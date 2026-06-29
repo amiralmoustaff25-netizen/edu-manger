@@ -70,6 +70,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:manager-comptable|comptable'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
+    // NOUVEAU BLOC : Espace strictement réservé aux élèves
+    Route::middleware(['role:eleve'])->group(function () {
+    Route::get('/mon-espace', function () {
+    // Pour l'instant, on affiche directement la vue statique que l'on a créée
+        return view('student.dashboard'); 
+        })->name('student.dashboard');
+    });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
