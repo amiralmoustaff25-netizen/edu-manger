@@ -21,7 +21,20 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        return redirect()->intended(route('login-logs.index', absolute: false));
+        $user = Auth::user();
+
+        // Redirection selon le rôle
+        if ($user->hasRole('eleve')) {
+            return redirect()->intended(route('student.dashboard', absolute: false));
+        } elseif ($user->hasRole(['super-admin', 'admin'])) {
+            return redirect()->intended(route('dashboard', absolute: false));
+        } elseif ($user->hasRole('professeur')) {
+            return redirect()->intended(route('dashboard', absolute: false));
+        } elseif ($user->hasRole('parent')) {
+            return redirect()->intended(route('dashboard', absolute: false));
+        } else {
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
     }
 
     public function destroy(Request $request): RedirectResponse
