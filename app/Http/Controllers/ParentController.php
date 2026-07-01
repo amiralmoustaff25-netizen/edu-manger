@@ -142,9 +142,7 @@ class ParentController extends Controller
             $recentAbsences = []; // À implémenter selon vos besoins
             
             // Dernières notes validées
-            $recentNotes = Note::whereHas('registration', function ($query) use ($student) {
-                $query->where('user_id', $student->id);
-            })->latest()->take(5)->get();
+            $recentNotes = Note::where('user_id', $student->id)->latest()->take(5)->get();
 
             return [
                 'student' => $student,

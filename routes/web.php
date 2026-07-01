@@ -70,11 +70,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:manager-comptable|comptable'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
-    // NOUVEAU BLOC : Espace strictement réservé aux élèves
     Route::middleware(['role:eleve'])->group(function () {
-    Route::get('/mon-espace', function () {
-    // Pour l'instant, on affiche directement la vue statique que l'on a créée
-        return view('student.dashboard'); 
+        Route::get('/mon-espace', function () {
+            $user = auth()->user();
+            
+            // On cherche l'inscription la plus récente de cet élève
+            // On charge en même temps la classe (classroom) et le professeur (teacher)
+            $registration = \App\Models\Registration::with(['classroom.teacher'])
+                ->where('user_id', $user->id)
+                ->latest()
+                ->first();
+
+            // On envoie les données à la vue
+            return view('students.dashboard', compact('user', 'registration')); 
+            
         })->name('student.dashboard');
     });
 
@@ -100,7 +109,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/parents/{id}/restore', [ParentController::class, 'restore'])->name('parents.restore');
 
         // Groupe de routes sécurisé pour l'administration
-        Route::middleware(['auth', 'role:Super-Admin|Admin'])->group(function () {
+        Route::middleware(['auth', 'role:super-admin|admin'])->group(function () {
                 // Route ressource pour les actions de base (index, store, destroy)
                 Route::resource('school-years', SchoolYearController::class)->only(['index', 'store', 'destroy']);
                 // Route spécifique pour l'activation

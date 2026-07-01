@@ -1,58 +1,76 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Mon Espace Élève</h2>
-    </x-slot>
-
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            <!-- Bandeau Annonces (Priorité Haute) -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded shadow-sm">
-                <div class="flex">
-                    <x-heroicon-o-megaphone class="h-6 w-6 text-yellow-500 mr-3"/>
-                    <div>
-                        <p class="font-bold text-yellow-800">Annonces</p>
-                        <p class="text-sm text-yellow-700">Bienvenue Moustapha. Les examens du semestre 2 débutent le 15 juillet.</p>
-                    </div>
-                </div>
+<div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight mb-6">
+            Gestion des élèves
+        </h2>
+        
+        <!-- Actions + Recherche -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <div class="flex gap-3">
+                <a href="{{ route('registrations.create') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Nouvelle inscription
+                </a>
             </div>
 
-            <!-- Grille des Widgets -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                <!-- Widget 1: Notes (Style standard) -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="font-semibold text-gray-700 mb-4 flex items-center">
-                        <x-heroicon-o-pencil class="w-5 h-5 mr-2 text-blue-500"/> Dernières notes
-                    </h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span>Français</span>
-                            <span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs font-bold">16/20</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Widget 2: Paiements (Header Violet) -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-t-4 border-t-purple-500">
-                    <h3 class="font-semibold text-gray-700 mb-4">Paiements</h3>
-                    <p class="text-2xl font-bold">80 000 FCFA</p>
-                    <p class="text-xs text-gray-500">Encaissé le 27/06/2026</p>
-                </div>
-
-                <!-- Widget 3: Absences (Header Rouge) -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-t-4 border-t-red-500">
-                    <h3 class="font-semibold text-gray-700 mb-4">Absences</h3>
-                    <p class="text-red-600 font-bold">1 non justifiée</p>
-                </div>
-
-                <!-- Widget 4: Emploi du temps (Header Vert) -->
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-t-4 border-t-teal-500">
-                    <h3 class="font-semibold text-gray-700 mb-4">Emploi du temps</h3>
-                    <button class="text-sm text-blue-600 underline">Télécharger PDF</button>
-                </div>
+            <div class="flex-1 max-w-md">
+                <input type="text" 
+                       id="search"
+                       placeholder="Rechercher par nom, matricule..." 
+                       class="w-full border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
             </div>
+        </div>
 
+        <!-- Tableau des élèves -->
+        <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                <thead class="bg-gray-50 dark:bg-slate-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Matricule</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nom & Prénom</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Classe</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date d'inscription</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                    @forelse ($students as $student)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ $student->matricule }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ $student->name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ $student->classroom?->name ?? 'Non assigné' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                {{ $student->registration?->registration_date?->format('d/m/Y') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($student->is_active)
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200">Actif</span>
+                                @else
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200">Inactif</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('students.show', $student) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Voir</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                Aucun élève trouvé.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4">
+                {{ $students->links() }}
+            </div>
         </div>
     </div>
-</x-app-layout>
+</div>
