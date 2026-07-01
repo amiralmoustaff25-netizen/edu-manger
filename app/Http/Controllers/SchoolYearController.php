@@ -8,11 +8,11 @@ use Illuminate\Http\Request;
 class SchoolYearController extends Controller
 {
     /**
-     * Protection : Seuls les Admin et Super-Admin peuvent gérer les années.
+     * Protection : Seuls les admin et super-admin peuvent gérer les années.
      */
     public function __construct()
     {
-        $this->middleware(['role:Super-Admin|Admin']);
+        $this->middleware(['role:super-admin|admin']);
     }
 
     // Liste des années scolaires
