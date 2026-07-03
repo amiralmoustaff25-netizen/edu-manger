@@ -2,132 +2,131 @@
 
 namespace App\Policies;
 
-use App\Models\Parent;
+use App\Models\ParentModel;
 use App\Models\User;
 
-class ParentPolicy
+class ParentModelPolicy
 {
     /**
-     * Le "passe-droit" : s'exécute avant toutes les autres vérifications.
-     * Si l'utilisateur est super-admin ou admin, il a accès à tout d'office.
+     * Passe-droit : super-admin a accès à tout.
+     * Admin passe aux vérifications de permissions.
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole(['super-admin', 'admin'])) {
+        if ($user->hasRole('super-admin')) {
             return true;
         }
-        return null; // Continue de vérifier les méthodes ci-dessous pour les autres
+
+        return null;
     }
 
     /**
-     * Détermine si l'utilisateur peut voir la liste des parents.
+     * Voir la liste des parents.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('voir-parents');
     }
 
     /**
-     * Détermine si l'utilisateur peut voir les détails d'un parent spécifique.
+     * Voir les détails d'un parent spécifique.
      */
     public function view(User $user, ParentModel $parent): bool
     {
         // Un parent peut voir son propre profil
-        if ($user->role === 'parent' && $user->id === $parent->user_id) {
+        if ($user->hasRole('parent') && $user->id === $parent->user_id) {
             return true;
         }
 
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('voir-detail-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut créer un parent.
+     * Créer un parent.
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('creer-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut modifier un parent.
+     * Modifier un parent.
      */
     public function update(User $user, ParentModel $parent): bool
     {
         // Un parent peut modifier son propre profil
-        if ($user->role === 'parent' && $user->id === $parent->user_id) {
+        if ($user->hasRole('parent') && $user->id === $parent->user_id) {
             return true;
         }
 
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('modifier-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut supprimer un parent.
+     * Supprimer (soft delete) un parent.
      */
     public function delete(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('archiver-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut restaurer un parent supprimé.
+     * Restaurer un parent supprimé.
      */
     public function restore(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('restaurer-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut supprimer définitivement un parent.
+     * Supprimer définitivement un parent.
      */
     public function forceDelete(User $user, ParentModel $parent): bool
     {
-        return $user->hasRole('super-admin');
+        return $user->can('supprimer-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut archiver un parent.
+     * Archiver un parent.
      */
     public function archive(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('archiver-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut associer un élève à un parent.
+     * Associer un élève à un parent.
      */
     public function attachStudent(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('associer-eleve-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut dissocier un élève d'un parent.
+     * Dissocier un élève d'un parent.
      */
     public function detachStudent(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('dissocier-eleve-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut réinitialiser le mot de passe d'un parent.
+     * Réinitialiser le mot de passe d'un parent.
      */
     public function resetPassword(User $user, ParentModel $parent): bool
     {
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('reinitialiser-mot-de-passe-parent');
     }
 
     /**
-     * Détermine si l'utilisateur peut voir les enfants d'un parent.
-     * Un parent ne peut voir que ses propres enfants.
+     * Voir les enfants d'un parent.
      */
     public function viewStudents(User $user, ParentModel $parent): bool
     {
-        // Un parent peut voir ses propres enfants
-        if ($user->role === 'parent' && $user->id === $parent->user_id) {
+        if ($user->hasRole('parent') && $user->id === $parent->user_id) {
             return true;
         }
 
-        return $user->hasAnyRole(['super-admin', 'admin']);
+        return $user->can('voir-detail-parent');
     }
 }
