@@ -2,17 +2,21 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class EventServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
+    protected $listen = [
         //
-    }
+    ];
 
     public function boot(): void
     {
         //
+    }
+
+    public function shouldDiscoverEvents(): bool
+    {
+        return false;
     }
 }

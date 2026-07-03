@@ -97,7 +97,7 @@ return [
     |
     */
 
-    'providers' => [
+        'providers' => [
 
         /*
          * Laravel Framework Service Providers...
@@ -134,10 +134,9 @@ return [
          * Application Service Providers...
          */
         App\Providers\AppServiceProvider::class,
-        // App\Providers\AuthServiceProvider::class,  // Fusionné dans AppServiceProvider
+        App\Providers\AuthServiceProvider::class,
 
     ],
-
     /*
     |--------------------------------------------------------------------------
     | Class Aliases
