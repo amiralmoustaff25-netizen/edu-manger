@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
@@ -19,8 +22,10 @@ class UserController extends Controller
         'eleve',
     ];
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
+        $this->authorize('voir-utilisateurs');
+
         $users = User::query()
             ->with('creator')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -53,17 +58,20 @@ class UserController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
+        $this->authorize('creer-utilisateur');
+
         return view('users.create', [
             'user' => new User(['is_active' => true]),
             'roles' => self::ROLES,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request): RedirectResponse
     {
-        $validated = $this->validatedData($request);
+        $validated = $request->validated();
+
         $validated['matricule'] = User::generateMatricule($validated['role']);
         $validated['password'] = Hash::make('password');
         $validated['created_by'] = auth()->id();
@@ -78,17 +86,19 @@ class UserController extends Controller
             ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.' | Mot de passe temporaire : password');
     }
 
-    public function edit(User $user)
+    public function edit(User $user): View
     {
+        $this->authorize('modifier-utilisateur', $user);
+
         return view('users.edit', [
             'user' => $user,
             'roles' => self::ROLES,
         ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $validated = $this->validatedData($request, $user);
+        $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
 
         $user->update($validated);
@@ -97,8 +107,10 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');
     }
 
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
+        $this->authorize('supprimer-utilisateur', $user);
+
         if ($user->is(auth()->user())) {
             return back()->withErrors(['user' => 'Vous ne pouvez pas supprimer votre propre compte.']);
         }
@@ -109,8 +121,10 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'Utilisateur désactivé et archivé.');
     }
 
-    public function toggle(User $user)
+    public function toggle(User $user): RedirectResponse
     {
+        $this->authorize('activer-desactiver-utilisateur', $user);
+
         if ($user->is(auth()->user())) {
             return back()->withErrors(['user' => 'Vous ne pouvez pas désactiver votre propre compte.']);
         }
@@ -120,8 +134,10 @@ class UserController extends Controller
         return back()->with('success', $user->is_active ? 'Utilisateur activé.' : 'Utilisateur désactivé.');
     }
 
-    public function resetPassword(User $user)
+    public function resetPassword(User $user): RedirectResponse
     {
+        $this->authorize('reinitialiser-mot-de-passe-utilisateur', $user);
+
         $user->update([
             'password' => Hash::make('password'),
             'password_must_change' => true,
@@ -129,16 +145,4 @@ class UserController extends Controller
 
         return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : password');
     }
-
-    private function validatedData(Request $request, ?User $user = null): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique(User::class)->ignore($user)],
-            'role' => ['required', Rule::in(self::ROLES)],
-            'contract_started_at' => ['nullable', 'date'],
-        ]);
-    }
-
-    
 }

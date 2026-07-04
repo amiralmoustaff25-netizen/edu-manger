@@ -12,7 +12,7 @@ class UpdateParentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['super-admin', 'admin']);
+        return $this->user()->can('modifier-parent', $this->parent);
     }
 
     /**

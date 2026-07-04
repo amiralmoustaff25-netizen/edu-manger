@@ -12,7 +12,7 @@ class StoreParentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['super-admin', 'admin']);
+        return $this->user()->can('creer-parent');
     }
 
     /**

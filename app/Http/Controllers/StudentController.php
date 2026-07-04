@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TransferStudentRequest;
+use App\Http\Requests\UpdateStudentStatusRequest;
 use App\Models\Classroom;
 use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class StudentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
+        $this->authorize('voir-eleves');
+
         $students = User::query()
-            ->where('role', 'eleve')
+            ->role('eleve')
             ->with(['latestRegistration.classroom', 'latestRegistration.schoolYear'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
@@ -50,9 +54,11 @@ class StudentController extends Controller
         ]);
     }
 
-    public function show(User $student)
+    public function show(User $student): View
     {
-        abort_unless($student->role === 'eleve', 404);
+        $this->authorize('voir-detail-eleve', $student);
+
+        abort_unless($student->hasRole('eleve'), 404);
 
         $student->load([
             'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments'])->latest(),
@@ -71,35 +77,33 @@ class StudentController extends Controller
         ]);
     }
 
-    public function transfer(Request $request, User $student)
+    public function transfer(TransferStudentRequest $request, User $student)
     {
-        abort_unless($student->role === 'eleve', 404);
+        $this->authorize('transferer-eleve', $student);
 
-        $validated = $request->validate([
-            'registration_id' => ['required', 'exists:registrations,id'],
-            'classroom_id' => ['required', 'exists:classrooms,id'],
-        ]);
+        abort_unless($student->hasRole('eleve'), 404);
+
+        $validated = $request->validated();
 
         $registration = Registration::where('user_id', $student->id)->findOrFail($validated['registration_id']);
         $registration->update(['classroom_id' => $validated['classroom_id']]);
 
-        return back()->with('success', 'Classe de l’élève mise à jour.');
+        return back()->with('success', 'Classe de l\'élève mise à jour.');
     }
 
-    public function updateStatus(Request $request, User $student)
+    public function updateStatus(UpdateStudentStatusRequest $request, User $student)
     {
-        abort_unless($student->role === 'eleve', 404);
+        $this->authorize('modifier-statut-eleve', $student);
 
-        $validated = $request->validate([
-            'registration_id' => ['required', 'exists:registrations,id'],
-            'status' => ['required', Rule::in(['pending', 'active'])],
-        ]);
+        abort_unless($student->hasRole('eleve'), 404);
+
+        $validated = $request->validated();
 
         $registration = Registration::where('user_id', $student->id)->findOrFail($validated['registration_id']);
         $registration->update(['status' => $validated['status']]);
 
         $student->update(['is_active' => $validated['status'] === 'active']);
 
-        return back()->with('success', 'Statut de l’élève mis à jour.');
+        return back()->with('success', 'Statut de l\'élève mis à jour.');
     }
 }

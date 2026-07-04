@@ -253,6 +253,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'name' => 'Super Admin',
                 'email' => 'admin@edu-manager.local',
                 'password' => bcrypt('password'),
+                'matricule' => 'ADM-' . date('Y') . '-0001',
                 'role' => 'super-admin',
                 'is_active' => true,
                 'password_must_change' => true,

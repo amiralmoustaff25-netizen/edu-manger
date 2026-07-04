@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreParentRequest;
+use App\Http\Requests\UpdateParentRequest;
 use App\Models\ParentModel;
 use App\Models\User;
 use App\Models\Note;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class ParentController extends Controller
 {
     /**
      * Liste paginée des parents avec recherche et filtrage
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $this->authorize('voir-parents');
 
@@ -45,7 +48,7 @@ class ParentController extends Controller
     /**
      * Afficher le formulaire de création d'un parent
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('creer-parent');
 
@@ -57,41 +60,24 @@ class ParentController extends Controller
     /**
      * Créer un nouveau parent avec son compte utilisateur
      */
-    public function store(Request $request)
+    public function store(StoreParentRequest $request): RedirectResponse
     {
-        $this->authorize('creer-parent');
-
-        $validated = $request->validate([
-            'nom' => ['required', 'string', 'max:255'],
-            'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:parents,email'],
-            'telephone' => ['nullable', 'string', 'max:20'],
-            'adresse' => ['nullable', 'string'],
-            'profession' => ['nullable', 'string', 'max:255'],
-            'statut' => ['required', Rule::in(['actif', 'en_attente_activation', 'archive'])],
-        ]);
-
-        // Vérifier si l'email existe déjà dans users
-        if (User::where('email', $validated['email'])->exists()) {
-            return back()->withErrors(['email' => 'Cet email est déjà utilisé par un compte utilisateur.'])->withInput();
-        }
+        $validated = $request->validated();
 
         $parent = DB::transaction(function () use ($validated) {
-            // Créer le compte utilisateur associé
             $user = User::create([
                 'name' => $validated['nom'] . ' ' . $validated['prenom'],
                 'email' => $validated['email'],
                 'password' => Hash::make('password'),
+                'matricule' => User::generateMatricule(),
                 'role' => 'parent',
                 'is_active' => $validated['statut'] === 'actif',
                 'password_must_change' => true,
                 'created_by' => auth()->id(),
             ]);
 
-            // Attribuer le rôle parent via Spatie
             $user->assignRole('parent');
 
-            // Créer le parent
             $parent = ParentModel::create([
                 'matricule_parent' => ParentModel::generateMatricule(),
                 'nom' => $validated['nom'],
@@ -107,7 +93,6 @@ class ParentController extends Controller
             return $parent;
         });
 
-        // Journalisation
         Log::info('Parent créé', [
             'parent_id' => $parent->id,
             'matricule_parent' => $parent->matricule_parent,
@@ -123,7 +108,7 @@ class ParentController extends Controller
     /**
      * Afficher les détails d'un parent
      */
-    public function show(ParentModel $parent)
+    public function show(ParentModel $parent): View
     {
         $this->authorize('voir-detail-parent', $parent);
 
@@ -134,7 +119,6 @@ class ParentController extends Controller
             },
         ]);
 
-        // Charger les informations détaillées pour chaque enfant
         foreach ($parent->students as $student) {
             $student->load([
                 'registrations' => function ($query) {
@@ -143,10 +127,242 @@ class ParentController extends Controller
             ]);
         }
 
-        // Calculer les statistiques pour chaque enfant
         $studentsData = $parent->students->map(function ($student) {
             $currentRegistration = $student->registrations->first();
             $totalPaid = $student->registrations->flatMap->payments->sum('amount');
             $remainingBalance = $student->registrations->flatMap->payments->sum('remaining_balance');
+            $recentAbsences = [];
+            $recentNotes = Note::where('user_id', $student->id)->latest()->take(5)->get();
 
-            // Dernières absences (simulé - à
+            return [
+                'student' => $student,
+                'currentRegistration' => $currentRegistration,
+                'totalPaid' => $totalPaid,
+                'remainingBalance' => $remainingBalance,
+                'recentAbsences' => $recentAbsences,
+                'recentNotes' => $recentNotes,
+            ];
+        });
+
+        return view('parents.show', [
+            'parent' => $parent,
+            'studentsData' => $studentsData,
+        ]);
+    }
+
+    /**
+     * Afficher le formulaire d'édition d'un parent
+     */
+    public function edit(ParentModel $parent): View
+    {
+        $this->authorize('modifier-parent', $parent);
+
+        $parent->load('user');
+
+        return view('parents.edit', [
+            'parent' => $parent,
+        ]);
+    }
+
+    /**
+     * Mettre à jour les informations d'un parent
+     */
+    public function update(UpdateParentRequest $request, ParentModel $parent): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated, $parent) {
+            $parent->update($validated);
+
+            if ($parent->user) {
+                $parent->user->update([
+                    'email' => $validated['email'],
+                    'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                    'is_active' => $validated['statut'] === 'actif',
+                ]);
+            }
+        });
+
+        Log::info('Parent mis à jour', [
+            'parent_id' => $parent->id,
+            'matricule_parent' => $parent->matricule_parent,
+            'updated_by' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('parents.show', $parent)
+            ->with('success', 'Informations du parent mises à jour avec succès.');
+    }
+
+    /**
+     * Archiver un parent (soft delete)
+     */
+    public function archive(ParentModel $parent): RedirectResponse
+    {
+        $this->authorize('archiver-parent', $parent);
+
+        DB::transaction(function () use ($parent) {
+            $parent->update(['statut' => 'archive']);
+
+            if ($parent->user) {
+                $parent->user->update(['is_active' => false]);
+            }
+
+            $parent->delete();
+        });
+
+        Log::info('Parent archivé', [
+            'parent_id' => $parent->id,
+            'matricule_parent' => $parent->matricule_parent,
+            'archived_by' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('parents.index')
+            ->with('success', 'Parent archivé avec succès.');
+    }
+
+    /**
+     * Restaurer un parent archivé
+     */
+    public function restore($id): RedirectResponse
+    {
+        $parent = ParentModel::withTrashed()->findOrFail($id);
+
+        $this->authorize('restaurer-parent', $parent);
+
+        DB::transaction(function () use ($parent) {
+            $parent->restore();
+            $parent->update(['statut' => 'actif']);
+
+            if ($parent->user) {
+                $parent->user->update(['is_active' => true]);
+            }
+        });
+
+        Log::info('Parent restauré', [
+            'parent_id' => $parent->id,
+            'matricule_parent' => $parent->matricule_parent,
+            'restored_by' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('parents.index')
+            ->with('success', 'Parent restauré avec succès.');
+    }
+
+    /**
+     * Supprimer définitivement un parent
+     */
+    public function destroy(ParentModel $parent): RedirectResponse
+    {
+        $this->authorize('supprimer-parent', $parent);
+
+        DB::transaction(function () use ($parent) {
+            $parent->students()->detach();
+
+            if ($parent->user) {
+                $parent->user->forceDelete();
+            }
+
+            $parent->forceDelete();
+        });
+
+        Log::info('Parent supprimé définitivement', [
+            'parent_id' => $parent->id,
+            'matricule_parent' => $parent->matricule_parent,
+            'deleted_by' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('parents.index')
+            ->with('success', 'Parent supprimé définitivement avec succès.');
+    }
+
+    /**
+     * Associer un élève à un parent
+     */
+    public function attachStudent(Request $request, ParentModel $parent): RedirectResponse
+    {
+        $this->authorize('associer-eleve-parent', $parent);
+
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'lien_parente' => ['required', Rule::in(['Pere', 'Mere', 'Tuteur', 'Tutrice', 'Autre'])],
+            'est_responsable_financier' => ['boolean'],
+            'est_contact_urgence' => ['boolean'],
+        ]);
+
+        $student = User::findOrFail($validated['user_id']);
+
+        if (!$student->hasRole('eleve')) {
+            return back()->withErrors(['user_id' => 'Cet utilisateur n\'est pas un élève.'])->withInput();
+        }
+
+        if ($parent->students()->where('user_id', $student->id)->exists()) {
+            return back()->withErrors(['user_id' => 'Cet élève est déjà associé à ce parent.'])->withInput();
+        }
+
+        $parent->students()->attach($student->id, [
+            'lien_parente' => $validated['lien_parente'],
+            'est_responsable_financier' => $validated['est_responsable_financier'] ?? false,
+            'est_contact_urgence' => $validated['est_contact_urgence'] ?? false,
+        ]);
+
+        Log::info('Élève associé au parent', [
+            'parent_id' => $parent->id,
+            'student_id' => $student->id,
+            'lien_parente' => $validated['lien_parente'],
+            'attached_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Élève associé au parent avec succès.');
+    }
+
+    /**
+     * Dissocier un élève d'un parent
+     */
+    public function detachStudent(ParentModel $parent, User $student): RedirectResponse
+    {
+        $this->authorize('dissocier-eleve-parent', $parent);
+
+        if (!$student->hasRole('eleve')) {
+            return back()->withErrors(['user' => 'Cet utilisateur n\'est pas un élève.']);
+        }
+
+        $parent->students()->detach($student->id);
+
+        Log::info('Élève dissocié du parent', [
+            'parent_id' => $parent->id,
+            'student_id' => $student->id,
+            'detached_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Élève dissocié du parent avec succès.');
+    }
+
+    /**
+     * Réinitialiser le mot de passe du compte parent
+     */
+    public function resetPassword(ParentModel $parent): RedirectResponse
+    {
+        $this->authorize('reinitialiser-mot-de-passe-parent', $parent);
+
+        if (!$parent->user) {
+            return back()->withErrors(['user' => 'Aucun compte utilisateur associé à ce parent.']);
+        }
+
+        $parent->user->update([
+            'password' => Hash::make('password'),
+            'password_must_change' => true,
+        ]);
+
+        Log::info('Mot de passe parent réinitialisé', [
+            'parent_id' => $parent->id,
+            'matricule_parent' => $parent->matricule_parent,
+            'reset_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : password');
+    }
+}

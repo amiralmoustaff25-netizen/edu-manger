@@ -2,22 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePaymentRequest;
 use App\Models\Payment;
 use App\Models\Registration;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
-    public function store(Request $request)
+    public function store(StorePaymentRequest $request): RedirectResponse
     {
-        Gate::authorize('create', Payment::class);
-
-        $validated = $request->validate([
-            'registration_id' => ['required', 'exists:registrations,id'],
-            'amount_paid' => ['required', 'numeric', 'min:0'],
-            'month' => ['required', 'string', 'max:50'],
-        ]);
+        $validated = $request->validated();
 
         $registration = Registration::findOrFail($validated['registration_id']);
         $expectedMonthlyFee = (float) $registration->monthly_fee;
@@ -34,6 +29,10 @@ class PaymentController extends Controller
             'status' => $isPartial ? 'partiel' : 'complet',
             'remaining_balance' => $isPartial ? $expectedMonthlyFee - $amountPaid : 0,
             'month' => $validated['month'],
+            'payment_date' => $validated['payment_date'] ?? now(),
+            'payment_method' => $validated['payment_method'] ?? null,
+            'payment_type' => $validated['payment_type'] ?? null,
+            'comment' => $validated['comment'] ?? null,
             'validated_by' => auth()->id(),
         ]);
 
