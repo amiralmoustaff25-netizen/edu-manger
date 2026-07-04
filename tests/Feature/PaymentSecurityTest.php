@@ -90,6 +90,7 @@ class PaymentSecurityTest extends TestCase
                 'registration_id' => $this->registrationId,
                 'amount_paid' => 10000.00,
                 'month' => 'Octobre',
+                // ✅ Plus besoin de payment_method, payment_type, comment
             ]);
 
         $response->assertStatus(201);
@@ -99,6 +100,8 @@ class PaymentSecurityTest extends TestCase
             'status' => 'partiel',
             'remaining_balance' => 5000.00,
             'validated_by' => $manager->id,
+            'payment_method' => 'espèces',      // valeur par défaut
+            'payment_type' => 'mensualité',     // valeur par défaut
         ]);
     }
 }

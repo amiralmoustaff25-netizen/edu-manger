@@ -6,11 +6,13 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Models\Payment;
 use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;  // ✅ AJOUT
 use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
-    public function store(StorePaymentRequest $request): RedirectResponse
+    // ✅ CHANGEment du type de retour
+    public function store(StorePaymentRequest $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validated();
 
@@ -30,8 +32,8 @@ class PaymentController extends Controller
             'remaining_balance' => $isPartial ? $expectedMonthlyFee - $amountPaid : 0,
             'month' => $validated['month'],
             'payment_date' => $validated['payment_date'] ?? now(),
-            'payment_method' => $validated['payment_method'] ?? null,
-            'payment_type' => $validated['payment_type'] ?? null,
+            'payment_method' => $validated['payment_method'] ?? 'espèces',
+            'payment_type' => $validated['payment_type'] ?? 'mensualité',
             'comment' => $validated['comment'] ?? null,
             'validated_by' => auth()->id(),
         ]);
