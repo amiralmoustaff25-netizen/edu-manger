@@ -119,4 +119,28 @@ class User extends Authenticatable
     {
         return $this->parents()->wherePivot('est_contact_urgence', true)->first();
     }
+    // Dans app/Models/User.php
+
+    public static function generateMatricule(string $role): string
+    {
+        $prefix = match ($role) {
+            'super-admin' => 'SAD',
+            'admin' => 'ADM',
+            'manager-comptable' => 'MCO',
+            'comptable' => 'CPT',
+            'professeur' => 'PROF',
+            'parent' => 'PAR',
+            'eleve' => 'ELE',
+            default => 'USR',
+        };
+
+        $sequence = self::withTrashed()->where('matricule', 'like', "{$prefix}-%")->count() + 1;
+
+        do {
+            $matricule = $prefix . '-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (self::withTrashed()->where('matricule', $matricule)->exists());
+
+        return $matricule;
+    }
 }

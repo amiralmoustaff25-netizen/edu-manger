@@ -64,7 +64,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validatedData($request);
-        $validated['matricule'] = $this->generateMatricule($validated['role']);
+        $validated['matricule'] = User::generateMatricule($validated['role']);
         $validated['password'] = Hash::make('password');
         $validated['created_by'] = auth()->id();
         $validated['password_must_change'] = true;
@@ -140,26 +140,5 @@ class UserController extends Controller
         ]);
     }
 
-    private function generateMatricule(string $role): string
-    {
-        $prefix = match ($role) {
-            'super-admin' => 'SAD',
-            'admin' => 'ADM',
-            'manager-comptable' => 'MCO',
-            'comptable' => 'CPT',
-            'professeur' => 'PROF',
-            'parent' => 'PAR',
-            'eleve' => 'ELE',
-            default => 'USR',
-        };
-
-        $sequence = User::withTrashed()->where('matricule', 'like', "{$prefix}-%")->count() + 1;
-
-        do {
-            $matricule = $prefix . '-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-            $sequence++;
-        } while (User::withTrashed()->where('matricule', $matricule)->exists());
-
-        return $matricule;
-    }
+    
 }
