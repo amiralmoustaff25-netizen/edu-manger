@@ -113,6 +113,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');
         Route::get('/login-logs/{loginLog}', [LoginLogController::class, 'show'])->name('login-logs.show');
     });
+    Route::middleware(['throttle:login'])->group(function () {
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+        ->name('login');
+    });
 });
 
 require __DIR__.'/auth.php';
