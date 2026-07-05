@@ -5,32 +5,40 @@
         </h2>
     </x-slot>
 
+    @php
+        $user = Auth::user();
+        $registration = $user->latestRegistration;
+        $notes = $user->notes()->with('matiere')->latest()->take(5)->get();
+        $moyenne = $user->notes()->avg('valeur') ?? 0;
+        $payments = $registration ? $registration->payments()->latest()->take(5)->get() : collect();
+        $totalPaid = $registration ? $registration->payments()->sum('amount') : 0;
+        $totalDue = $registration ? ($registration->monthly_fee * 9) : 0; // 9 mois d'école
+        $remaining = $totalDue - $totalPaid;
+    @endphp
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Message de bienvenue -->
-            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg mb-6 @if(Auth::user()->cycle === 'primaire') border-t-4 border-emerald-500 @elseif(Auth::user()->cycle === 'college') border-t-4 border-orange-500 @else border-t-4 border-red-500 @endif">
+            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg mb-6 @if($user->cycle === 'primaire') border-t-4 border-emerald-500 @elseif($user->cycle === 'college') border-t-4 border-orange-500 @else border-t-4 border-red-500 @endif">
                 <div class="p-6 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
                     <div>
-                        <h3 class="text-2xl font-bold @if(Auth::user()->cycle === 'primaire') text-emerald-600 dark:text-emerald-400 @elseif(Auth::user()->cycle === 'college') text-orange-600 dark:text-orange-400 @else text-red-600 dark:text-red-400 @endif mb-2">
-                            Bonjour, {{ Auth::user()->name }} ! 👋
+                        <h3 class="text-2xl font-bold @if($user->cycle === 'primaire') text-emerald-600 dark:text-emerald-400 @elseif($user->cycle === 'college') text-orange-600 dark:text-orange-400 @else text-red-600 dark:text-red-400 @endif mb-2">
+                            {{ __('Bonjour, :name ! 👋', ['name' => $user->name]) }}
                         </h3>
                         <p class="text-gray-600 dark:text-gray-300">
-                            Bienvenue sur ton portail EduManager. Voici le résumé de tes informations scolaires.
+                            {{ __('Bienvenue sur ton portail EduManager. Voici le résumé de tes informations scolaires.') }}
                         </p>
                     </div>
-                    <!-- Optionnel : Avatar de l'élève -->
                     <div class="hidden md:block">
-                        <div class="h-16 w-16 rounded-full @if(Auth::user()->cycle === 'primaire') bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 @elseif(Auth::user()->cycle === 'college') bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-600 dark:text-orange-400 @else bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 @endif font-bold text-2xl">
-                            {{ substr(Auth::user()->name, 0, 1) }}
+                        <div class="h-16 w-16 rounded-full @if($user->cycle === 'primaire') bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 @elseif($user->cycle === 'college') bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-600 dark:text-orange-400 @else bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 @endif font-bold text-2xl">
+                            {{ substr($user->name, 0, 1) }}
                         </div>
                     </div>
                 </div>
- 
-
             </div>
 
-            <!-- Grille des statistiques / widgets -->
+            <!-- Grille des statistiques -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 
                 <!-- Carte 1 : Classe -->
@@ -40,9 +48,9 @@
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                         </div>
                         <div class="ml-4">
-                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">Ma Classe</p>
+                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ __('Ma Classe') }}</p>
                             <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                                {{ $registration->classroom->name ?? 'Classe non assignée' }}
+                                {{ $registration->classroom->name ?? __('Classe non assignée') }}
                             </p>
                         </div>
                     </div>
@@ -55,28 +63,24 @@
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         </div>
                         <div class="ml-4">
-                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">Professeur Principal</p>
+                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ __('Professeur Principal') }}</p>
                             <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                                {{ $registration->classroom->teacher->name ?? 'Aucun professeur' }}
+                                {{ $registration->classroom->teacher->name ?? __('Aucun professeur') }}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Carte 3 : Statut de l'inscription -->
+                <!-- Carte 3 : Moyenne générale -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </div>
                         <div class="ml-4">
-                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">Statut Inscription</p>
+                            <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ __('Moyenne Générale') }}</p>
                             <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                                @if($registration)
-                                    <span class="text-green-600 dark:text-green-400">Active</span>
-                                @else
-                                    <span class="text-red-600 dark:text-red-400">En attente</span>
-                                @endif
+                                {{ number_format($moyenne, 2, ',', ' ') }}/20
                             </p>
                         </div>
                     </div>
@@ -84,60 +88,71 @@
                 
             </div>
 
-            <!-- Section de contenu principal (Actualités ou Emploi du temps) -->
-            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-700">
-                    
-                    @if(Auth::user()->cycle === 'primaire')
-                        <!-- Primaire : Cahier de texte et communications prioritaires -->
-                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">📚 Mon Cahier de Texte</h4>
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-indigo-800 dark:text-indigo-200">Devoirs pour demain</p>
-                                <p class="text-sm text-indigo-700 dark:text-indigo-300 mt-1">Mathématiques : Exercices 1 à 5 page 42</p>
+            <!-- Section Notes & Paiements -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Dernières notes -->
+                <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">📚 {{ __('Mes Dernières Notes') }}</h4>
+                        @if($notes->count() > 0)
+                            <div class="space-y-3">
+                                @foreach($notes as $note)
+                                    <div class="flex items-center justify-between p-3 rounded-lg @if($note->valeur >= 10) bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 @else bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 @endif">
+                                        <div>
+                                            <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $note->matiere->nom ?? __('Matière inconnue') }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $note->type_evaluation }} — {{ $note->periode }}</p>
+                                        </div>
+                                        <span class="text-lg font-bold @if($note->valeur >= 10) text-green-600 dark:text-green-400 @else text-red-600 dark:text-red-400 @endif">
+                                            {{ $note->valeur }}/20
+                                        </span>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div class="border-l-4 border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-green-800 dark:text-green-200">Lecture du soir</p>
-                                <p class="text-sm text-green-700 dark:text-green-300 mt-1">Lire le chapitre 3 de "Le Petit Prince"</p>
-                            </div>
-                        </div>
-                    @elseif(Auth::user()->cycle === 'college')
-                        <!-- Collège : Équilibre entre devoirs et communications -->
-                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">📋 Mes Devoirs & Actualités</h4>
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-indigo-800 dark:text-indigo-200">Devoirs à rendre</p>
-                                <p class="text-sm text-indigo-700 dark:text-indigo-300 mt-1">Français : Rédaction sur "Mon héros préféré" (pour vendredi)</p>
-                            </div>
-                            <div class="border-l-4 border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-amber-800 dark:text-amber-200">Interrogation prévue</p>
-                                <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">Histoire-Géographie : Chapitre sur la Révolution française (mercredi)</p>
-                            </div>
-                            <div class="border-l-4 border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-green-800 dark:text-green-200">Actualité de l'école</p>
-                                <p class="text-sm text-green-700 dark:text-green-300 mt-1">Les bulletins du trimestre sont disponibles</p>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Lycée : Vue orientée vers les examens et l'autonomie -->
-                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">🎯 Examens & Planning</h4>
-                        <div class="space-y-4">
-                            <div class="border-l-4 border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-red-800 dark:text-red-200">Bac Blanc - Semaine prochaine</p>
-                                <p class="text-sm text-red-700 dark:text-red-300 mt-1">Préparez-vous : Philosophie, Histoire, Anglais</p>
-                            </div>
-                            <div class="border-l-4 border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-indigo-800 dark:text-indigo-200">Orientation Post-Bac</p>
-                                <p class="text-sm text-indigo-700 dark:text-indigo-300 mt-1">Journée portes ouvertes universités : 15 mars</p>
-                            </div>
-                            <div class="border-l-4 border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-900/50 p-4 rounded-r-lg">
-                                <p class="font-semibold text-purple-800 dark:text-purple-200">Notes récentes</p>
-                                <p class="text-sm text-purple-700 dark:text-purple-300 mt-1">Moyenne trimestrielle : 14.5/20 - Progression : +1.2</p>
-                            </div>
-                        </div>
-                    @endif
-                    
+                        @else
+                            <p class="text-gray-500 dark:text-gray-400 italic">{{ __('Aucune note disponible pour le moment.') }}</p>
+                        @endif
+                    </div>
                 </div>
+
+                <!-- Paiements -->
+                <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">💰 {{ __('Mes Paiements') }}</h4>
+                        
+                        <!-- Solde -->
+                        <div class="mb-4 p-4 rounded-lg @if($remaining <= 0) bg-green-50 dark:bg-green-900/30 border border-green-200 @else bg-amber-50 dark:bg-amber-900/30 border border-amber-200 @endif">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">{{ __('Solde restant') }}</span>
+                                <span class="text-xl font-bold @if($remaining <= 0) text-green-600 dark:text-green-400 @else text-amber-600 dark:text-amber-400 @endif">
+                                    {{ number_format($remaining, 0, ',', ' ') }} FCFA
+                                </span>
+                            </div>
+                        </div>
+
+                        @if($payments->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($payments as $payment)
+                                    <div class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-slate-700/50">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $payment->month }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $payment->payment_date->format('d/m/Y') }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ number_format($payment->amount, 0, ',', ' ') }} FCFA</span>
+                                            <span class="block text-xs @if($payment->status === 'complet') text-green-600 @else text-amber-600 @endif">
+                                                {{ $payment->status === 'complet' ? __('Complet') : __('Partiel') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-gray-500 dark:text-gray-400 italic">{{ __('Aucun paiement enregistré.') }}</p>
+                        @endif
+                    </div>
+                </div>
+
             </div>
 
         </div>

@@ -48,5 +48,21 @@
     "Current Password": "Mot de passe actuel",
     "New Password": "Nouveau mot de passe",
     "Delete": "Supprimer",
-    "Permanently delete your account.": "Supprimer définitivement votre compte."
+    "Permanently delete your account.": "Supprimer définitivement votre compte.",
+    "Bonjour, :name ! 👋": "Bonjour, :name ! 👋",
+    "Bienvenue sur ton portail EduManager. Voici le résumé de tes informations scolaires.": "Bienvenue sur ton portail EduManager. Voici le résumé de tes informations scolaires.",
+    "Ma Classe": "Ma Classe",
+    "Classe non assignée": "Classe non assignée",
+    "Professeur Principal": "Professeur Principal",
+    "Aucun professeur": "Aucun professeur",
+    "Moyenne Générale": "Moyenne Générale",
+    "Mes Dernières Notes": "Mes Dernières Notes",
+    "Matière inconnue": "Matière inconnue",
+    "Aucune note disponible pour le moment.": "Aucune note disponible pour le moment.",
+    "Mes Paiements": "Mes Paiements",
+    "Solde restant": "Solde restant",
+    "Aucun paiement enregistré.": "Aucun paiement enregistré.",
+    "Complet": "Complet",
+    "Partiel": "Partiel",
+    "Mon Espace Élève": "Mon Espace Élève"
 }
