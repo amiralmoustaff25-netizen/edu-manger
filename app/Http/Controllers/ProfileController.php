@@ -11,25 +11,32 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $user->load('latestRegistration.classroom.schoolYear');
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'registration' => $user->latestRegistration,
+            'classroom' => $user->latestRegistration?->classroom,
+            'schoolYear' => $user->latestRegistration?->schoolYear,
         ]);
     }
 
-    public function show() 
+    public function show(): View
     {
-        $user = auth()->user(); // Récupère l'utilisateur actuellement connecté
-        return view('profile.show', compact('user'));
+        $user = Auth::user();
+        $user->load('latestRegistration.classroom.schoolYear');
+
+        return view('profile.show', [
+            'user' => $user,
+            'registration' => $user->latestRegistration,
+            'classroom' => $user->latestRegistration?->classroom,
+            'schoolYear' => $user->latestRegistration?->schoolYear,
+        ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
@@ -40,12 +47,9 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.show')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -53,9 +57,7 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-
         Auth::logout();
-
         $user->delete();
 
         $request->session()->invalidate();

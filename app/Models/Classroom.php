@@ -3,40 +3,46 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Classroom extends Model
 {
-    /**
-     * Les attributs qui peuvent être assignés en masse.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'cycle',
         'school_year_id',
-        'teacher_id', // <-- Ajouté pour pouvoir assigner un enseignant à la classe
+        'teacher_id',
     ];
 
     /**
-     * Obtenir l'enseignant titulaire de la classe.
+     * Relation avec l'année scolaire
      */
-    public function teacher()
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
+    }
+
+    /**
+     * Relation avec l'enseignant titulaire
+     */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
     /**
-     * Obtenir les notes associées à la classe.
+     * Relation avec les notes
      */
-    public function notes()
+    public function notes(): HasMany
     {
         return $this->hasMany(Note::class);
     }
+
     /**
-     * Obtenir les inscriptions (élèves) associées à cette classe.
+     * Relation avec les inscriptions
      */
-    public function registrations()
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }
