@@ -22,6 +22,11 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
+        // REDIRECTION ÉLÈVE vers /mon-espace
+        if (auth()->user()->hasRole('eleve')) {
+            return redirect()->route('student.dashboard');
+        }
+
         $activeYear = SchoolYear::where('is_active', true)->first();
 
         $registrations = Registration::with(['user', 'classroom', 'schoolYear'])
@@ -71,16 +76,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
 
+    // ✅ CORRIGÉ : plus de doublon
     Route::middleware(['role:eleve'])->group(function () {
         Route::get('/mon-espace', function () {
             $user = auth()->user();
+            $user->load('latestRegistration.classroom.schoolYear');
 
-            $registration = \App\Models\Registration::with(['classroom.teacher'])
-                ->where('user_id', $user->id)
-                ->latest()
-                ->first();
+            $registration = $user->latestRegistration;
+            $notes = $user->notes()->with('matiere')->latest()->take(5)->get();
+            $moyenne = $user->notes()->avg('valeur') ?? 0;
+            $payments = $registration ? $registration->payments()->latest()->take(5)->get() : collect();
+            $totalPaid = $registration ? $registration->payments()->sum('amount') : 0;
+            $totalDue = $registration ? ($registration->monthly_fee * 9) : 0;
+            $remaining = $totalDue - $totalPaid;
 
-            return view('students.dashboard', compact('user', 'registration'));
+            return view('students.dashboard', compact(
+                'user', 'registration', 'notes', 'moyenne', 
+                'payments', 'totalPaid', 'remaining'
+            ));
         })->name('student.dashboard');
     });
 
@@ -113,9 +126,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');
         Route::get('/login-logs/{loginLog}', [LoginLogController::class, 'show'])->name('login-logs.show');
     });
+
     Route::middleware(['throttle:login'])->group(function () {
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->name('login');
+        Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+            ->name('login');
     });
 });
 
