@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ParentModel extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $table = 'parents';
@@ -94,10 +96,11 @@ class ParentModel extends Model
     public static function generateMatricule(): string
     {
         $prefix = 'PAR';
-        $sequence = self::withTrashed()->where('matricule_parent', 'like', "{$prefix}-%")->count() + 1;
+        $year = date('y');
+        $sequence = 1;
 
         do {
-            $matricule = $prefix . '-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $matricule = $prefix . '-' . $year . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (self::withTrashed()->where('matricule_parent', $matricule)->exists());
 
@@ -112,6 +115,11 @@ class ParentModel extends Model
         return $query->whereHas('students', function ($q) {
             $q->where('est_responsable_financier', true);
         });
+    }
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\ParentModelFactory::new();
     }
 
     /**

@@ -69,7 +69,7 @@ class ParentController extends Controller
                 'name' => $validated['nom'] . ' ' . $validated['prenom'],
                 'email' => $validated['email'],
                 'password' => Hash::make('password'),
-                'matricule' => User::generateMatricule(),
+                'matricule' => User::generateMatricule('parent'),
                 'role' => 'parent',
                 'is_active' => $validated['statut'] === 'actif',
                 'password_must_change' => true,
