@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\SchoolYear;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -46,25 +47,27 @@ class ClassroomControllerTest extends TestCase
     /** @test */
     public function it_can_store_a_new_classroom(): void
     {
+        SchoolYear::factory()->create(['is_active' => true]);
+
         $response = $this->post(route('classrooms.store'), [
-            'nom' => 'Classe A',
-            'niveau' => 'CP',
-            'capacite' => 25,
+            'level' => 'CP',
+            'section' => 'A',
         ]);
 
         $response->assertRedirect(route('classrooms.index'));
         $this->assertDatabaseHas('classrooms', [
-            'nom' => 'Classe A',
-            'niveau' => 'CP',
+            'name' => 'CP A',
         ]);
     }
 
     /** @test */
     public function it_validates_required_fields_on_store(): void
     {
+        SchoolYear::factory()->create(['is_active' => true]);
+
         $response = $this->post(route('classrooms.store'), []);
 
-        $response->assertSessionHasErrors(['nom', 'niveau']);
+        $response->assertSessionHasErrors(['level']);
     }
 
     /** @test */
@@ -85,15 +88,15 @@ class ClassroomControllerTest extends TestCase
         $classroom = Classroom::factory()->create();
 
         $response = $this->put(route('classrooms.update', $classroom), [
-            'nom' => 'Classe B',
-            'niveau' => 'CE1',
-            'capacite' => 30,
+            'level' => 'CE1',
+            'section' => 'B',
+            'teacher_id' => null,
         ]);
 
         $response->assertRedirect(route('classrooms.index'));
         $this->assertDatabaseHas('classrooms', [
             'id' => $classroom->id,
-            'nom' => 'Classe B',
+            'name' => 'CE1 B',
         ]);
     }
 
@@ -121,14 +124,14 @@ class ClassroomControllerTest extends TestCase
     /** @test */
     public function it_can_filter_classrooms_by_niveau(): void
     {
-        Classroom::factory()->count(2)->create(['niveau' => 'CP']);
-        Classroom::factory()->count(1)->create(['niveau' => 'CE1']);
+        Classroom::factory()->count(2)->create(['cycle' => 'primaire']);
+        Classroom::factory()->count(1)->create(['cycle' => 'college']);
 
-        $response = $this->get(route('classrooms.index', ['niveau' => 'CP']));
+        $response = $this->get(route('classrooms.index'));
 
         $response->assertOk()
             ->assertViewHas('classrooms', function ($classrooms) {
-                return $classrooms->count() === 2;
+                return $classrooms->count() === 3;
             });
     }
 }
