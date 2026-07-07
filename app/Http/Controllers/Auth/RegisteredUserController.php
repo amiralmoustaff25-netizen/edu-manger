@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-        public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -56,7 +56,7 @@ class RegisteredUserController extends Controller
         $sequence = User::count() + 1;
 
         do {
-            $matricule = 'USR-' . date('y') . '-' . str_pad($sequence, 6, '0', STR_PAD_LEFT);
+            $matricule = 'USR-'.date('y').'-'.str_pad($sequence, 6, '0', STR_PAD_LEFT);
             $sequence++;
         } while (User::where('matricule', $matricule)->exists());
 

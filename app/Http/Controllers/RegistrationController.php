@@ -73,7 +73,7 @@ class RegistrationController extends Controller
         $sequence = Registration::count() + 1;
 
         do {
-            $matricule = 'EDU-' . date('y') . '-' . str_pad($sequence, 6, '0', STR_PAD_LEFT);
+            $matricule = 'EDU-'.date('y').'-'.str_pad($sequence, 6, '0', STR_PAD_LEFT);
             $sequence++;
         } while (Registration::where('matricule', $matricule)->exists());
 

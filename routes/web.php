@@ -6,10 +6,11 @@ use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\SchoolYearController;
 use App\Models\Classroom;
+use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
@@ -42,8 +43,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $stats = [
             'students' => User::where('role', 'eleve')->count(),
             'classrooms' => Classroom::count(),
-            'parents' => \App\Models\ParentModel::count(),
-            'active_parents' => \App\Models\ParentModel::where('statut', 'actif')->count(),
+            'parents' => ParentModel::count(),
+            'active_parents' => ParentModel::where('statut', 'actif')->count(),
             'paid_this_month' => Payment::where('status', 'complet')
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
@@ -91,7 +92,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             $remaining = $totalDue - $totalPaid;
 
             return view('students.dashboard', compact(
-                'user', 'registration', 'notes', 'moyenne', 
+                'user', 'registration', 'notes', 'moyenne',
                 'payments', 'totalPaid', 'remaining'
             ));
         })->name('student.dashboard');

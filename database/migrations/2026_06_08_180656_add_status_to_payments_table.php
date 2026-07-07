@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('payments', function (Blueprint $table) {
             // 'complet' si le mois est réglé, 'partiel' si le parent doit encore de l'argent
             $table->string('status')->default('complet')->after('amount');
-            
+
             // Pour stocker le reste à payer sur ce mois si le paiement est partiel
             $table->decimal('remaining_balance', 10, 2)->default(0.00)->after('status');
         });

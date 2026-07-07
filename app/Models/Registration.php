@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Payment;
-use App\Models\SchoolYear;
 
 class Registration extends Model
 {
     protected $fillable = [
-        'user_id', 'classroom_id', 'registration_fee_paid', 
+        'user_id', 'classroom_id', 'registration_fee_paid',
         'monthly_fee', 'registration_date', 'academic_year',
-        'school_year_id', 'matricule', 'status'
+        'school_year_id', 'matricule', 'status',
     ];
 
     /**

@@ -4,21 +4,21 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\ParentModel; 
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles, SoftDeletes; 
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+
     /**
-     * 
      * Un utilisateur (élève) peut avoir plusieurs inscriptions (une par année scolaire).
      */
-    public function registrations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }
@@ -87,8 +87,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Note::class);
     }
-    
-    public function classrooms() 
+
+    public function classrooms()
     {
         return $this->hasMany(Classroom::class, 'teacher_id');
     }
@@ -137,7 +137,7 @@ class User extends Authenticatable
         $sequence = self::withTrashed()->where('matricule', 'like', "{$prefix}-%")->count() + 1;
 
         do {
-            $matricule = $prefix . '-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $matricule = $prefix.'-'.date('y').'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (self::withTrashed()->where('matricule', $matricule)->exists());
 

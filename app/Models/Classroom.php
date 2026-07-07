@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Classroom extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'cycle',

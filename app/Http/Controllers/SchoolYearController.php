@@ -32,7 +32,7 @@ class SchoolYearController extends Controller
 
         return redirect()
             ->route('school-years.index')
-            ->with('success', 'Année scolaire ' . $schoolYear->year_string . ' créée avec succès.');
+            ->with('success', 'Année scolaire '.$schoolYear->year_string.' créée avec succès.');
     }
 
     public function activate(SchoolYear $schoolYear): RedirectResponse
@@ -42,7 +42,7 @@ class SchoolYearController extends Controller
         if ($schoolYear->is_active) {
             return redirect()
                 ->back()
-                ->with('info', 'L\'année scolaire ' . $schoolYear->year_string . ' est déjà active.');
+                ->with('info', 'L\'année scolaire '.$schoolYear->year_string.' est déjà active.');
         }
 
         \DB::transaction(function () use ($schoolYear) {
@@ -55,7 +55,7 @@ class SchoolYearController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'L\'année scolaire ' . $schoolYear->year_string . ' est maintenant active.');
+            ->with('success', 'L\'année scolaire '.$schoolYear->year_string.' est maintenant active.');
     }
 
     public function destroy(SchoolYear $schoolYear): RedirectResponse
@@ -74,10 +74,10 @@ class SchoolYearController extends Controller
         if ($classroomsCount > 0 || $registrationsCount > 0) {
             return redirect()
                 ->back()
-                ->with('error', 'Impossible de supprimer cette année scolaire : ' .
-                    ($classroomsCount > 0 ? $classroomsCount . ' classe(s) ' : '') .
-                    ($classroomsCount > 0 && $registrationsCount > 0 ? 'et ' : '') .
-                    ($registrationsCount > 0 ? $registrationsCount . ' inscription(s) ' : '') .
+                ->with('error', 'Impossible de supprimer cette année scolaire : '.
+                    ($classroomsCount > 0 ? $classroomsCount.' classe(s) ' : '').
+                    ($classroomsCount > 0 && $registrationsCount > 0 ? 'et ' : '').
+                    ($registrationsCount > 0 ? $registrationsCount.' inscription(s) ' : '').
                     'y sont rattachées. Veuillez les transférer ou les supprimer d\'abord.');
         }
 
@@ -89,6 +89,6 @@ class SchoolYearController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'L\'année scolaire ' . $yearString . ' a été supprimée avec succès.');
+            ->with('success', 'L\'année scolaire '.$yearString.' a été supprimée avec succès.');
     }
 }

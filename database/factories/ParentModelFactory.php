@@ -13,7 +13,7 @@ class ParentModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'matricule_parent' => 'PAR-' . date('y') . '-' . str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'matricule_parent' => 'PAR-'.date('y').'-'.str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'nom' => $this->faker->lastName(),
             'prenom' => $this->faker->firstName(),
             'email' => $this->faker->unique()->safeEmail(),
@@ -24,4 +24,4 @@ class ParentModelFactory extends Factory
             'user_id' => User::factory(),
         ];
     }
-} 
+}

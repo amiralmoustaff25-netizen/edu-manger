@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+    public function up(): void
     {
         Schema::table('payments', function (Blueprint $table) {
             // On n'ajoute plus 'status' puisqu'il existe déjà dans ta table d'origine

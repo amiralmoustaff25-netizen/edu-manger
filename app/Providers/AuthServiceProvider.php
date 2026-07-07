@@ -9,9 +9,9 @@ use App\Policies\LoginLogPolicy;
 use App\Policies\ParentModelPolicy;
 use App\Policies\PaymentPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -31,7 +31,8 @@ class AuthServiceProvider extends ServiceProvider
 
         RateLimiter::for('login', function (object $request) {
             $email = (string) $request->input('email');
-            return Limit::perMinute(5)->by($email . '|' . $request->ip());
+
+            return Limit::perMinute(5)->by($email.'|'.$request->ip());
         });
 
         RateLimiter::for('api', function (object $request) {

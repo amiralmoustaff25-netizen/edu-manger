@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
 
 class Payment extends Model
 {
@@ -55,7 +54,7 @@ class Payment extends Model
                 return $count + 1;
             });
 
-            $payment->receipt_number = 'REC-' . $year . '-' . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+            $payment->receipt_number = 'REC-'.$year.'-'.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
         });
     }
 

@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\Payment;
 use App\Models\Registration;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;  // ✅ AJOUT
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;  // ✅ AJOUT
 use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller

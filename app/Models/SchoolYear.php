@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SchoolYear extends Model
 {
-    use SoftDeletes;
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'year_string',
@@ -82,9 +82,10 @@ class SchoolYear extends Model
      */
     public function getRemainingDaysAttribute(): int
     {
-        if (!$this->end_date) {
+        if (! $this->end_date) {
             return 0;
         }
+
         return max(0, now()->diffInDays($this->end_date, false));
     }
 
@@ -93,9 +94,9 @@ class SchoolYear extends Model
      */
     public function isCurrent(): bool
     {
-        return $this->is_active && 
-               $this->start_date && $this->start_date->lte(now()) && 
-               (!$this->end_date || $this->end_date->gte(now()));
+        return $this->is_active &&
+               $this->start_date && $this->start_date->lte(now()) &&
+               (! $this->end_date || $this->end_date->gte(now()));
     }
 
     /**
@@ -113,7 +114,7 @@ class SchoolYear extends Model
             if ($schoolYear->is_active) {
                 static::where('is_active', true)->update(['is_active' => false]);
             }
-            
+
             // Définir automatiquement le statut si non fourni
             if (empty($schoolYear->status)) {
                 $schoolYear->status = $schoolYear->is_active ? 'active' : 'upcoming';

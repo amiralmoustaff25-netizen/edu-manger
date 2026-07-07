@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\ParentModelFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -100,7 +101,7 @@ class ParentModel extends Model
         $sequence = 1;
 
         do {
-            $matricule = $prefix . '-' . $year . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $matricule = $prefix.'-'.$year.'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (self::withTrashed()->where('matricule_parent', $matricule)->exists());
 
@@ -119,7 +120,7 @@ class ParentModel extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\ParentModelFactory::new();
+        return ParentModelFactory::new();
     }
 
     /**

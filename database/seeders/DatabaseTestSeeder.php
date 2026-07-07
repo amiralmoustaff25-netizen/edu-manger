@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
-use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseTestSeeder extends Seeder
 {
@@ -43,7 +43,7 @@ class DatabaseTestSeeder extends Seeder
             'name' => 'Moustapha Diop',
             'email' => 'moustapha@edumanager.sn',
             'password' => Hash::make('password123'),
-            'role' => 'teacher', 
+            'role' => 'teacher',
         ]);
 
         // 4. Création de la Classe liée à l'année scolaire
@@ -59,7 +59,7 @@ class DatabaseTestSeeder extends Seeder
             'name' => 'Amadou Diallo',
             'email' => 'amadou@edumanager.sn',
             'password' => Hash::make('password123'),
-            'role' => 'student', 
+            'role' => 'student',
         ]);
 
         // 6. Création de la Matière

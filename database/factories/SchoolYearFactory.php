@@ -12,10 +12,11 @@ class SchoolYearFactory extends Factory
     public function definition(): array
     {
         $year = fake()->unique()->numberBetween(2020, 2030);
+
         return [
-            'year_string' => "{$year}-" . ($year + 1),
+            'year_string' => "{$year}-".($year + 1),
             'start_date' => "{$year}-09-01",
-            'end_date' => ($year + 1) . "-06-30",
+            'end_date' => ($year + 1).'-06-30',
             'is_active' => false,
             'status' => 'upcoming',
         ];

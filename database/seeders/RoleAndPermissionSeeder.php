@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -18,7 +19,7 @@ class RoleAndPermissionSeeder extends Seeder
     public function run(): void
     {
         // Réinitialiser le cache des permissions pour éviter les conflits
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // =================================================================
         // 1. DÉFINITION DE TOUTES LES PERMISSIONS (par module métier)
@@ -248,12 +249,12 @@ class RoleAndPermissionSeeder extends Seeder
         // 5. CRÉATION DU SUPER-ADMIN PAR DÉFAUT (si aucun n'existe)
         // =================================================================
 
-        if (!User::role('super-admin')->exists()) {
+        if (! User::role('super-admin')->exists()) {
             $superAdminUser = User::create([
                 'name' => 'Super Admin',
                 'email' => 'admin@edu-manager.local',
                 'password' => bcrypt('password'),
-                'matricule' => 'ADM-' . date('Y') . '-0001',
+                'matricule' => 'ADM-'.date('Y').'-0001',
                 'role' => 'super-admin',
                 'is_active' => true,
                 'password_must_change' => true,
@@ -264,6 +265,6 @@ class RoleAndPermissionSeeder extends Seeder
         }
 
         // Re-cacher les permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

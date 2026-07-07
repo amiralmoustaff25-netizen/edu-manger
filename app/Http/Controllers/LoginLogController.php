@@ -44,6 +44,7 @@ class LoginLogController extends Controller
     {
         Gate::authorize('view', $loginLog);
         $loginLog->load('user');
+
         return view('login_logs.show', compact('loginLog'));
     }
 }

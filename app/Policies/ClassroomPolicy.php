@@ -16,6 +16,7 @@ class ClassroomPolicy
         if ($user->hasRole(['super-admin', 'admin'])) {
             return true;
         }
+
         return null; // Continue de vérifier les méthodes ci-dessous pour les autres
     }
 

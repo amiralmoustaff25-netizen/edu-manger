@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-        $table->id();
-        $table->string('matricule')->unique(); // Identifiant unique de connexion (ex: DIR-2026-001)
-        $table->string('name');
-        $table->string('email')->nullable()->unique(); // Devient optionnel
-        $table->timestamp('email_verified_at')->nullable();
-        $table->string('password');
-        $table->string('role')->default('user'); // admin, censeur, comptable, surveillant, teacher, parent, student
-        $table->rememberToken();
-        $table->timestamps();
-    });
+            $table->id();
+            $table->string('matricule')->unique(); // Identifiant unique de connexion (ex: DIR-2026-001)
+            $table->string('name');
+            $table->string('email')->nullable()->unique(); // Devient optionnel
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->string('role')->default('user'); // admin, censeur, comptable, surveillant, teacher, parent, student
+            $table->rememberToken();
+            $table->timestamps();
+        });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

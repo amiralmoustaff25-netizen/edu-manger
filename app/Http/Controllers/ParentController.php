@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreParentRequest;
 use App\Http\Requests\UpdateParentRequest;
+use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\User;
-use App\Models\Note;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +66,7 @@ class ParentController extends Controller
 
         $parent = DB::transaction(function () use ($validated) {
             $user = User::create([
-                'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                'name' => $validated['nom'].' '.$validated['prenom'],
                 'email' => $validated['email'],
                 'password' => Hash::make('password'),
                 'matricule' => User::generateMatricule('parent'),
@@ -102,7 +102,7 @@ class ParentController extends Controller
 
         return redirect()
             ->route('parents.index')
-            ->with('success', 'Parent créé avec succès. Matricule : ' . $parent->matricule_parent . ' | Mot de passe temporaire : password');
+            ->with('success', 'Parent créé avec succès. Matricule : '.$parent->matricule_parent.' | Mot de passe temporaire : password');
     }
 
     /**
@@ -177,7 +177,7 @@ class ParentController extends Controller
             if ($parent->user) {
                 $parent->user->update([
                     'email' => $validated['email'],
-                    'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                    'name' => $validated['nom'].' '.$validated['prenom'],
                     'is_active' => $validated['statut'] === 'actif',
                 ]);
             }
@@ -295,7 +295,7 @@ class ParentController extends Controller
 
         $student = User::findOrFail($validated['user_id']);
 
-        if (!$student->hasRole('eleve')) {
+        if (! $student->hasRole('eleve')) {
             return back()->withErrors(['user_id' => 'Cet utilisateur n\'est pas un élève.'])->withInput();
         }
 
@@ -326,7 +326,7 @@ class ParentController extends Controller
     {
         $this->authorize('dissocier-eleve-parent', $parent);
 
-        if (!$student->hasRole('eleve')) {
+        if (! $student->hasRole('eleve')) {
             return back()->withErrors(['user' => 'Cet utilisateur n\'est pas un élève.']);
         }
 
@@ -348,7 +348,7 @@ class ParentController extends Controller
     {
         $this->authorize('reinitialiser-mot-de-passe-parent', $parent);
 
-        if (!$parent->user) {
+        if (! $parent->user) {
             return back()->withErrors(['user' => 'Aucun compte utilisateur associé à ce parent.']);
         }
 
