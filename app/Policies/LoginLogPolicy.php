@@ -8,23 +8,35 @@ use App\Models\User;
 class LoginLogPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Passe-droit : super-admin a accès à tout.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /**
+     * Voir la liste des logs de connexion.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super-admin', 'admin']);
+        return $user->can('voir-logs-connexion');
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Voir les détails d'un log de connexion.
      */
     public function view(User $user, LoginLog $loginLog): bool
     {
-        return $user->hasRole(['super-admin', 'admin']);
+        return $user->can('voir-detail-log-connexion');
     }
 
     /**
-     * Determine whether the user can create models.
+     * Les logs de connexion sont créés automatiquement, pas manuellement.
      */
     public function create(User $user): bool
     {
@@ -32,7 +44,7 @@ class LoginLogPolicy
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Les logs de connexion ne peuvent pas être modifiés.
      */
     public function update(User $user, LoginLog $loginLog): bool
     {
@@ -40,26 +52,26 @@ class LoginLogPolicy
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Supprimer un log de connexion.
      */
     public function delete(User $user, LoginLog $loginLog): bool
     {
-        return false;
+        return $user->can('supprimer-log-connexion');
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Restaurer un log de connexion supprimé.
      */
     public function restore(User $user, LoginLog $loginLog): bool
     {
-        return false;
+        return $user->can('restaurer-log-connexion');
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Supprimer définitivement un log de connexion.
      */
     public function forceDelete(User $user, LoginLog $loginLog): bool
     {
-        return false;
+        return $user->can('supprimer-definitivement-log-connexion');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\ParentModel;
 use App\Models\User;
 
-class ParentModelPolicy
+class ParentPolicy
 {
     /**
      * Passe-droit : super-admin a accès à tout.
