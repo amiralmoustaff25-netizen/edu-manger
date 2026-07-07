@@ -36,7 +36,7 @@ jobs:
         with:
           php-version: '8.2'
           extensions: mbstring, mysql, pdo, xml, ctype, json, openssl, bcmath
-          coverage: none
+          coverage: xdebug
 
       - name: Get composer cache directory
         id: composer-cache
@@ -93,7 +93,14 @@ jobs:
           DB_DATABASE: laravel_test
           DB_USERNAME: root
           DB_PASSWORD: root
-        run: php artisan test
+        run: php artisan test --coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
