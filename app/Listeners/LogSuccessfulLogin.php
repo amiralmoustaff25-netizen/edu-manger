@@ -3,22 +3,16 @@
 namespace App\Listeners;
 
 use App\Models\LoginLog;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Request;
 
+#[\Illuminate\Events\AsEventListener]
 class LogSuccessfulLogin
 {
     /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      */
-    public function handle(object $event): void
+    public function handle(Login $event): void
     {
         $user = $event->user;
 
