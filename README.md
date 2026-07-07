@@ -1,59 +1,288 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Edu-Manager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Système de gestion scolaire complet développé avec Laravel 12, permettant la gestion des élèves, parents, professeurs, classes, inscriptions et paiements.
 
-## About Laravel
+## 📋 Prérequis
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **PHP** >= 8.2
+- **Composer** >= 2.0
+- **Node.js** >= 20
+- **npm** >= 9
+- **MySQL** >= 8.0 ou MariaDB >= 10.6
+- **Git**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Cloner le repository
 
-## Learning Laravel
+```bash
+git clone https://github.com/amiralmoustaff25-netizen/edu-manger.git
+cd edu-manager
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 2. Installer les dépendances PHP
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+```
 
-## Laravel Sponsors
+### 3. Configurer l'environnement
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-### Premium Partners
+Éditez le fichier `.env` et configurez votre base de données :
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=edu_manager
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
 
-## Contributing
+### 4. Exécuter les migrations
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan migrate
+```
 
-## Code of Conduct
+### 5. Installer les dépendances Node.js
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+npm install
+```
 
-## Security Vulnerabilities
+### 6. Compiler les assets
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+npm run build
+```
 
-## License
+### 7. Lancer le serveur de développement
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan serve
+```
+
+L'application sera accessible sur `http://localhost:8000`.
+
+## 🌱 Seeders & Données de démo
+
+### Exécuter les seeders
+
+```bash
+php artisan db:seed
+```
+
+Cela va créer :
+- Tous les rôles et permissions
+- Une année scolaire active (2025-2026)
+- Des utilisateurs de démonstration
+- Des classes et inscriptions exemples
+- Des paiements exemples
+
+## 👥 Utilisateurs de démonstration
+
+| Matricule | Nom | Email | Rôle | Mot de passe |
+|-----------|-----|-------|------|-------------|
+| 20260325 | Moustapha Diop | moustaff25@gmail.com | Super-Admin | password |
+| ADM-260001 | Admin École | admin@edumanager.sn | Admin | password |
+| MCO-260001 | Manager Comptable | manager.comptable@edumanager.sn | Manager-Comptable | password |
+| CPT-260001 | Comptable | comptable@edumanager.sn | Comptable | password |
+| PROF001 | Moussa Sall | moussa@ecole.sn | Professeur | password |
+| ELE-260001 | Amadou Diallo | amadou@edumanager.sn | Élève | password |
+| ELE-260002 | Aïssatou Ndiaye | aissatou@edumanager.sn | Élève | password |
+
+## 🔐 Matrice des rôles et permissions
+
+### Super-Admin
+Accès total à toutes les fonctionnalités du système.
+
+### Admin
+Accès complet sauf les fonctions réservées au super-admin :
+- Gestion des utilisateurs
+- Gestion des élèves
+- Inscriptions
+- Gestion des parents
+- Classes
+- Années scolaires
+- Paiements
+- Logs de connexion
+
+### Manager-Comptable
+Gestion financière et comptable :
+- ✅ Voir dashboard et profil
+- ✅ Voir et enregistrer les paiements
+- ✅ Valider les paiements partiels
+- ✅ Voir les finances et recouvrement
+- ✅ Voir les élèves et parents (lecture seule)
+
+### Comptable
+Gestion des paiements (sans validation partielle) :
+- ✅ Voir dashboard et profil
+- ✅ Voir et enregistrer les paiements
+- ✅ Voir les finances et recouvrement
+- ✅ Voir les élèves et parents (lecture seule)
+- ❌ Valider les paiements partiels
+
+### Professeur
+Gestion pédagogique :
+- ✅ Voir dashboard et profil
+- ✅ Voir sa classe
+- ✅ Saisir les notes
+- ✅ Marquer les absences
+- ✅ Voir les élèves (lecture seule)
+
+### Parent
+Espace famille :
+- ✅ Voir dashboard et profil
+- ✅ Voir ses enfants
+- ✅ Voir les paiements de ses enfants
+- ✅ Voir les notes de ses enfants
+
+### Élève
+Espace personnel :
+- ✅ Voir dashboard et profil
+- ✅ Voir ses notes
+- ✅ Voir ses paiements
+
+## 📚 Liste complète des permissions
+
+### Dashboard & Profil
+- `voir-dashboard`
+- `voir-profil`
+- `modifier-profil`
+- `supprimer-compte`
+
+### Utilisateurs
+- `voir-utilisateurs`
+- `creer-utilisateur`
+- `modifier-utilisateur`
+- `supprimer-utilisateur`
+- `activer-desactiver-utilisateur`
+- `reinitialiser-mot-de-passe-utilisateur`
+
+### Élèves
+- `voir-eleves`
+- `voir-detail-eleve`
+- `transferer-eleve`
+- `modifier-statut-eleve`
+
+### Inscriptions
+- `voir-inscriptions`
+- `creer-inscription`
+
+### Parents
+- `voir-parents`
+- `creer-parent`
+- `modifier-parent`
+- `voir-detail-parent`
+- `archiver-parent`
+- `restaurer-parent`
+- `supprimer-parent`
+- `associer-eleve-parent`
+- `dissocier-eleve-parent`
+- `reinitialiser-mot-de-passe-parent`
+
+### Classes
+- `voir-classes`
+- `creer-classe`
+- `modifier-classe`
+- `supprimer-classe`
+- `affecter-professeur`
+
+### Années scolaires
+- `voir-annees-scolaires`
+- `creer-annee-scolaire`
+- `supprimer-annee-scolaire`
+- `activer-annee-scolaire`
+
+### Paiements
+- `voir-paiements`
+- `enregistrer-paiement`
+- `valider-paiement-partiel`
+- `voir-finances`
+- `voir-recouvrement`
+
+### Pédagogie
+- `voir-sa-classe`
+- `saisir-notes`
+- `marquer-absences`
+
+### Espace famille
+- `voir-ses-enfants`
+- `voir-ses-paiements-enfants`
+- `voir-ses-notes-enfants`
+
+### Logs & Audit
+- `voir-logs-connexion`
+- `voir-detail-log-connexion`
+
+### Super-Admin
+- `tout-faire`
+
+## 🧪 Tests
+
+Exécuter la suite de tests :
+
+```bash
+php artisan test
+```
+
+## 🎨 Stack technique
+
+- **Backend** : Laravel 12, PHP 8.2+
+- **Frontend** : Blade, Tailwind CSS 3.4, Alpine.js
+- **Base de données** : MySQL 8.0
+- **Authentification** : Laravel Breeze
+- **Gestion des permissions** : Spatie Laravel Permission
+- **Build tools** : Vite 5
+
+## 📝 Structure du projet
+
+```
+app/
+├── Http/
+│   ├── Controllers/     # Contrôleurs
+│   ├── Middleware/     # Middleware (auth, roles, etc.)
+│   ├── Requests/       # Form Requests
+│   └── Policies/       # Policies d'autorisation
+database/
+├── migrations/         # Migrations de base de données
+└── seeders/           # Seeders (données de démo)
+resources/
+├── views/             # Vues Blade
+├── css/               # Assets CSS
+└── js/                # Assets JavaScript
+routes/
+├── web.php            # Routes web
+└── auth.php           # Routes d'authentification
+```
+
+## 🤝 Contribuer
+
+Les contributions sont les bienvenues ! Merci de suivre ces étapes :
+
+1. Fork le repository
+2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`)
+3. Committez vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+
+## 👨‍💻 Auteur
+
+- **Moustapha Diop** - [amiralmoustaff25-netizen](https://github.com/amiralmoustaff25-netizen)
+
+## 🙏 Remerciements
+
+- Laravel Framework
+- Spatie pour le package Laravel Permission
+- La communauté Laravel
