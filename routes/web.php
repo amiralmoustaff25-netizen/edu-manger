@@ -21,7 +21,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/dashboard', function () {
         // REDIRECTION ÉLÈVE vers /mon-espace
         if (auth()->user()->hasRole('eleve')) {

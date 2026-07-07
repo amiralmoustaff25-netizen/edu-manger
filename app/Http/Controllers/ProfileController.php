@@ -45,6 +45,11 @@ class ProfileController extends Controller
             $request->user()->email_verified_at = null;
         }
 
+        // Réinitialiser password_must_change si le mot de passe a été changé
+        if ($request->user()->isDirty('password')) {
+            $request->user()->password_must_change = false;
+        }
+
         $request->user()->save();
 
         return Redirect::route('profile.show')->with('status', 'profile-updated');
