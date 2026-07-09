@@ -28,7 +28,7 @@
             @endif
 
             <div class="grid gap-4 md:grid-cols-4">
-                <div class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-200">
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
                     <p class="text-sm font-medium text-gray-500">Classe actuelle</p>
                     <p class="mt-3 text-xl font-bold text-gray-900">{{ $currentRegistration->classroom->name ?? 'Non inscrit' }}</p>
                 </div>

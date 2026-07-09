@@ -25,7 +25,7 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto space-y-6 sm:px-6 lg:px-8">
-            <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
                 <form method="GET" action="{{ route('teachers.index') }}" class="grid gap-4 lg:grid-cols-4">
                     <div class="lg:col-span-2">
                         <label for="search" class="block text-sm font-medium text-gray-700">Recherche</label>

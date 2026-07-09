@@ -9,9 +9,15 @@ class SchoolYearFactory extends Factory
 {
     protected $model = SchoolYear::class;
 
+    protected static int $yearCounter = 2020;
+
     public function definition(): array
     {
-        $year = rand(2020, 2030);
+        $year = static::$yearCounter++;
+
+        if ($year > 2099) {
+            $year = static::$yearCounter = 2020;
+        }
 
         return [
             'year_string' => "{$year}-".($year + 1),
