@@ -76,13 +76,7 @@
                                     {{ $log->login_at ? $log->login_at->format('d/m/Y H:i:s') : '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    @if($log->user)
-                                        <a href="{{ route('users.show', $log->user->id) }}" class="text-blue-600 hover:text-blue-900">
-                                            {{ $log->user->name }}
-                                        </a>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
+                                    {{ $log->user->name ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $log->email ?? ($log->user ? $log->user->email : '-') }}
