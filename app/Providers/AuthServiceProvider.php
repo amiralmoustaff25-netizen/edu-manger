@@ -19,6 +19,7 @@ class AuthServiceProvider extends ServiceProvider
         Payment::class => PaymentPolicy::class,
         LoginLog::class => LoginLogPolicy::class,
         ParentModel::class => ParentModelPolicy::class,
+        \App\Models\Teacher::class => \App\Policies\TeacherPolicy::class,
     ];
 
     public function boot(): void

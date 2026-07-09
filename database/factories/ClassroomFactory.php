@@ -13,9 +13,12 @@ class ClassroomFactory extends Factory
 
     public function definition(): array
     {
+        $levels = ['CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+        $cycles = ['primaire', 'college', 'lycee'];
+
         return [
-            'name' => fake()->randomElement(['CP', 'CE1', 'CE2', 'CM1', 'CM2']).' '.fake()->randomLetter(),
-            'cycle' => fake()->randomElement(['primaire', 'college', 'lycee']),
+            'name' => $levels[array_rand($levels)].' '.chr(rand(65, 90)),
+            'cycle' => $cycles[array_rand($cycles)],
             'school_year_id' => SchoolYear::factory(),
             'teacher_id' => User::factory(),
         ];

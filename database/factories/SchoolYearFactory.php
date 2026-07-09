@@ -11,7 +11,7 @@ class SchoolYearFactory extends Factory
 
     public function definition(): array
     {
-        $year = fake()->unique()->numberBetween(2020, 2030);
+        $year = rand(2020, 2030);
 
         return [
             'year_string' => "{$year}-".($year + 1),

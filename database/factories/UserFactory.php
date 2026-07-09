@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -24,12 +23,15 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $uniqueId = random_int(1, 99999);
+        $emailSuffix = random_int(1000, 9999);
+
         return [
-            'matricule' => fake()->unique()->numerify('MAT-#####'), // Génère un matricule du type MAT-12345
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'matricule' => sprintf('MAT-%05d', $uniqueId),
+            'name' => 'Utilisateur '.$uniqueId,
+            'email' => 'user'.$emailSuffix.'@example.com',
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => 'password',
             'remember_token' => Str::random(10),
             'role' => 'user', // Ajoute une valeur par défaut ici
         ];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PaymentController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use App\Models\Classroom;
 use App\Models\ParentModel;
@@ -20,6 +22,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Routes pour tester les exports (PDF/Excel)
+Route::get('/export/pdf-hello-world', [ExportController::class, 'pdfHelloWorld'])->name('export.pdf.hello-world');
+Route::get('/export/pdf-preview', [ExportController::class, 'pdfPreview'])->name('export.pdf.preview');
+Route::get('/export/excel-hello-world', [ExportController::class, 'excelHelloWorld'])->name('export.excel.hello-world');
 
 Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/dashboard', function () {
@@ -126,6 +133,10 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         // Routes pour les logs de connexion
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');
         Route::get('/login-logs/{loginLog}', [LoginLogController::class, 'show'])->name('login-logs.show');
+
+        Route::resource('teachers', TeacherController::class);
+        Route::get('/teachers-export-pdf', [TeacherController::class, 'exportPdf'])->name('teachers.export-pdf');
+        Route::get('/teachers-export-csv', [TeacherController::class, 'exportCsv'])->name('teachers.export-csv');
     });
 
 });

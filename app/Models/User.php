@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Teacher;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -45,6 +46,9 @@ class User extends Authenticatable
         'password',
         'role',
         'cycle',
+        'specialite',
+        'telephone',
+        'date_naissance',
         'emergency_contact_name',
         'emergency_contact_phone',
         'medical_notes',
@@ -102,6 +106,11 @@ class User extends Authenticatable
         return $this->belongsToMany(ParentModel::class, 'parent_user', 'user_id', 'parent_id')
             ->withPivot('lien_parente', 'est_responsable_financier', 'est_contact_urgence')
             ->withTimestamps();
+    }
+
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class);
     }
 
     /**

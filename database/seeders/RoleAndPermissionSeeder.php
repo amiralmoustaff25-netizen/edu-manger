@@ -69,6 +69,13 @@ class RoleAndPermissionSeeder extends Seeder
             'supprimer-classe',
             'affecter-professeur',
 
+            // --- Professeurs ---
+            'voir-professeurs',
+            'creer-professeur',
+            'modifier-professeur',
+            'supprimer-professeur',
+            'voir-rib-professeur',
+
             // --- Années scolaires ---
             'voir-annees-scolaires',
             'creer-annee-scolaire',

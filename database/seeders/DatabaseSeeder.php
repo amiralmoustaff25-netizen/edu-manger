@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleAndPermissionSeeder::class);
+        $this->call(TeacherSeeder::class);
 
         $activeYear = SchoolYear::updateOrCreate(
             ['year_string' => '2025-2026'],
