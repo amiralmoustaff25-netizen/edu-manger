@@ -119,7 +119,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
         Route::resource('classes', TeacherClassController::class)->only(['index', 'show']);
         Route::resource('notes', GradeController::class)->only(['index', 'store']);
-        Route::resource('absences', AttendanceController::class)->only(['index', 'store']);
+        Route::resource('attendances', AttendanceController::class)->only(['index', 'store']);
     });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {

@@ -39,6 +39,24 @@
                         {{ __('Nouvelle Inscription') }}
                     </x-nav-link>
                     @endrole
+
+                    @role('professeur')
+                    <x-nav-link :href="route('professeur.dashboard')" :active="request()->routeIs('professeur.dashboard')">
+                        {{ __('Tableau de bord') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('professeur.classes.index')" :active="request()->routeIs('professeur.classes.*')">
+                        {{ __('Mes Classes') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('professeur.notes.index')" :active="request()->routeIs('professeur.notes.*')">
+                        {{ __('Saisie Notes') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('professeur.attendances.index')" :active="request()->routeIs('professeur.attendances.*')">
+                        {{ __('Présences') }}
+                    </x-nav-link>
+                    @endrole
                 </div>
             </div>
 
@@ -127,6 +145,24 @@
             @role('super-admin|admin')
             <x-responsive-nav-link :href="route('registrations.create')" :active="request()->routeIs('registrations.*')">
                 {{ __('Nouvelle Inscription') }}
+            </x-responsive-nav-link>
+            @endrole
+
+            @role('professeur')
+            <x-responsive-nav-link :href="route('professeur.dashboard')" :active="request()->routeIs('professeur.dashboard')">
+                {{ __('Tableau de bord') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('professeur.classes.index')" :active="request()->routeIs('professeur.classes.*')">
+                {{ __('Mes Classes') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('professeur.notes.index')" :active="request()->routeIs('professeur.notes.*')">
+                {{ __('Saisie Notes') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('professeur.attendances.index')" :active="request()->routeIs('professeur.attendances.*')">
+                {{ __('Présences') }}
             </x-responsive-nav-link>
             @endrole
         </div>
