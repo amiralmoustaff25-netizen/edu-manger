@@ -92,6 +92,11 @@ class User extends Authenticatable
         return $this->hasMany(Note::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     public function classrooms()
     {
         return $this->hasMany(Classroom::class, 'teacher_id');

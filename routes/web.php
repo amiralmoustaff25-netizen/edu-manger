@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\GradeController;
 use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PaymentController;
@@ -9,7 +11,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\UserController;
 use App\Models\Classroom;
 use App\Models\ParentModel;
@@ -33,6 +37,11 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         // REDIRECTION ÉLÈVE vers /mon-espace
         if (auth()->user()->hasRole('eleve')) {
             return redirect()->route('student.dashboard');
+        }
+
+        // REDIRECTION PROFESSEUR vers /professeur/dashboard
+        if (auth()->user()->hasRole('professeur')) {
+            return redirect()->route('professeur.dashboard');
         }
 
         $activeYear = SchoolYear::where('is_active', true)->first();
@@ -103,6 +112,14 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
                 'payments', 'totalPaid', 'remaining'
             ));
         })->name('student.dashboard');
+    });
+
+    // Routes pour les professeurs
+    Route::middleware(['role:professeur'])->prefix('professeur')->name('professeur.')->group(function () {
+        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
+        Route::resource('classes', TeacherClassController::class)->only(['index', 'show']);
+        Route::resource('notes', GradeController::class)->only(['index', 'store']);
+        Route::resource('absences', AttendanceController::class)->only(['index', 'store']);
     });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {
