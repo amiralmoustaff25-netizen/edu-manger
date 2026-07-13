@@ -10,7 +10,7 @@ class Matiere extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nom'];
+    protected $fillable = ['nom', 'coefficient'];
     public function notes()
     {
         return $this->hasMany(Note::class);

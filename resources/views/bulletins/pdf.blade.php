@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin Scolaire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .header h2 {
+            font-size: 14px;
+            margin: 5px 0;
+            font-weight: normal;
+        }
+        .student-info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .student-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .student-info td {
+            padding: 5px;
+            border: none;
+        }
+        .student-info .label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .grades-table th, .grades-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+        }
+        .grades-table th {
+            background-color: #333;
+            color: white;
+            font-weight: bold;
+        }
+        .grades-table .subject {
+            text-align: left;
+        }
+        .summary {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .summary table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary td {
+            padding: 8px;
+            border: none;
+        }
+        .summary .label {
+            font-weight: bold;
+        }
+        .summary .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .mention {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .mention.excellent { background-color: #d4edda; color: #155724; }
+        .mention.tres-bien { background-color: #d1ecf1; color: #0c5460; }
+        .mention.bien { background-color: #fff3cd; color: #856404; }
+        .mention.assez-bien { background-color: #e2e3e5; color: #383d41; }
+        .mention.passable { background-color: #f8d7da; color: #721c24; }
+        .mention.insuffisant { background-color: #f5c6cb; color: #721c24; }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        .signature {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>École - Bulletin Scolaire</h1>
+        <h2>Année Scolaire {{ $bulletin['classroom']->schoolYear->year_string ?? 'N/A' }}</h2>
+    </div>
+
+    <div class="student-info">
+        <table>
+            <tr>
+                <td class="label">Nom & Prénom :</td>
+                <td>{{ $bulletin['student']->name }}</td>
+                <td class="label">Matricule :</td>
+                <td>{{ $bulletin['student']->matricule }}</td>
+            </tr>
+            <tr>
+                <td class="label">Classe :</td>
+                <td>{{ $bulletin['classroom']->name }}</td>
+                <td class="label">Période :</td>
+                <td>{{ ucfirst(str_replace('_', ' ', $period)) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th class="subject">Matière</th>
+                <th>Coef</th>
+                <th>Notes</th>
+                <th>Moyenne</th>
+                <th>Moy. × Coef</th>
+                <th>Appréciation</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($bulletin['subjects'] as $subject)
+            <tr>
+                <td class="subject">{{ $subject['matiere'] }}</td>
+                <td>{{ $subject['coefficient'] }}</td>
+                <td>{{ implode(', ', $subject['notes']) ?: '-' }}</td>
+                <td>{{ $subject['average'] > 0 ? number_format($subject['average'], 2) : '-' }}</td>
+                <td>{{ $subject['weighted_average'] > 0 ? number_format($subject['weighted_average'], 2) : '-' }}</td>
+                <td>{{ $subject['appreciation'] ?: '-' }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2" style="text-align: right; font-weight: bold;">Total Coefficients :</td>
+                <td colspan="4" style="font-weight: bold;">{{ $bulletin['total_coefficients'] }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="summary">
+        <table>
+            <tr>
+                <td class="label">Moyenne Générale :</td>
+                <td class="value">{{ number_format($bulletin['general_average'], 2) }}/20</td>
+                <td class="label">Classement :</td>
+                <td class="value">{{ $bulletin['rank'] }}<sup>ème</sup></td>
+            </tr>
+        </table>
+        
+        @php
+            $mentionClass = match($bulletin['mention']) {
+                'Excellent' => 'excellent',
+                'Très Bien' => 'tres-bien',
+                'Bien' => 'bien',
+                'Assez Bien' => 'assez-bien',
+                'Passable' => 'passable',
+                default => 'insuffisant',
+            };
+        @endphp
+        
+        <div class="mention {{ $mentionClass }}">
+            {{ $bulletin['mention'] }}
+        </div>
+    </div>
+
+    <div class="signature">
+        <div class="signature-box">
+            <div>Le Chef d'Établissement</div>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <div>Le Professeur Principal</div>
+            <div class="signature-line"></div>
+        </div>
+        <div class="signature-box">
+            <div>Les Parents</div>
+            <div class="signature-line"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Bulletin généré le {{ now()->format('d/m/Y H:i') }} | Document officiel</p>
+    </div>
+</body>
+</html>

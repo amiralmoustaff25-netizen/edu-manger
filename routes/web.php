@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\BulletinController;
 use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
@@ -91,6 +92,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/show', [ProfileController::class, 'show'])->name('profile.show');
+
+    // Routes pour les bulletins scolaires
+    Route::get('/bulletins', [BulletinController::class, 'index'])->name('bulletins.index');
+    Route::get('/bulletins/{student}/{period}', [BulletinController::class, 'show'])->name('bulletins.show');
+    Route::get('/bulletins/{student}/{period}/pdf', [BulletinController::class, 'generatePdf'])->name('bulletins.pdf');
+    Route::get('/bulletins/class/{classroom}/{period}/pdf', [BulletinController::class, 'generateClassPdf'])->name('bulletins.class-pdf');
 
     Route::middleware(['role:manager-comptable|comptable'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
