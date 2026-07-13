@@ -56,6 +56,10 @@
                     <x-nav-link :href="route('professeur.attendances.index')" :active="request()->routeIs('professeur.attendances.*')">
                         {{ __('Présences') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('profile.show')" :active="request()->routeIs('profile.*')">
+                        {{ __('Mon Profil') }}
+                    </x-nav-link>
                     @endrole
                 </div>
             </div>
@@ -163,6 +167,10 @@
 
             <x-responsive-nav-link :href="route('professeur.attendances.index')" :active="request()->routeIs('professeur.attendances.*')">
                 {{ __('Présences') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('profile.show')" :active="request()->routeIs('profile.*')">
+                {{ __('Mon Profil') }}
             </x-responsive-nav-link>
             @endrole
         </div>

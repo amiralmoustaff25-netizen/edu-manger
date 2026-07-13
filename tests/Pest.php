@@ -52,7 +52,7 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function actingAs($user, $guard = null)
 {
-    // ..
+    return test()->actingAs($user, $guard);
 }

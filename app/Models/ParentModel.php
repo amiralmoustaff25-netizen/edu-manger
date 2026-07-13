@@ -16,6 +16,8 @@ class ParentModel extends Model
 
     protected $table = 'parents';
 
+    protected static $factory = ParentModelFactory::class;
+
     protected $fillable = [
         'matricule_parent',
         'nom',

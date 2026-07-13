@@ -2,16 +2,25 @@
 
 namespace App\Models;
 
+use Database\Factories\RegistrationFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id', 'classroom_id', 'registration_fee_paid',
         'monthly_fee', 'registration_date', 'academic_year',
         'school_year_id', 'matricule', 'status',
     ];
+
+    protected static function newFactory()
+    {
+        return RegistrationFactory::new();
+    }
 
     /**
      * Relation avec l'élève (User)
@@ -43,5 +52,35 @@ class Registration extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    // Scope pour les inscriptions actives
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    // Scope pour les inscriptions par année scolaire
+    public function scopeForYear($query, string $year)
+    {
+        return $query->where('academic_year', $year);
+    }
+
+    // Scope pour les inscriptions par classe
+    public function scopeForClassroom($query, int $classroomId)
+    {
+        return $query->where('classroom_id', $classroomId);
+    }
+
+    // Accessor pour le statut formaté
+    public function getFormattedStatusAttribute(): string
+    {
+        return match($this->status) {
+            'active' => 'Actif',
+            'pending' => 'En attente',
+            'completed' => 'Complété',
+            'cancelled' => 'Annulé',
+            default => ucfirst($this->status),
+        };
     }
 }

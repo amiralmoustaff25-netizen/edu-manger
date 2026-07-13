@@ -103,6 +103,21 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-logs-connexion',
             'voir-detail-log-connexion',
 
+            // --- Cahier de textes & Programmes ---
+            'voir-programmes',
+            'creer-programme',
+            'modifier-programme',
+            'soumettre-programme',
+            'supprimer-programme',
+            'valider-programme-surveillant',
+            'valider-programme-directeur',
+            'rejeter-programme',
+            'voir-cahier-textes',
+            'saisir-cahier-textes',
+            'modifier-cahier-textes',
+            'voir-tableau-bord-cahier-textes',
+            'voir-historique-cahier-textes',
+
             // --- Super-Admin ---
             'tout-faire',
         ];
@@ -135,6 +150,11 @@ class RoleAndPermissionSeeder extends Seeder
 
         $comptable = Role::firstOrCreate([
             'name' => 'comptable',
+            'guard_name' => self::GUARD,
+        ]);
+
+        $surveillant = Role::firstOrCreate([
+            'name' => 'surveillant',
             'guard_name' => self::GUARD,
         ]);
 
@@ -194,6 +214,18 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-detail-parent',
         ]);
 
+        // --- Surveillant : validation de programmes ---
+        $surveillant->syncPermissions([
+            'voir-dashboard',
+            'voir-profil',
+            'modifier-profil',
+            'voir-programmes',
+            'valider-programme-surveillant',
+            'rejeter-programme',
+            'voir-cahier-textes',
+            'voir-tableau-bord-cahier-textes',
+        ]);
+
         // --- Professeur : pédagogie ---
         $professeur->syncPermissions([
             'voir-dashboard',
@@ -204,6 +236,14 @@ class RoleAndPermissionSeeder extends Seeder
             'marquer-absences',
             'voir-eleves',
             'voir-detail-eleve',
+            'voir-programmes',
+            'creer-programme',
+            'modifier-programme',
+            'soumettre-programme',
+            'voir-cahier-textes',
+            'saisir-cahier-textes',
+            'modifier-cahier-textes',
+            'voir-tableau-bord-cahier-textes',
         ]);
 
         // --- Parent : espace famille ---
@@ -235,6 +275,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'admin' => 'admin',
                 'manager-comptable' => 'manager-comptable',
                 'comptable' => 'comptable',
+                'surveillant' => 'surveillant',
                 'professeur' => 'professeur',
                 'parent' => 'parent',
                 'eleve' => 'eleve',

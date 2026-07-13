@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\CahierTexteController;
+use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\GradeController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\UserController;
 use App\Models\Classroom;
 use App\Models\ParentModel;
@@ -91,6 +94,27 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
     Route::middleware(['role:manager-comptable|comptable'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+    });
+
+    Route::middleware(['auth'])->group(function () {
+        Route::resource('programs', ProgramAnnualController::class);
+        Route::post('programs/{program}/submit', [ProgramAnnualController::class, 'submit'])->name('programs.submit');
+        Route::post('programs/{program}/validate-surveillant', [ProgramAnnualController::class, 'validateSurveillant'])->name('programs.validate-surveillant');
+        Route::post('programs/{program}/validate-directeur', [ProgramAnnualController::class, 'validateDirecteur'])->name('programs.validate-directeur');
+        Route::post('programs/{program}/reject', [ProgramAnnualController::class, 'reject'])->name('programs.reject');
+        Route::post('programs/import', [ProgramAnnualController::class, 'importExcel'])->name('programs.import');
+        Route::get('programs/template', [ProgramAnnualController::class, 'downloadTemplate'])->name('programs.template');
+
+        Route::get('cahier-textes', [CahierTexteController::class, 'index'])->name('cahier-textes.index');
+        Route::get('cahier-textes/select', [CahierTexteController::class, 'select'])->name('cahier-textes.select');
+        Route::post('cahier-textes/toggle', [CahierTexteController::class, 'toggle'])->name('cahier-textes.toggle');
+        Route::post('cahier-textes/bulk', [CahierTexteController::class, 'bulkToggle'])->name('cahier-textes.bulk');
+        Route::post('cahier-textes/mark-lesson', [CahierTexteController::class, 'markLessonDone'])->name('cahier-textes.mark-lesson');
+        Route::patch('cahier-textes/{completion}/remark', [CahierTexteController::class, 'updateRemark'])->name('cahier-textes.remark');
+
+        Route::get('cahier-textes/dashboard', [CahierTexteDashboardController::class, 'index'])->name('cahier-textes.dashboard.index');
+        Route::get('cahier-textes/dashboard/{program}/progress', [CahierTexteDashboardController::class, 'progress'])->name('cahier-textes.dashboard.progress');
+        Route::get('cahier-textes/dashboard/{program}/timeline', [CahierTexteDashboardController::class, 'timeline'])->name('cahier-textes.dashboard.timeline');
     });
 
     // ✅ CORRIGÉ : plus de doublon
