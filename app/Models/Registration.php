@@ -54,6 +54,21 @@ class Registration extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function discounts()
+    {
+        return $this->hasMany(Discount::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
     // Scope pour les inscriptions actives
     public function scopeActive($query)
     {

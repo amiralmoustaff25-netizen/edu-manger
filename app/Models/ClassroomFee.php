@@ -6,26 +6,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StudentClassHistory extends Model
+class ClassroomFee extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'classroom_id',
+        'fee_type_id',
         'school_year_id',
-        'annee_scolaire',
-        'resultat',
+        'amount',
     ];
 
-    public function student(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return [
+            'amount' => 'decimal:2',
+        ];
     }
 
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    public function feeType(): BelongsTo
+    {
+        return $this->belongsTo(FeeType::class);
     }
 
     public function schoolYear(): BelongsTo

@@ -82,6 +82,13 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'validated_by');
     }
 
+    public function invoices(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Invoice::class, 'payment_invoice')
+            ->withPivot('amount_applied')
+            ->withTimestamps();
+    }
+
     /**
      * Vérifie si le paiement est complet.
      */

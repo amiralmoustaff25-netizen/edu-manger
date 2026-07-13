@@ -97,6 +97,16 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class);
     }
 
+    public function sanctions()
+    {
+        return $this->hasMany(Sanction::class);
+    }
+
+    public function classHistories()
+    {
+        return $this->hasMany(StudentClassHistory::class);
+    }
+
     public function classrooms()
     {
         return $this->hasMany(Classroom::class, 'teacher_id');
