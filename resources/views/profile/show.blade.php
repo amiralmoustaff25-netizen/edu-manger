@@ -38,9 +38,9 @@
                     <!-- En-tête avec photo et badge -->
                     <div class="flex flex-col md:flex-row items-start md:items-center gap-6 mb-8">
                         <div class="relative">
-                            <div class="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
-                            </div>
+                            <img src="{{ $user->profile_photo_url }}" 
+                                 alt="{{ $user->name }}" 
+                                 class="w-32 h-32 rounded-full object-cover shadow-lg">
                             <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white dark:border-slate-800"></div>
                         </div>
                         

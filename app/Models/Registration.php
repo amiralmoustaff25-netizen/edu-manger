@@ -17,6 +17,10 @@ class Registration extends Model
         'school_year_id', 'matricule', 'status',
     ];
 
+    protected $casts = [
+        'registration_date' => 'date',
+    ];
+
     protected static function newFactory()
     {
         return RegistrationFactory::new();

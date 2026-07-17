@@ -42,6 +42,7 @@ class User extends Authenticatable
     protected $fillable = [
         'matricule',
         'name',
+        'prenom',
         'email',
         'password',
         'role',
@@ -49,6 +50,10 @@ class User extends Authenticatable
         'specialite',
         'telephone',
         'date_naissance',
+        'lieu_naissance',
+        'sexe',
+        'nationalite',
+        'adresse',
         'emergency_contact_name',
         'emergency_contact_phone',
         'medical_notes',
@@ -57,6 +62,7 @@ class User extends Authenticatable
         'created_by',
         'contract_started_at',
         'password_must_change',
+        'profile_photo_path',
     ];
 
     /**
@@ -166,5 +172,22 @@ class User extends Authenticatable
         } while (self::withTrashed()->where('matricule', $matricule)->exists());
 
         return $matricule;
+    }
+
+    /**
+     * Get the user's profile photo URL.
+     */
+    public function getProfilePhotoUrlAttribute(): string
+    {
+        if ($this->profile_photo_path) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_photo_path);
+        }
+
+        // Default avatar: initials
+        $initials = collect(explode(' ', $this->name))
+            ->map(fn($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->join('');
+
+        return 'https://ui-avatars.com/api/?name='.urlencode($initials).'&color=FFFFFF&background=4F46E5';
     }
 }

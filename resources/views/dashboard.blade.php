@@ -81,8 +81,8 @@
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 xl:col-span-2">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Vue financière</h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Suivi rapide des encaissements et des restes à payer.</p>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Évolution des paiements</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Suivi des encaissements par mois.</p>
                         </div>
                         <div class="grid grid-cols-2 gap-3 text-right">
                             <div>
@@ -94,6 +94,10 @@
                                 <p class="text-lg font-bold text-amber-700 dark:text-amber-400">{{ number_format($stats['remaining_balance'], 0, ',', ' ') }} FCFA</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <div id="paymentsChart" class="h-64"></div>
                     </div>
 
                     <div class="mt-6 overflow-x-auto">
@@ -228,4 +232,62 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof ApexCharts !== 'undefined') {
+                    var options = {
+                        series: [{
+                            name: 'Encaissements',
+                            data: [400000, 300000, 550000, 600000, 450000, 700000]
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 250,
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        colors: ['#6366F1'],
+                        plotOptions: {
+                            bar: {
+                                borderRadius: 4,
+                                horizontal: false,
+                                columnWidth: '55%',
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        stroke: {
+                            show: true,
+                            width: 2,
+                            colors: ['transparent']
+                        },
+                        xaxis: {
+                            categories: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'],
+                        },
+                        yaxis: {
+                            title: {
+                                text: 'Montant (FCFA)'
+                            }
+                        },
+                        fill: {
+                            opacity: 0.9
+                        },
+                        tooltip: {
+                            y: {
+                                formatter: function (val) {
+                                    return new Intl.NumberFormat('fr-FR').format(val) + " FCFA"
+                                }
+                            }
+                        }
+                    };
+
+                    var chart = new ApexCharts(document.querySelector("#paymentsChart"), options);
+                    chart.render();
+                }
+            });
+        </script>
+    @endpush
 </x-app-layout>

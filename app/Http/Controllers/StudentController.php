@@ -2,13 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\TransferStudentRequest;
+use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Requests\UpdateStudentStatusRequest;
 use App\Models\Classroom;
+use App\Models\ParentModel;
 use App\Models\Registration;
+use App\Models\SchoolYear;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class StudentController extends Controller
 {
@@ -54,6 +64,110 @@ class StudentController extends Controller
         ]);
     }
 
+    public function create(): View
+    {
+        $this->authorize('voir-eleves');
+
+        return view('students.create', [
+            'student' => new User(['is_active' => true]),
+            'classrooms' => Classroom::all(),
+            'parents' => ParentModel::actifs()->get(),
+            'activeYear' => SchoolYear::where('is_active', true)->first(),
+        ]);
+    }
+
+    /**
+     * Process and store student photo.
+     */
+    private function processStudentPhoto($photo, User $user): ?string
+    {
+        if (!$photo) {
+            return null;
+        }
+
+        // Delete old photo if exists
+        if ($user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+        }
+
+        // Resize and store the photo
+        $filename = $user->matricule . '_' . time() . '.jpg';
+        $path = 'photos/eleves/' . $filename;
+
+        $image = Image::make($photo)
+            ->fit(150, 150)
+            ->encode('jpg', 90);
+
+        Storage::disk('public')->put($path, $image);
+
+        return $path;
+    }
+
+    public function store(StoreStudentRequest $request): RedirectResponse
+    {
+        $this->authorize('voir-eleves');
+
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated, $request) {
+            $user = User::create([
+                'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'password' => Hash::make('password'),
+                'matricule' => User::generateMatricule('eleve'),
+                'role' => 'eleve',
+                'cycle' => $validated['cycle'],
+                'telephone' => $validated['telephone'] ?? null,
+                'date_naissance' => $validated['date_naissance'],
+                'lieu_naissance' => $validated['lieu_naissance'],
+                'sexe' => $validated['sexe'],
+                'nationalite' => $validated['nationalite'] ?? null,
+                'adresse' => $validated['adresse'] ?? null,
+                'created_by' => auth()->id(),
+                'is_active' => true,
+                'password_must_change' => true,
+            ]);
+
+            $user->assignRole('eleve');
+
+            // Process photo if uploaded
+            if ($request->hasFile('photo')) {
+                Gate::authorize('upload-photo-eleve');
+                $photoPath = $this->processStudentPhoto($request->file('photo'), $user);
+                $user->update(['profile_photo_path' => $photoPath]);
+            }
+
+            $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
+
+            Registration::create([
+                'user_id' => $user->id,
+                'classroom_id' => $validated['classroom_id'],
+                'school_year_id' => $activeYear->id,
+                'academic_year' => $activeYear->year_string,
+                'registration_date' => now()->toDateString(),
+                'status' => 'pending',
+                'matricule' => 'REG-' . date('Y') . '-' . str_pad(Registration::count() + 1, 6, '0', STR_PAD_LEFT),
+            ]);
+
+            if (isset($validated['parents'])) {
+                $parentSync = [];
+                foreach ($validated['parents'] as $parentData) {
+                    if (!empty($parentData['parent_id'])) {
+                        $parentSync[$parentData['parent_id']] = [
+                            'lien_parente' => $parentData['lien_parente'] ?? null,
+                            'est_responsable_financier' => $parentData['est_responsable_financier'] ?? false,
+                            'est_contact_urgence' => $parentData['est_contact_urgence'] ?? false,
+                        ];
+                    }
+                }
+                $user->parents()->sync($parentSync);
+            }
+        });
+
+        return redirect()->route('students.index')->with('success', 'Élève créé avec succès. Matricule : ELE-XXXXXX | Mot de passe temporaire : password');
+    }
+
     public function show(User $student): View
     {
         $this->authorize('voir-detail-eleve', $student);
@@ -75,6 +189,97 @@ class StudentController extends Controller
             'totalPaid' => $totalPaid,
             'remainingBalance' => $remainingBalance,
         ]);
+    }
+
+    public function edit(User $student): View
+    {
+        $this->authorize('voir-detail-eleve', $student);
+
+        abort_unless($student->hasRole('eleve'), 404);
+
+        $student->load(['parents', 'latestRegistration']);
+
+        return view('students.edit', [
+            'student' => $student,
+            'classrooms' => Classroom::all(),
+            'parents' => ParentModel::actifs()->get(),
+            'activeYear' => SchoolYear::where('is_active', true)->first(),
+        ]);
+    }
+
+    public function update(UpdateStudentRequest $request, User $student): RedirectResponse
+    {
+        $this->authorize('voir-detail-eleve', $student);
+
+        abort_unless($student->hasRole('eleve'), 404);
+
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated, $student, $request) {
+            $updateData = [
+                'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'cycle' => $validated['cycle'],
+                'telephone' => $validated['telephone'] ?? null,
+                'date_naissance' => $validated['date_naissance'],
+                'lieu_naissance' => $validated['lieu_naissance'],
+                'sexe' => $validated['sexe'],
+                'nationalite' => $validated['nationalite'] ?? null,
+                'adresse' => $validated['adresse'] ?? null,
+            ];
+
+            // Handle photo deletion
+            if (!empty($validated['supprimer_photo'])) {
+                Gate::authorize('remove-photo-eleve');
+                if ($student->profile_photo_path) {
+                    Storage::disk('public')->delete($student->profile_photo_path);
+                }
+                $updateData['profile_photo_path'] = null;
+            }
+
+            // Process new photo if uploaded
+            if ($request->hasFile('photo')) {
+                Gate::authorize('upload-photo-eleve');
+                $photoPath = $this->processStudentPhoto($request->file('photo'), $student);
+                $updateData['profile_photo_path'] = $photoPath;
+            }
+
+            $student->update($updateData);
+
+            $currentRegistration = $student->latestRegistration;
+            if ($currentRegistration) {
+                $currentRegistration->update(['classroom_id' => $validated['classroom_id']]);
+            }
+
+            if (isset($validated['parents'])) {
+                $parentSync = [];
+                foreach ($validated['parents'] as $parentData) {
+                    if (!empty($parentData['parent_id'])) {
+                        $parentSync[$parentData['parent_id']] = [
+                            'lien_parente' => $parentData['lien_parente'] ?? null,
+                            'est_responsable_financier' => $parentData['est_responsable_financier'] ?? false,
+                            'est_contact_urgence' => $parentData['est_contact_urgence'] ?? false,
+                        ];
+                    }
+                }
+                $student->parents()->sync($parentSync);
+            }
+        });
+
+        return redirect()->route('students.show', $student)->with('success', 'Élève mis à jour avec succès.');
+    }
+
+    public function destroy(User $student): RedirectResponse
+    {
+        $this->authorize('voir-eleves');
+
+        abort_unless($student->hasRole('eleve'), 404);
+
+        $student->update(['is_active' => false]);
+        $student->delete();
+
+        return redirect()->route('students.index')->with('success', 'Élève désactivé et archivé.');
     }
 
     public function transfer(TransferStudentRequest $request, User $student)
@@ -105,5 +310,19 @@ class StudentController extends Controller
         $student->update(['is_active' => $validated['status'] === 'active']);
 
         return back()->with('success', 'Statut de l\'élève mis à jour.');
+    }
+
+    public function removePhoto(User $student): RedirectResponse
+    {
+        Gate::authorize('remove-photo-eleve');
+
+        abort_unless($student->hasRole('eleve'), 404);
+
+        if ($student->profile_photo_path) {
+            Storage::disk('public')->delete($student->profile_photo_path);
+            $student->update(['profile_photo_path' => null]);
+        }
+
+        return back()->with('success', 'Photo de l\'élève supprimée avec succès.');
     }
 }

@@ -18,6 +18,7 @@ class Classroom extends Model
         'cycle',
         'school_year_id',
         'teacher_id',
+        'max_students',
     ];
 
     /**

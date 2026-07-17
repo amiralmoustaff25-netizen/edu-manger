@@ -26,7 +26,7 @@
                 </a>
             </div>
 
-            <form method="POST" action="{{ route('profile.update') }}">
+            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                 @csrf
                 @method('patch')
 
@@ -36,9 +36,9 @@
                         <!-- En-tête avec photo -->
                         <div class="flex flex-col md:flex-row items-start md:items-center gap-6 mb-8">
                             <div class="relative">
-                                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
+                                <img src="{{ $user->profile_photo_url }}" 
+                                     alt="{{ $user->name }}" 
+                                     class="w-32 h-32 rounded-full object-cover shadow-lg">
                             </div>
                             
                             <div class="flex-1">
@@ -47,6 +47,24 @@
                                 <span class="inline-block mt-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
                                     {{ ucfirst($user->role) }}
                                 </span>
+                                
+                                <!-- Champ photo -->
+                                <div class="mt-4">
+                                    <label for="profile_photo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        {{ __('Photo de profil') }}
+                                    </label>
+                                    <input type="file" id="profile_photo" name="profile_photo" accept="image/*"
+                                           class="w-full text-sm text-gray-500 dark:text-gray-400
+                                                  file:mr-4 file:py-2 file:px-4
+                                                  file:rounded-full file:border-0
+                                                  file:text-sm file:font-semibold
+                                                  file:bg-indigo-50 dark:file:bg-slate-700
+                                                  file:text-indigo-700 dark:file:text-indigo-300
+                                                  hover:file:bg-indigo-100 dark:hover:file:bg-slate-600">
+                                    @error('profile_photo')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 

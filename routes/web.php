@@ -87,6 +87,9 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     })->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
+    Route::get('/classrooms/{classroom}/teachers', [ClassroomController::class, 'teachers'])->name('classrooms.teachers');
+    Route::post('/classrooms/{classroom}/teachers', [ClassroomController::class, 'attachTeacher'])->name('classrooms.attach-teacher');
+    Route::delete('/classrooms/{classroom}/teachers/{teacher}', [ClassroomController::class, 'detachTeacher'])->name('classrooms.detach-teacher');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -158,10 +161,16 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
+        Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
+        Route::post('/students', [StudentController::class, 'store'])->name('students.store');
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
+        Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
+        Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
+        Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
         Route::patch('/students/{student}/transfer', [StudentController::class, 'transfer'])->name('students.transfer');
         Route::patch('/students/{student}/status', [StudentController::class, 'updateStatus'])->name('students.status');
+        Route::delete('/students/{student}/photo', [StudentController::class, 'removePhoto'])->name('students.remove-photo');
 
         Route::get('/registrations/create', [RegistrationController::class, 'create'])->name('registrations.create');
         Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');

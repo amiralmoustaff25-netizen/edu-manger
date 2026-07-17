@@ -45,6 +45,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-detail-eleve',
             'transferer-eleve',
             'modifier-statut-eleve',
+            'upload-photo-eleve',
 
             // --- Inscriptions (registrations) ---
             'voir-inscriptions',
@@ -68,6 +69,7 @@ class RoleAndPermissionSeeder extends Seeder
             'modifier-classe',
             'supprimer-classe',
             'affecter-professeur',
+            'gerer-enseignants-classe',
 
             // --- Professeurs ---
             'voir-professeurs',

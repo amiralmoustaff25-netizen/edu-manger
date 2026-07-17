@@ -1,13 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $student->name }}</h2>
-                <p class="mt-1 text-sm text-gray-500">{{ $student->matricule }} - {{ $student->email ?? 'Email non renseigné' }}</p>
+            <div class="flex items-center gap-4">
+                <img src="{{ $student->profile_photo_url }}" 
+                     alt="{{ $student->name }}" 
+                     class="w-12 h-12 rounded-full object-cover">
+                <div>
+                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">{{ $student->name }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $student->matricule }} - {{ $student->email ?? 'Email non renseigné' }}</p>
+                </div>
             </div>
-            <a href="{{ route('students.index') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-                Retour aux élèves
-            </a>
+            <div class="flex gap-3">
+                <a href="{{ route('students.edit', $student) }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
+                    Modifier
+                </a>
+                <a href="{{ route('students.index') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-300 dark:hover:bg-slate-700">
+                    Retour aux élèves
+                </a>
+            </div>
         </div>
     </x-slot>
 

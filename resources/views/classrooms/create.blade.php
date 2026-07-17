@@ -38,6 +38,21 @@
                         </select>
                     </div>
 
+                    <div class="mb-4">
+                        <label for="teacher_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enseignant titulaire</label>
+                        <select name="teacher_id" id="teacher_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">-- Aucun enseignant --</option>
+                            @foreach(\App\Models\User::role('professeur')->get() as $teacher)
+                                <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="max_students" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre maximum d'élèves</label>
+                        <input type="number" name="max_students" id="max_students" value="30" min="1" max="60" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
                     <div class="mb-6">
                         <label for="section" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section (Optionnel : A, B...)</label>
                         <input type="text" name="section" id="section" placeholder="Ex: A" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">

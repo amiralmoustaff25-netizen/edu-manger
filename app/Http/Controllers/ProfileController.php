@@ -39,18 +39,31 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
         // Réinitialiser password_must_change si le mot de passe a été changé
-        if ($request->user()->isDirty('password')) {
-            $request->user()->password_must_change = false;
+        if ($user->isDirty('password')) {
+            $user->password_must_change = false;
         }
 
-        $request->user()->save();
+        // Gérer l'upload de la photo de profil
+        if ($request->hasFile('profile_photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($user->profile_photo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            // Stocker la nouvelle photo
+            $path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $user->profile_photo_path = $path;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.show')->with('status', 'profile-updated');
     }

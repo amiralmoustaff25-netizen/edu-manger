@@ -40,5 +40,7 @@
 
             {{ $slot }}
         </x-sidebar>
+
+        @stack('scripts')
     </body>
 </html>

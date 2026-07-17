@@ -96,10 +96,14 @@ class CahierTexteController extends Controller
         return response()->json(['ok' => true, 'progress' => $this->service->computeProgress($program)]);
     }
 
-    public function markLessonDone(Request $request, ProgramChapter $lesson): \Illuminate\Http\JsonResponse
+    public function markLessonDone(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate(['date' => ['required', 'date', 'before_or_equal:today']]);
+        $request->validate([
+            'date' => ['required', 'date', 'before_or_equal:today'],
+            'lesson_id' => ['required', 'exists:program_chapters,id']
+        ]);
 
+        $lesson = ProgramChapter::findOrFail($request->lesson_id);
         $chapterIds = collect([$lesson->id])
             ->merge($lesson->children()->pluck('id'));
 

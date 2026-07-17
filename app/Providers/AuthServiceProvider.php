@@ -12,6 +12,7 @@ use App\Policies\LoginLogPolicy;
 use App\Policies\ParentModelPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\ProgramAnnualPolicy;
+use App\Policies\StudentPhotoPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -34,6 +35,14 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::define('validatePartial', function ($user) {
             return $user->hasRole('manager-comptable');
+        });
+
+        Gate::define('upload-photo-eleve', function ($user) {
+            return $user->hasRole(['super-admin', 'admin']);
+        });
+
+        Gate::define('remove-photo-eleve', function ($user) {
+            return $user->hasRole(['super-admin', 'admin']);
         });
 
         RateLimiter::for('login', function (object $request) {

@@ -49,6 +49,9 @@
                                             {{ $classroom->teacher->name ?? 'Aucun' }}
                                         </td>
                                         <td class="py-3 px-4 flex space-x-3">
+                                            <a href="{{ route('classrooms.teachers', $classroom->id) }}" class="text-indigo-500 hover:text-indigo-600 font-medium transition">
+                                                Enseignants
+                                            </a>
                                             <a href="{{ route('classrooms.edit', $classroom->id) }}" class="text-yellow-500 hover:text-yellow-600 font-medium transition">
                                                 Modifier
                                             </a>
