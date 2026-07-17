@@ -23,7 +23,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('professeur.grades.index') }}" method="GET" class="flex items-center space-x-4">
+                    <form action="{{ route('professeur.notes.index') }}" method="GET" class="flex items-center space-x-4">
                         <div class="flex-1">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Classe') }}</label>
                             <select name="classroom_id" id="classroomSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -81,7 +81,7 @@
                         </div>
                     </div>
                     
-                    <form action="{{ route('professeur.grades.store') }}" method="POST">
+                    <form action="{{ route('professeur.notes.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="classroom_id" value="{{ request('classroom_id') }}">
                         <input type="hidden" name="matiere_id" value="{{ request('matiere_id') }}">
@@ -91,10 +91,13 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Type d\'évaluation') }}</label>
                                     <select name="type_evaluation" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="devoir">{{ __('Devoir') }}</option>
-                                        <option value="interrogation">{{ __('Interrogation') }}</option>
-                                        <option value="examen">{{ __('Examen') }}</option>
-                                        <option value="tp">{{ __('TP') }}</option>
+                                        @if(in_array($selectedClassroom->cycle, ['college', 'lycee']))
+                                            <option value="devoir">{{ __('Devoir') }}</option>
+                                            <option value="composition">{{ __('Composition') }}</option>
+                                        @else
+                                            <option value="devoir">{{ __('Devoir') }}</option>
+                                            <option value="interrogation">{{ __('Interrogation') }}</option>
+                                        @endif
                                     </select>
                                 </div>
                                 <div>

@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\Registration;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class TeacherClassController extends Controller
 {
     public function index(Request $request)
     {
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
         
         $classrooms = $teacher->classrooms()
             ->with(['schoolYear', 'teacher'])
@@ -24,7 +30,12 @@ class TeacherClassController extends Controller
     {
         $this->authorize('view', $classroom);
 
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
         
         // Vérifier que le professeur est bien assigné à cette classe
         if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {

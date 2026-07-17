@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Registration;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
         
         $classrooms = $teacher->classrooms()
             ->with(['schoolYear'])
@@ -65,7 +71,13 @@ class AttendanceController extends Controller
             'attendances.*.notes' => 'nullable|string',
         ]);
 
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
+        
         $classroom = Classroom::findOrFail($validated['classroom_id']);
 
         // Vérifier que le professeur est assigné à cette classe

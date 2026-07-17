@@ -6,13 +6,19 @@ use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\Registration;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class GradeController extends Controller
 {
     public function index(Request $request)
     {
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
         
         $classrooms = $teacher->classrooms()
             ->with(['schoolYear'])
@@ -36,7 +42,13 @@ class GradeController extends Controller
             'grades.*.appreciation' => 'nullable|string',
         ]);
 
-        $teacher = auth()->user();
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
+        
         $classroom = Classroom::findOrFail($validated['classroom_id']);
         $matiere = Matiere::findOrFail($validated['matiere_id']);
 

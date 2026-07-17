@@ -64,9 +64,7 @@ class TeacherDashboardController extends Controller
             }
 
             // Calculer la moyenne de la classe
-            $classAverage = Note::whereHas('registration', function ($query) use ($classroom) {
-                $query->where('classroom_id', $classroom->id);
-            })->avg('valeur') ?? 0;
+            $classAverage = Note::where('classroom_id', $classroom->id)->avg('valeur') ?? 0;
 
             $classroomDetails[] = [
                 'classroom' => $classroom,
