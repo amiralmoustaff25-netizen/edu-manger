@@ -27,8 +27,8 @@
                 </div>
             </div>
 
-            <!-- Grille des statistiques -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+            <!-- Grille des statistiques - Première ligne -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 
                 <!-- Carte 1 : Classes -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
@@ -74,6 +74,11 @@
                         </div>
                     </div>
                 </div>
+                
+            </div>
+
+            <!-- Grille des statistiques - Deuxième ligne -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
                 <!-- Carte 4 : Progression des cours -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
