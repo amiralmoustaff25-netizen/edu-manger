@@ -72,6 +72,9 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
+        // Combiner nom et prénom pour le champ name
+        $validated['name'] = trim($validated['nom'] . ' ' . $validated['prenom']);
+        
         $validated['matricule'] = User::generateMatricule($validated['role']);
         $validated['password'] = Hash::make('password');
         $validated['created_by'] = auth()->id();
@@ -80,6 +83,25 @@ class UserController extends Controller
 
         $user = User::create($validated);
         $user->syncRoles([$validated['role']]);
+
+        // Création automatique du profil Teacher si rôle = professeur
+        if ($validated['role'] === 'professeur') {
+            $teacherData = [
+                'user_id' => $user->id,
+                'matricule' => \App\Models\Teacher::generateMatricule(),
+                'statut' => $validated['statut'] ?? 'contractuel',
+                'nombre_heures_semaine' => 18,
+                'date_naissance' => $validated['date_naissance'] ?? null,
+                'lieu_naissance' => $validated['lieu_naissance'] ?? null,
+                'sexe' => $validated['sexe'] ?? null,
+                'nationalite' => $validated['nationalite'] ?? null,
+                'diplomes' => $validated['diplomes'] ?? null,
+                'specialites' => $validated['specialites'] ? explode(',', $validated['specialites']) : null,
+                'created_by' => auth()->id(),
+            ];
+
+            \App\Models\Teacher::create($teacherData);
+        }
 
         return redirect()
             ->route('users.index')

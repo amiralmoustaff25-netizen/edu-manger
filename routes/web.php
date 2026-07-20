@@ -1,12 +1,16 @@
 <?php
 
+use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BulletinController;
 use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\ClassroomFeeController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FeeTypeController;
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PaymentController;
@@ -103,7 +107,28 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/bulletins/class/{classroom}/{period}/pdf', [BulletinController::class, 'generateClassPdf'])->name('bulletins.class-pdf');
 
     Route::middleware(['role:manager-comptable|comptable'])->group(function () {
+        // Routes comptabilité
+        Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.dashboard');
+        Route::get('/accounting/reports', [AccountingController::class, 'reports'])->name('accounting.reports');
+        Route::get('/accounting/advanced-reports', [AccountingController::class, 'advancedReports'])->name('accounting.advanced-reports');
+        Route::get('/accounting/export-advanced-reports', [AccountingController::class, 'exportAdvancedReports'])->name('accounting.export-advanced-reports');
+        Route::get('/accounting/alerts', [AccountingController::class, 'alerts'])->name('accounting.alerts');
+        Route::get('/accounting/cash-flow', [AccountingController::class, 'cashFlow'])->name('accounting.cash-flow');
+        
+        // Paiements
+        Route::resource('payments', PaymentController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        
+        // Factures
+        Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.pdf');
+        
+        // Types de frais
+        Route::resource('fee-types', FeeTypeController::class)->only(['index', 'create', 'edit', 'update', 'destroy']);
+        
+        // Frais par classe
+        Route::resource('classroom-fees', ClassroomFeeController::class)->only(['index', 'create', 'edit', 'update', 'destroy']);
     });
 
     Route::middleware(['auth'])->group(function () {
