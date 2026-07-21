@@ -19,14 +19,30 @@
                     <div class="mb-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rechercher un élève par matricule</h3>
                         <div class="flex gap-4">
-                            <input type="text" id="matricule" placeholder="Entrez le matricule..." 
-                                class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                x-data="{ matricule: '' }"
-                                x-model="matricule"
-                                @keyup.enter="searchStudent()">
-                            <button onclick="searchStudent()" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                                🔍 Rechercher
+                            <div class="flex-1 relative">
+                                <input type="text" id="matricule" placeholder="Entrez le matricule..." 
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-10"
+                                    x-data="{ matricule: '' }"
+                                    x-model="matricule"
+                                    @keyup.enter="searchStudent()"
+                                    autofocus>
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <button onclick="searchStudent()" id="search-btn" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2">
+                                <span>🔍</span>
+                                <span>Rechercher</span>
                             </button>
+                        </div>
+                        <div id="search-loading" class="hidden mt-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                            <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Recherche en cours...</span>
                         </div>
                     </div>
 
@@ -79,6 +95,7 @@
                     <form id="payment-form" action="{{ route('payments.store') }}" method="POST" class="hidden">
                         @csrf
                         <input type="hidden" name="registration_id" id="registration_id">
+                        <input type="hidden" name="selected_fees" id="selected_fees">
                         
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <!-- Frais à payer -->
@@ -193,6 +210,10 @@
                 return;
             }
 
+            // Afficher le chargement
+            document.getElementById('search-loading').classList.remove('hidden');
+            document.getElementById('search-btn').disabled = true;
+
             fetch(`/api/students/by-matricule/${matricule}`)
                 .then(response => response.json())
                 .then(data => {
@@ -208,6 +229,10 @@
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Erreur lors de la recherche de l\'élève');
+                })
+                .finally(() => {
+                    document.getElementById('search-loading').classList.add('hidden');
+                    document.getElementById('search-btn').disabled = false;
                 });
         }
 
@@ -232,9 +257,12 @@
         function loadStudentFees(registrationId) {
             fetch(`/api/students/${registrationId}/fees`)
                 .then(response => response.json())
-                .then(fees => {
-                    displayFeesList(fees);
+                .then(data => {
+                    displayFeesList(data.fees);
                     document.getElementById('payment-form').classList.remove('hidden');
+                    
+                    // Mettre à jour le total dû affiché
+                    document.getElementById('total-due').textContent = formatCurrency(data.total_due);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -247,25 +275,43 @@
             container.innerHTML = '';
             selectedFees = [];
 
+            if (fees.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Aucun frais à payer</p>';
+                return;
+            }
+
             fees.forEach((fee, index) => {
                 const div = document.createElement('div');
-                div.className = 'bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700';
+                div.className = 'bg-white dark:bg-gray-800 rounded p-4 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors';
+                
+                const priorityColors = {
+                    'high': 'border-l-4 border-l-red-500',
+                    'medium': 'border-l-4 border-l-yellow-500',
+                    'low': 'border-l-4 border-l-green-500',
+                    'none': 'border-l-4 border-l-gray-300',
+                };
+                
+                if (fee.priority && fee.priority !== 'none') {
+                    div.className += ' ' + (priorityColors[fee.priority] || '');
+                }
+                
                 div.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <input type="checkbox" id="fee-${index}" 
                                 ${fee.status === 'paid' ? 'disabled' : ''}
                                 onchange="toggleFee(${index}, ${fee.amount}, '${fee.description}')"
-                                class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600">
+                                class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600 focus:ring-indigo-500 h-5 w-5">
                             <div>
                                 <p class="font-medium text-gray-900 dark:text-white">${fee.description}</p>
                                 <p class="text-sm text-gray-600 dark:text-gray-400">${fee.type}</p>
+                                ${fee.priority === 'high' ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 mt-1">Prioritaire</span>' : ''}
                             </div>
                         </div>
                         <div class="text-right">
                             <p class="font-bold text-gray-900 dark:text-white">${formatCurrency(fee.amount)}</p>
                             <p class="text-xs ${fee.status === 'paid' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
-                                ${fee.status === 'paid' ? 'Payé' : 'À payer'}
+                                ${fee.status === 'paid' ? '✓ Payé' : 'À payer'}
                             </p>
                         </div>
                     </div>
@@ -288,6 +334,9 @@
             const total = selectedFees.reduce((sum, fee) => sum + fee.amount, 0);
             document.getElementById('selected-total').textContent = formatCurrency(total);
             document.getElementById('amount_paid').value = total;
+            
+            // Mettre à jour le champ caché des frais sélectionnés
+            document.getElementById('selected_fees').value = JSON.stringify(selectedFees);
         }
 
         function calculateChange() {
