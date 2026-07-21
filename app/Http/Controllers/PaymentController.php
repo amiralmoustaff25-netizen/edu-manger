@@ -44,6 +44,13 @@ class PaymentController extends Controller
         return view('accounting.payments.index', compact('payments'));
     }
 
+    public function create(): View
+    {
+        $this->authorize('enregistrer-paiement');
+
+        return view('accounting.payments.create');
+    }
+
     public function show(Payment $payment): View
     {
         $this->authorize('voir-comptabilite');

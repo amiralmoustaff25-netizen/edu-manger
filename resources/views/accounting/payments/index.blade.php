@@ -9,6 +9,15 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
+                    <div class="mb-6 flex justify-between items-center">
+                        <a href="{{ route('accounting.dashboard') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                            ← Retour au Dashboard
+                        </a>
+                        <a href="{{ route('payments.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                            + Nouveau Paiement
+                        </a>
+                    </div>
+
                     <!-- Formulaire de recherche et filtres -->
                     <form action="{{ route('payments.index') }}" method="GET" class="mb-6">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">

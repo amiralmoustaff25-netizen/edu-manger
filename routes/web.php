@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\Api\StudentController as ApiStudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BulletinController;
 use App\Http\Controllers\CahierTexteController;
@@ -100,6 +101,10 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/show', [ProfileController::class, 'show'])->name('profile.show');
 
+    // Routes API pour les paiements
+    Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
+    Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
+
     // Routes pour les bulletins scolaires
     Route::get('/bulletins', [BulletinController::class, 'index'])->name('bulletins.index');
     Route::get('/bulletins/{student}/{period}', [BulletinController::class, 'show'])->name('bulletins.show');
@@ -116,12 +121,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/accounting/cash-flow', [AccountingController::class, 'cashFlow'])->name('accounting.cash-flow');
         
         // Paiements
-        Route::resource('payments', PaymentController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
+        Route::resource('payments', PaymentController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
         
         // Factures
-        Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
+        Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
         Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.pdf');
         
         // Types de frais

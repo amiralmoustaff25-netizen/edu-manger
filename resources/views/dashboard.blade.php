@@ -161,34 +161,15 @@
 
             @role('manager-comptable|comptable')
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Enregistrer un paiement</h3>
-                    <form action="{{ route('payments.store') }}" method="POST" class="mt-5 grid gap-4 md:grid-cols-4">
-                        @csrf
-                        <div class="md:col-span-2">
-                            <label for="registration_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Inscription</label>
-                            <select id="registration_id" name="registration_id" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400">
-                                <option value="">Sélectionner un élève</option>
-                                @foreach($registrations as $registration)
-                                    <option value="{{ $registration->id }}">
-                                        {{ $registration->matricule }} - {{ $registration->user->name ?? 'N/A' }} ({{ $registration->classroom->name ?? 'N/A' }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="flex items-center justify-between">
                         <div>
-                            <label for="amount_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Montant payé</label>
-                            <input id="amount_paid" type="number" name="amount_paid" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Enregistrer un paiement</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Accéder au formulaire de paiement optimisé avec matricule.</p>
                         </div>
-                        <div>
-                            <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mois</label>
-                            <input id="month" type="text" name="month" required placeholder="Ex: Octobre" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400">
-                        </div>
-                        <div class="md:col-span-4">
-                            <button type="submit" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-                                Valider le paiement
-                            </button>
-                        </div>
-                    </form>
+                        <a href="{{ route('payments.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                            Nouveau Paiement
+                        </a>
+                    </div>
                 </div>
             @endrole
 
