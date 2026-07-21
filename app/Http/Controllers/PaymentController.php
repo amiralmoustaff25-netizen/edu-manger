@@ -7,6 +7,7 @@ use App\Models\Credit;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolConfiguration;
+use App\Notifications\PaymentReceived;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -156,6 +157,11 @@ class PaymentController extends Controller
                 $overpayment = $amountPaid - $expectedMonthlyFee;
                 $this->handleOverpayment($registration, $payment, $overpayment, $config->overpayment_mode);
             }
+
+            // Envoyer la notification au parent/élève
+            if ($payment->status === 'complet') {
+                $registration->user->notify(new PaymentReceived($payment));
+            }
         } else {
             // Mode nouveau : paiement de plusieurs frais
             $totalExpected = collect($selectedFees)->sum('amount');
@@ -184,6 +190,11 @@ class PaymentController extends Controller
             if ($amountPaid > $totalExpected) {
                 $overpayment = $amountPaid - $totalExpected;
                 $this->handleOverpayment($registration, $payment, $overpayment, $config->overpayment_mode);
+            }
+
+            // Envoyer la notification au parent/élève
+            if ($payment->status === 'complet') {
+                $registration->user->notify(new PaymentReceived($payment));
             }
         }
 
@@ -245,5 +256,51 @@ class PaymentController extends Controller
         $date = now()->format('Ymd');
         $random = strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
         return "REC-{$date}-{$random}";
+    }
+
+    public function validationIndex(): View
+    {
+        $this->authorize('manager-comptable');
+
+        $pendingPayments = Payment::with(['registration.user', 'registration.classroom'])
+            ->pendingValidation()
+            ->latest()
+            ->paginate(15);
+
+        return view('accounting.payments.validation', compact('pendingPayments'));
+    }
+
+    public function validatePayment(Payment $payment): RedirectResponse
+    {
+        $this->authorize('manager-comptable');
+
+        if ($payment->status !== 'partiel' || $payment->validated_at) {
+            return back()->with('error', 'Ce paiement ne peut pas être validé.');
+        }
+
+        $payment->validatePayment(auth()->id());
+
+        return back()->with('success', 'Paiement validé avec succès.');
+    }
+
+    public function rejectPayment(Payment $payment, Request $request): RedirectResponse
+    {
+        $this->authorize('manager-comptable');
+
+        if ($payment->status !== 'partiel' || $payment->validated_at) {
+            return back()->with('error', 'Ce paiement ne peut pas être rejeté.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $payment->comment = ($payment->comment ?? '') . ' [REJETÉ: ' . $request->reason . ']';
+        $payment->status = 'rejected';
+        $payment->validated_by = auth()->id();
+        $payment->validated_at = now();
+        $payment->save();
+
+        return back()->with('success', 'Paiement rejeté.');
     }
 }

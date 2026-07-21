@@ -17,6 +17,7 @@ use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolConfigurationController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
@@ -136,6 +137,20 @@ Route::middleware(['auth', 'verified', 'password.changed', 'school.configured'])
         Route::resource('payments', PaymentController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        
+        // Validation des paiements (manager-comptable uniquement)
+        Route::middleware(['role:manager-comptable'])->group(function () {
+            Route::get('/payments/validation', [PaymentController::class, 'validationIndex'])->name('payments.validation');
+            Route::post('/payments/{payment}/validate', [PaymentController::class, 'validatePayment'])->name('payments.validate');
+            Route::post('/payments/{payment}/reject', [PaymentController::class, 'rejectPayment'])->name('payments.reject');
+        });
+        
+        // Rappels (manager-comptable uniquement)
+        Route::middleware(['role:manager-comptable'])->group(function () {
+            Route::resource('reminders', ReminderController::class)->only(['index', 'create', 'store', 'destroy']);
+            Route::post('/reminders/generate-overdue', [ReminderController::class, 'generateOverdue'])->name('reminders.generate-overdue');
+            Route::post('/reminders/generate-upcoming', [ReminderController::class, 'generateUpcoming'])->name('reminders.generate-upcoming');
+        });
         
         // Factures
         Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);

@@ -30,6 +30,8 @@ class Payment extends Model
         'payment_type',       // Type de paiement (inscription, mensualité, etc.)
         'comment',            // Commentaire éventuel
         'validated_by',       // ID du manager qui a validé si partiel
+        'validated_at',       // Date de validation
+        'receipt_number',     // Numéro de reçu
     ];
 
     /**
@@ -39,6 +41,7 @@ class Payment extends Model
     {
         return [
             'payment_date' => 'date',
+            'validated_at' => 'datetime',
             'amount' => 'decimal:2',
             'remaining_balance' => 'decimal:2',
         ];
@@ -135,5 +138,42 @@ class Payment extends Model
     public function scopeForYear($query, int $year)
     {
         return $query->whereYear('created_at', $year);
+    }
+
+    /**
+     * Scope pour les paiements en attente de validation.
+     */
+    public function scopePendingValidation($query)
+    {
+        return $query->where('status', 'partiel')->whereNull('validated_at');
+    }
+
+    /**
+     * Scope pour les paiements validés.
+     */
+    public function scopeValidated($query)
+    {
+        return $query->whereNotNull('validated_at');
+    }
+
+    /**
+     * Valider un paiement partiel.
+     */
+    public function validatePayment($validatorId): void
+    {
+        $this->status = 'complet';
+        $this->validated_by = $validatorId;
+        $this->validated_at = now();
+        $this->remaining_balance = 0;
+        $this->save();
+    }
+
+    /**
+     * Marquer un paiement comme nécessitant une validation.
+     */
+    public function markForValidation(): void
+    {
+        $this->status = 'partiel';
+        $this->save();
     }
 }
