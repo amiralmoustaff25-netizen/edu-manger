@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\CheckSchoolConfiguration;
 use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
@@ -24,7 +23,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'password.changed' => EnsurePasswordChanged::class,
-            'school.configured' => CheckSchoolConfiguration::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

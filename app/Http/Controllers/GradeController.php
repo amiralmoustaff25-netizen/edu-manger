@@ -52,9 +52,14 @@ class GradeController extends Controller
         $classroom = Classroom::findOrFail($validated['classroom_id']);
         $matiere = Matiere::findOrFail($validated['matiere_id']);
 
-        // Vérifier que le professeur est assigné à cette classe
-        if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {
-            abort(403, 'Vous n\'êtes pas autorisé à saisir des notes pour cette classe.');
+        // Vérifier que le professeur est assigné à cette classe ET cette matière
+        $isAssigned = $teacher->classrooms()
+            ->where('classrooms.id', $classroom->id)
+            ->wherePivot('matiere_id', $matiere->id)
+            ->exists();
+
+        if (!$isAssigned) {
+            abort(403, 'Vous n\'êtes pas autorisé à saisir des notes pour cette matière dans cette classe.');
         }
 
         $savedCount = 0;

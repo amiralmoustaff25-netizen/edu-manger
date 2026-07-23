@@ -18,7 +18,6 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReminderController;
-use App\Http\Controllers\SchoolConfigurationController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherClassController;
@@ -43,7 +42,7 @@ Route::get('/export/pdf-hello-world', [ExportController::class, 'pdfHelloWorld']
 Route::get('/export/pdf-preview', [ExportController::class, 'pdfPreview'])->name('export.pdf.preview');
 Route::get('/export/excel-hello-world', [ExportController::class, 'excelHelloWorld'])->name('export.excel.hello-world');
 
-Route::middleware(['auth', 'verified', 'password.changed', 'school.configured'])->group(function () {
+Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/dashboard', function () {
         // REDIRECTION ÉLÈVE vers /mon-espace
         if (auth()->user()->hasRole('eleve')) {
@@ -106,17 +105,6 @@ Route::middleware(['auth', 'verified', 'password.changed', 'school.configured'])
     // Routes API pour les paiements
     Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
     Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
-
-    Route::middleware(['role:super-admin|admin|manager-comptable'])->group(function () {
-        // Routes paramètres
-        Route::prefix('settings')->name('settings.')->group(function () {
-            Route::get('/school', [SchoolConfigurationController::class, 'index'])->name('school.index');
-            Route::post('/school/update-info', [SchoolConfigurationController::class, 'updateSchoolInfo'])->name('school.update-info');
-            Route::post('/school/update-bank', [SchoolConfigurationController::class, 'updateBankInfo'])->name('school.update-bank');
-            Route::post('/school/update-accounting', [SchoolConfigurationController::class, 'updateAccountingSettings'])->name('school.update-accounting');
-            Route::post('/school/complete', [SchoolConfigurationController::class, 'completeConfiguration'])->name('school.complete');
-        });
-    });
 
     // Routes pour les bulletins scolaires
     Route::get('/bulletins', [BulletinController::class, 'index'])->name('bulletins.index');

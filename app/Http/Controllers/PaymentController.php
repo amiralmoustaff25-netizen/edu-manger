@@ -6,7 +6,6 @@ use App\Http\Requests\StorePaymentRequest;
 use App\Models\Credit;
 use App\Models\Payment;
 use App\Models\Registration;
-use App\Models\SchoolConfiguration;
 use App\Notifications\PaymentReceived;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -120,12 +119,6 @@ class PaymentController extends Controller
 
         $registration = Registration::findOrFail($validated['registration_id']);
         $amountPaid = (float) $validated['amount_paid'];
-        
-        // Vérifier la règle de paiement séquentiel
-        $config = SchoolConfiguration::current();
-        if ($config->sequential_payment_rule && !$config->allow_future_payment) {
-            $this->validateSequentialPayment($registration, $validated['month']);
-        }
         
         // Récupérer les frais sélectionnés si présents
         $selectedFees = $request->input('selected_fees', []);

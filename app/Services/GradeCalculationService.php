@@ -75,9 +75,14 @@ class GradeCalculationService
 
         $averages = $students->map(function ($s) use ($period) {
             return $this->calculateWeightedAverage($s, $period);
-        })->sortDesc();
+        });
 
-        return $averages->search($studentAverage) + 1;
+        // Compteur des élèves avec une moyenne strictement supérieure
+        $betterCount = $averages->filter(function ($average) use ($studentAverage) {
+            return $average > $studentAverage;
+        })->count();
+
+        return $betterCount + 1;
     }
 
     /**
