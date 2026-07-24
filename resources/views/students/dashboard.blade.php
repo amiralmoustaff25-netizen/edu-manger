@@ -5,16 +5,6 @@
         </h2>
     </x-slot>
 
-    @php
-        $user = Auth::user();
-        $registration = $user->latestRegistration;
-        $notes = $user->notes()->with('matiere')->latest()->take(5)->get();
-        $moyenne = $user->notes()->avg('valeur') ?? 0;
-        $payments = $registration ? $registration->payments()->latest()->take(5)->get() : collect();
-        $totalPaid = $registration ? $registration->payments()->sum('amount') : 0;
-        $totalDue = $registration ? ($registration->monthly_fee * 9) : 0; // 9 mois d'école
-        $remaining = $totalDue - $totalPaid;
-    @endphp
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -24,16 +14,20 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
                     <div>
                         <h3 class="text-2xl font-bold @if($user->cycle === 'primaire') text-emerald-600 dark:text-emerald-400 @elseif($user->cycle === 'college') text-orange-600 dark:text-orange-400 @else text-red-600 dark:text-red-400 @endif mb-2">
-                            {{ __('Bonjour, :name ! 👋', ['name' => $user->name]) }}
+                            {{ __('Bonjour, :name !', ['name' => $user->name]) }}
                         </h3>
                         <p class="text-gray-600 dark:text-gray-300">
                             {{ __('Bienvenue sur ton portail EduManager. Voici le résumé de tes informations scolaires.') }}
                         </p>
                     </div>
                     <div class="hidden md:block">
-                        <div class="h-16 w-16 rounded-full @if($user->cycle === 'primaire') bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 @elseif($user->cycle === 'college') bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-600 dark:text-orange-400 @else bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 @endif font-bold text-2xl">
-                            {{ substr($user->name, 0, 1) }}
-                        </div>
+                        @if($user->profile_photo_path)
+                            <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" class="h-16 w-16 rounded-full object-cover ring-2 ring-white dark:ring-slate-600">
+                        @else
+                            <div class="h-16 w-16 rounded-full @if($user->cycle === 'primaire') bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 @elseif($user->cycle === 'college') bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-600 dark:text-orange-400 @else bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 @endif font-bold text-2xl">
+                                {{ mb_substr($user->name, 0, 1) }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -153,6 +147,100 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Parents -->
+            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">👨‍👩‍👧 {{ __('Mes Parents / Responsables') }}</h4>
+                    @if($user->parents->count() > 0)
+                        <div class="space-y-3">
+                            @foreach($user->parents as $parent)
+                                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50">
+                                    <div>
+                                        <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $parent->nom }} {{ $parent->prenom }}</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ $parent->pivot->lien_parente ?? '-' }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        @if($parent->pivot->est_responsable_financier)<span class="inline-flex px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">Resp. financier</span>@endif
+                                        @if($parent->pivot->est_contact_urgence)<span class="inline-flex px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">Urgence</span>@endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-gray-500 dark:text-gray-400 italic">{{ __('Aucun parent enregistré.') }}</p>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Bulletins -->
+            <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">📄 {{ __('Mes Bulletins') }}</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        @foreach(['trimestre_1' => 'Trimestre 1', 'trimestre_2' => 'Trimestre 2', 'trimestre_3' => 'Trimestre 3'] as $period => $label)
+                            <div class="rounded-md border border-gray-200 dark:border-slate-700 p-4">
+                                <p class="font-medium text-gray-800 dark:text-gray-200 mb-3">{{ $label }}</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ route('bulletins.show', [$user, $period]) }}" target="_blank" class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">Voir</a>
+                                    <a href="{{ route('bulletins.pdf', [$user, $period]) }}" target="_blank" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">PDF</a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Présences & Sanctions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">✅ {{ __('Mes Dernières Présences') }}</h4>
+                        @if($user->attendances->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($user->attendances->sortByDesc('date')->take(10) as $attendance)
+                                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $attendance->date?->format('d/m/Y') }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $attendance->classroom->name ?? '-' }}</p>
+                                        </div>
+                                        <span class="inline-flex px-2 py-1 text-xs rounded-full
+                                            {{ match($attendance->status) {
+                                                'present' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+                                                'late' => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+                                                'excused' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                                default => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                                            } }}">{{ $attendance->status_label }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-gray-500 dark:text-gray-400 italic">{{ __('Aucune donnée de présence.') }}</p>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">⚠️ {{ __('Mes Sanctions') }}</h4>
+                        @if($user->sanctions->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($user->sanctions->sortByDesc('date_incident')->take(10) as $sanction)
+                                    <div class="flex flex-col p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ $sanction->type_label }}</span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $sanction->date_incident?->format('d/m/Y') }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ $sanction->description ?? '-' }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-gray-500 dark:text-gray-400 italic">{{ __('Aucune sanction enregistrée.') }}</p>
+                        @endif
+                    </div>
+                </div>
             </div>
 
         </div>

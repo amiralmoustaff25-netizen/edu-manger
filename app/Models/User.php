@@ -35,6 +35,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Détermine si l'utilisateur est un élève (rôle colonne ou rôle Spatie).
+     */
+    public function isStudent(): bool
+    {
+        return $this->role === 'eleve' || $this->hasRole('eleve');
+    }
+
+    /**
+     * Scope pour récupérer uniquement les élèves.
+     */
+    public function scopeStudents($query)
+    {
+        return $query->where('role', 'eleve')
+            ->orWhereHas('roles', fn ($q) => $q->where('name', 'eleve'));
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

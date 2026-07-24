@@ -214,7 +214,10 @@ class PaymentController extends Controller
                 return response()->json(['message' => 'Paiement enregistré.', 'payment' => $payment], 201);
             }
 
-            return redirect()->route('payments.show', $payment)->with('success', 'Paiement enregistré avec succès. Reçu : ' . $payment->receipt_number);
+            return redirect()->route('payments.show', $payment)->with([
+                'success' => 'Paiement enregistré avec succès. Reçu : ' . $payment->receipt_number,
+                'payment_receipt' => $payment->id,
+            ]);
         });
     }
 

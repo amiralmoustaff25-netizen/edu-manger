@@ -62,33 +62,33 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Matricule</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Utilisateur</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Rôle</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Statut</th>
-                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Créé par</th>
-                                <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+                                <th class="px-4 py-3 text-left align-middle whitespace-nowrap font-semibold text-gray-600 dark:text-gray-300">Matricule</th>
+                                <th class="px-4 py-3 text-left align-middle font-semibold text-gray-600 dark:text-gray-300">Utilisateur</th>
+                                <th class="px-4 py-3 text-left align-middle font-semibold text-gray-600 dark:text-gray-300">Rôle</th>
+                                <th class="px-4 py-3 text-left align-middle font-semibold text-gray-600 dark:text-gray-300">Statut</th>
+                                <th class="px-4 py-3 text-left align-middle font-semibold text-gray-600 dark:text-gray-300">Créé par</th>
+                                <th class="px-4 py-3 text-right align-middle font-semibold text-gray-600 dark:text-gray-300">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
                             @forelse($users as $user)
                                 <tr>
-                                    <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{{ $user->matricule }}</td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 align-middle whitespace-nowrap font-mono text-xs text-gray-700 dark:text-gray-300">{{ $user->matricule }}</td>
+                                    <td class="px-4 py-3 align-middle">
                                         <p class="font-medium text-gray-900 dark:text-gray-200">{{ $user->name }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $user->email ?? 'Email non renseigné' }}</p>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 align-middle">
                                         <span class="rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:text-sky-300">{{ $user->getRoleNames()->first() ?? 'Sans rôle' }}</span>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 align-middle">
                                         <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $user->is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
                                             {{ $user->is_active ? 'Actif' : 'Inactif' }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $user->creator->name ?? 'Système' }}</td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-wrap justify-end gap-2">
+                                    <td class="px-4 py-3 align-middle text-gray-600 dark:text-gray-400">{{ $user->creator->name ?? 'Système' }}</td>
+                                    <td class="px-4 py-3 align-middle text-right whitespace-nowrap">
+                                        <div class="inline-flex flex-nowrap items-center justify-end gap-2">
                                             <a href="{{ route('users.edit', $user) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Modifier</a>
 
                                             <form method="POST" action="{{ route('users.reset-password', $user) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Réinitialiser le mot de passe', message: 'Le mot de passe sera remplacé par un mot de passe temporaire et l’utilisateur devra le changer à sa prochaine connexion.', confirmLabel: 'Réinitialiser' })">

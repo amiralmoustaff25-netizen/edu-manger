@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use App\Console\Commands\PublishScheduledAnnouncements;
 use App\Console\Commands\SendPaymentReminders;
 
 Artisan::command('inspire', function () {
@@ -11,3 +12,6 @@ Artisan::command('inspire', function () {
 
 // Schedule reminder sending
 Schedule::command('reminders:send')->dailyAt('09:00');
+
+// Schedule announcement publishing
+Schedule::command('announcements:publish-scheduled')->everyMinute();

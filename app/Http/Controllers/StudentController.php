@@ -28,7 +28,7 @@ class StudentController extends Controller
         $this->authorize('voir-eleves');
 
         $students = User::query()
-            ->role('eleve')
+            ->students()
             ->with(['latestRegistration.classroom', 'latestRegistration.schoolYear'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
@@ -126,9 +126,14 @@ class StudentController extends Controller
     {
         $this->authorize('voir-detail-eleve', $student);
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $student->load([
+            'parents',
+            'notes.matiere',
+            'attendances.classroom',
+            'attendances.recordedBy',
+            'sanctions.author',
             'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments'])->latest(),
         ]);
 
@@ -151,7 +156,7 @@ class StudentController extends Controller
     {
         $this->authorize('voir-detail-eleve', $student);
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $student->load(['parents', 'latestRegistration']);
 
@@ -167,7 +172,7 @@ class StudentController extends Controller
     {
         $this->authorize('voir-detail-eleve', $student);
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $validated = $request->validated();
 
@@ -235,7 +240,7 @@ class StudentController extends Controller
     {
         $this->authorize('voir-eleves');
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $student->update(['is_active' => false]);
         $student->delete();
@@ -247,7 +252,7 @@ class StudentController extends Controller
     {
         $this->authorize('transferer-eleve', $student);
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $validated = $request->validated();
 
@@ -261,7 +266,7 @@ class StudentController extends Controller
     {
         $this->authorize('modifier-statut-eleve', $student);
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         $validated = $request->validated();
 
@@ -277,7 +282,7 @@ class StudentController extends Controller
     {
         Gate::authorize('remove-photo-eleve');
 
-        abort_unless($student->hasRole('eleve'), 404);
+        abort_unless($student->isStudent(), 404);
 
         if ($student->profile_photo_path) {
             Storage::disk('public')->delete($student->profile_photo_path);

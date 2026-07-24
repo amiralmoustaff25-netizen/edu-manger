@@ -10,7 +10,7 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $student->matricule }} - {{ $student->email ?? 'Email non renseigné' }}</p>
                 </div>
             </div>
-            <div class="flex gap-3">
+            <div class="flex flex-wrap gap-3">
                 @can('enregistrer-paiement')
                     <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
                         Effectuer un paiement
@@ -184,6 +184,156 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Parents -->
+            <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Parents & responsables</h3>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Nom</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Lien</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Rôles</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Téléphone</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                            @forelse($student->parents as $parent)
+                                <tr>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $parent->nom }} {{ $parent->prenom }}</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $parent->pivot->lien_parente ?? '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($parent->pivot->est_responsable_financier)<span class="inline-flex px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">Resp. financier</span>@endif
+                                        @if($parent->pivot->est_contact_urgence)<span class="inline-flex px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">Urgence</span>@endif
+                                    </td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $parent->telephone ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun parent enregistré.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-2">
+                <!-- Dernières notes -->
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Dernières notes</h3>
+                    <div class="mt-5 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                            <thead class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Matière</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Type / Période</th>
+                                    <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Note</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                                @forelse($student->notes->take(10) as $note)
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $note->matiere->nom ?? 'N/A' }}</td>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $note->type_evaluation }} — {{ $note->periode }}</td>
+                                        <td class="px-4 py-3 text-right font-bold {{ $note->valeur >= 10 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">{{ number_format($note->valeur, 2) }}/20</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucune note.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bulletins -->
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Bulletins scolaires</h3>
+                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        @foreach(['trimestre_1' => 'Trimestre 1', 'trimestre_2' => 'Trimestre 2', 'trimestre_3' => 'Trimestre 3'] as $period => $label)
+                            <div class="rounded-md border border-gray-200 dark:border-slate-700 p-4">
+                                <p class="font-medium text-gray-800 dark:text-gray-200 mb-3">{{ $label }}</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ route('bulletins.show', [$student, $period]) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">
+                                        Voir
+                                    </a>
+                                    <a href="{{ route('bulletins.pdf', [$student, $period]) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">
+                                        PDF
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if($currentRegistration)
+                        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Génération basée sur la classe {{ $currentRegistration->classroom->name ?? 'N/A' }}.</p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-2">
+                <!-- Présences -->
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Dernières présences / absences</h3>
+                    <div class="mt-5 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                            <thead class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Date</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Statut</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Classe</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Note</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                                @forelse($student->attendances->sortByDesc('date')->take(10) as $attendance)
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $attendance->date?->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex px-2 py-1 text-xs rounded-full
+                                                {{ match($attendance->status) {
+                                                    'present' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+                                                    'late' => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+                                                    'excused' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                                    default => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                                                } }}">{{ $attendance->status_label }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $attendance->classroom->name ?? 'N/A' }}</td>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $attendance->notes ?? '-' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucune donnée de présence.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sanctions -->
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Sanctions disciplinaires</h3>
+                    <div class="mt-5 overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                            <thead class="bg-gray-50 dark:bg-slate-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Date</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Type</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                                @forelse($student->sanctions->sortByDesc('date_incident')->take(10) as $sanction)
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $sanction->date_incident?->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $sanction->type_label }}</td>
+                                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $sanction->description ?? '-' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucune sanction enregistrée.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

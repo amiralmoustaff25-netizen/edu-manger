@@ -37,6 +37,15 @@
                 </a>
             @endrole
 
+            @can('voir-notifications')
+                <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                    <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('notifications.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {{ __('Centre de notifications') }}
+                </a>
+            @endcan
+
             @role('eleve')
             <!-- Mon Dossier -->
             <div class="mt-6">
@@ -50,8 +59,8 @@
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Vie Scolaire') }}</p>
                 <div class="mt-2 space-y-1">
-                    <a href="{{ route('student.dashboard') }}" class="{{ request()->routeIs('student.dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.dashboard') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('student.timetable') }}" class="{{ request()->routeIs('student.timetable') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.timetable') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         {{ __('Emploi du temps') }}
@@ -71,14 +80,14 @@
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Suivi Pédagogique') }}</p>
                 <div class="mt-2 space-y-1">
-                    <a href="{{ route('student.dashboard') }}" class="{{ request()->routeIs('student.dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.dashboard') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('student.notes') }}" class="{{ request()->routeIs('student.notes') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.notes') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                         {{ __('Mes Notes') }}
                     </a>
-                    <a href="{{ route('bulletins.index') }}" class="{{ request()->routeIs('bulletins.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('bulletins.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('student.bulletins') }}" class="{{ request()->routeIs('student.bulletins') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.bulletins') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         {{ __('Bulletins') }}
@@ -162,6 +171,17 @@
                         <a href="{{ route('school-years.index') }}" class="{{ request()->routeIs('school-years.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Années scolaires') }}</a>
                     </div>
                 </div>
+
+                <div x-data="{ open: {{ request()->routeIs('announcements.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Notifications & Communications') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('announcements.create') }}" class="{{ request()->routeIs('announcements.create') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Nouvelle notification') }}</a>
+                        <a href="{{ route('announcements.index') }}" class="{{ request()->routeIs('announcements.index', 'announcements.show', 'announcements.edit', 'announcements.preview') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Historique') }}</a>
+                    </div>
+                </div>
             </div>
             @endrole
 
@@ -202,6 +222,21 @@
                         </svg>
                         {{ __('Logs Connexion') }}
                     </a>
+                    <div x-data="{ open: {{ request()->routeIs('announcements.*') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                            <span class="flex items-center">
+                                <svg class="mr-3 flex-shrink-0 h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                {{ __('Notifications') }}
+                            </span>
+                            <span x-text="open ? '−' : '+'"></span>
+                        </button>
+                        <div x-show="open" x-collapse class="ml-4 space-y-1">
+                            <a href="{{ route('announcements.create') }}" class="{{ request()->routeIs('announcements.create') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Nouvelle notification') }}</a>
+                            <a href="{{ route('announcements.index') }}" class="{{ request()->routeIs('announcements.index', 'announcements.show', 'announcements.edit', 'announcements.preview') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Historique') }}</a>
+                        </div>
+                    </div>
                 </div>
             </div>
             @endrole
@@ -375,6 +410,55 @@
                     </div>
 
                     <div class="flex items-center">
+                        @can('voir-notifications')
+                        <div x-data="notificationBell()" x-init="init()" class="relative mr-2" @click.away="open = false">
+                            <button @click="open = !open" class="relative p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-slate-700 transition-colors duration-200">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                <span x-show="count > 0" x-text="count" x-cloak class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full min-w-[1.25rem]"></span>
+                            </button>
+
+                            <div x-show="open" x-cloak class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50" x-transition>
+                                <div class="p-3 border-b border-gray-100 dark:border-slate-700 font-semibold text-sm text-gray-800 dark:text-gray-200">Notifications</div>
+                                <div class="max-h-64 overflow-y-auto">
+                                    <template x-for="n in notifications" :key="n.id">
+                                        <a :href="n.url" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 border-b border-gray-100 dark:border-slate-700">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full"
+                                                    :class="{ 'bg-red-500': n.type === 'urgent', 'bg-amber-500': n.type === 'important', 'bg-blue-500': true }"></span>
+                                                <span class="text-sm font-medium text-gray-900 dark:text-white truncate" x-text="n.title"></span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="n.created_at"></div>
+                                        </a>
+                                    </template>
+                                    <div x-show="notifications.length === 0" class="px-4 py-6 text-sm text-gray-500 dark:text-gray-400 text-center">Aucune notification non lue.</div>
+                                </div>
+                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-center text-sm text-indigo-600 dark:text-indigo-400 bg-gray-50 dark:bg-slate-700/50 rounded-b-md hover:underline">Voir tout</a>
+                            </div>
+
+                            <script>
+                                function notificationBell() {
+                                    return {
+                                        open: false,
+                                        count: 0,
+                                        notifications: [],
+                                        init() {
+                                            this.fetch();
+                                            setInterval(() => this.fetch(), 60000);
+                                        },
+                                        fetch() {
+                                            fetch('{{ route('notifications.unread') }}')
+                                                .then(r => r.ok ? r.json() : { count: 0, notifications: [] })
+                                                .then(data => { this.count = data.count || 0; this.notifications = data.notifications || []; })
+                                                .catch(() => { this.count = 0; this.notifications = []; });
+                                        }
+                                    }
+                                }
+                            </script>
+                        </div>
+                        @endcan
+
                         <!-- Dark Mode Toggle -->
                         <button @click="dark = !dark" class="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-slate-700 transition-colors duration-200 mr-4">
                             <svg x-show="!dark" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -6,7 +6,19 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            @if (session('payment_receipt') == $payment->id)
+                <div class="rounded-lg border border-green-200 bg-green-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 dark:border-green-900 dark:bg-green-900/20">
+                    <div class="text-sm text-green-800 dark:text-green-200">
+                        <p class="font-semibold">Paiement effectué avec succès</p>
+                        <p>Le reçu <span class="font-mono">{{ $payment->receipt_number }}</span> est disponible.</p>
+                    </div>
+                    <a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                        Voir le reçu
+                    </a>
+                </div>
+            @endif
+
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <!-- Boutons d'action -->

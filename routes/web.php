@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Api\StudentController as ApiStudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BulletinController;
@@ -25,8 +26,10 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserNotificationController;
 use App\Models\Classroom;
 use App\Models\Invoice;
+use App\Models\Matiere;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
@@ -160,10 +163,10 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.pdf');
         
         // Types de frais
-        Route::resource('fee-types', FeeTypeController::class)->only(['index', 'create', 'edit', 'update', 'destroy']);
-        
+        Route::resource('fee-types', FeeTypeController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+
         // Frais par classe
-        Route::resource('classroom-fees', ClassroomFeeController::class)->only(['index', 'create', 'edit', 'update', 'destroy']);
+        Route::resource('classroom-fees', ClassroomFeeController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     });
 
     Route::middleware(['auth'])->group(function () {
@@ -189,16 +192,45 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
     // ✅ CORRIGÉ : plus de doublon
     Route::middleware(['role:eleve'])->group(function () {
+        Route::get('/mon-espace/notes', function () {
+            $user = auth()->user();
+            $notes = $user->notes()->with('matiere')->latest()->get();
+
+            return view('students.notes', compact('user', 'notes'));
+        })->name('student.notes');
+
+        Route::get('/mon-espace/emploi-du-temps', function () {
+            $user = auth()->user();
+            $registration = $user->latestRegistration;
+            $registration?->load(['classroom.teachers.user', 'classroom.schoolYear', 'schoolYear']);
+
+            $matieres = Matiere::all()->keyBy('id');
+
+            return view('students.timetable', compact('user', 'registration', 'matieres'));
+        })->name('student.timetable');
+
+        Route::get('/mon-espace/bulletins', function () {
+            $user = auth()->user();
+
+            return view('students.bulletins', compact('user'));
+        })->name('student.bulletins');
+
         Route::get('/mon-espace', function () {
             $user = auth()->user();
-            $user->load('latestRegistration.classroom.schoolYear');
+            $user->load([
+                'latestRegistration.classroom.schoolYear',
+                'parents',
+                'attendances.classroom',
+                'sanctions',
+            ]);
 
             $registration = $user->latestRegistration;
             $notes = $user->notes()->with('matiere')->latest()->take(5)->get();
             $moyenne = $user->notes()->avg('valeur') ?? 0;
             $payments = $registration ? $registration->payments()->latest()->take(5)->get() : collect();
             $totalPaid = $registration ? $registration->payments()->sum('amount') : 0;
-            $totalDue = $registration ? ($registration->monthly_fee * 9) : 0;
+            $schoolMonthsCount = count(config('edu.school_months'));
+            $totalDue = $registration ? ($registration->monthly_fee * $schoolMonthsCount) : 0;
             $remaining = $totalDue - $totalPaid;
 
             return view('students.dashboard', compact(
@@ -254,6 +286,21 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::resource('teachers', TeacherController::class);
         Route::get('/teachers-export-pdf', [TeacherController::class, 'exportPdf'])->name('teachers.export-pdf');
         Route::get('/teachers-export-csv', [TeacherController::class, 'exportCsv'])->name('teachers.export-csv');
+
+        // Notifications & Communications
+        Route::get('/announcements/{announcement}/preview', [AnnouncementController::class, 'preview'])->name('announcements.preview');
+        Route::post('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish'])->name('announcements.publish');
+        Route::post('/announcements/{announcement}/archive', [AnnouncementController::class, 'archive'])->name('announcements.archive');
+        Route::resource('announcements', AnnouncementController::class);
+    });
+
+    // Centre de notifications pour tous les utilisateurs authentifiés
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [UserNotificationController::class, 'index'])->name('index');
+        Route::get('/unread', [UserNotificationController::class, 'unread'])->name('unread');
+        Route::post('/mark-all-read', [UserNotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::post('/{notification}/mark-as-read', [UserNotificationController::class, 'markAsRead'])->name('mark-as-read');
+        Route::get('/{notification}', [UserNotificationController::class, 'show'])->name('show');
     });
 
 });

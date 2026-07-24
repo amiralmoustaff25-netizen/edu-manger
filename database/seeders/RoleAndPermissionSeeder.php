@@ -133,6 +133,16 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-logs-connexion',
             'voir-detail-log-connexion',
 
+            // --- Notifications & Communications ---
+            'voir-notifications',
+            'creer-notification',
+            'publier-notification',
+            'programmer-notification',
+            'modifier-notification',
+            'archiver-notification',
+            'voir-historique-notifications',
+            'voir-statistiques-lecture',
+
             // --- Cahier de textes & Programmes ---
             'voir-programmes',
             'creer-programme',
@@ -218,6 +228,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
             'voir-paiements',
             'enregistrer-paiement',
             'valider-paiement-partiel',
@@ -254,6 +265,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
             'voir-paiements',
             'enregistrer-paiement',
             'voir-comptabilite',
@@ -281,6 +293,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
             'voir-programmes',
             'valider-programme-surveillant',
             'rejeter-programme',
@@ -293,6 +306,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
             'voir-sa-classe',
             'saisir-notes',
             'marquer-absences',
@@ -313,6 +327,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
             'voir-ses-enfants',
             'voir-ses-paiements-enfants',
             'voir-ses-notes-enfants',
@@ -323,6 +338,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-dashboard',
             'voir-profil',
             'modifier-profil',
+            'voir-notifications',
         ]);
 
         // =================================================================

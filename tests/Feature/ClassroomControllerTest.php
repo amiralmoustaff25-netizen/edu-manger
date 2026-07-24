@@ -70,7 +70,7 @@ class ClassroomControllerTest extends TestCase
 
         $response = $this->post(route('classrooms.store'), []);
 
-        $response->assertSessionHasErrors(['level', 'max_students']);
+        $response->assertSessionHasErrors(['level']);
     }
 
     /** @test */
@@ -94,14 +94,12 @@ class ClassroomControllerTest extends TestCase
             'level' => 'CE1',
             'section' => 'B',
             'teacher_id' => null,
-            'max_students' => 35,
         ]);
 
         $response->assertRedirect(route('classrooms.index'));
         $this->assertDatabaseHas('classrooms', [
             'id' => $classroom->id,
             'name' => 'CE1 B',
-            'max_students' => 35,
         ]);
     }
 

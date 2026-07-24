@@ -26,12 +26,29 @@
                     </a>
                 </div>
 
-                <div class="w-full sm:w-auto sm:max-w-md flex-1">
-                    <input type="text"
-                           id="search"
-                           placeholder="Rechercher par nom, matricule..."
-                           class="w-full border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
-                </div>
+                <form method="GET" action="{{ route('students.index') }}" class="w-full lg:flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text"
+                               name="search"
+                               value="{{ request('search') }}"
+                               placeholder="Rechercher par nom, matricule..."
+                               class="flex-1 min-w-[12rem] border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
+                        <select name="classroom_id" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
+                            <option value="">Toutes les classes</option>
+                            @foreach($classrooms as $classroom)
+                                <option value="{{ $classroom->id }}" {{ request('classroom_id') == $classroom->id ? 'selected' : '' }}>{{ $classroom->name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="status" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
+                            <option value="">Tous statuts</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actif</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>En attente</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactif</option>
+                        </select>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">Filtrer</button>
+                        <a href="{{ route('students.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 text-center dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">Réinit.</a>
+                    </div>
+                </form>
             </div>
 
             <!-- Tableau des élèves -->
