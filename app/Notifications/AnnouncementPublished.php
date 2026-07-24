@@ -3,14 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\Announcement;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AnnouncementPublished extends Notification implements ShouldQueue
+class AnnouncementPublished extends Notification
 {
-    use Queueable;
 
     public function __construct(public Announcement $announcement)
     {

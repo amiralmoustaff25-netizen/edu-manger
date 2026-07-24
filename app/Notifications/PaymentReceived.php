@@ -3,15 +3,12 @@
 namespace App\Notifications;
 
 use App\Models\Payment;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 
-class PaymentReceived extends Notification implements ShouldQueue
+class PaymentReceived extends Notification
 {
-    use Queueable;
 
     protected $payment;
 
@@ -39,13 +36,14 @@ class PaymentReceived extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $schoolName = config('app.name', 'École');
-        $studentName = $this->payment->registration->user->name;
+        $student = $this->payment->registration->user;
+        $studentName = $student->name;
         $className = $this->payment->registration->classroom->name ?? 'Non assigné';
-        
+
         $mail = (new MailMessage)
             ->subject("Reçu de paiement - {$schoolName}")
-            ->greeting("Bonjour {$studentName},")
-            ->line("Nous confirmons avoir reçu votre paiement de **" . number_format($this->payment->amount, 0) . " FCFA**.")
+            ->greeting("Bonjour {$notifiable->name},")
+            ->line("Nous confirmons avoir reçu un paiement de **" . number_format($this->payment->amount, 0) . " FCFA** pour l'élève **{$studentName}**.")
             ->line("**Détails du paiement :**")
             ->line("- Mois : {$this->payment->month}")
             ->line("- Date : {$this->payment->payment_date->format('d/m/Y')}")
@@ -73,13 +71,19 @@ class PaymentReceived extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
+        $student = $this->payment->registration->user;
+
         return [
             'payment_id' => $this->payment->id,
             'amount' => $this->payment->amount,
             'month' => $this->payment->month,
             'receipt_number' => $this->payment->receipt_number,
-            'student_name' => $this->payment->registration->user->name,
-            'message' => 'Paiement reçu avec succès',
+            'student_name' => $student->name,
+            'title' => 'Paiement reçu',
+            'type' => 'information',
+            'priority' => 'normal',
+            'category' => 'administrative',
+            'content' => "Un paiement de " . number_format($this->payment->amount, 0) . " FCFA a été reçu pour l'élève " . $student->name . " (reçu n° " . $this->payment->receipt_number . ").",
         ];
     }
 }

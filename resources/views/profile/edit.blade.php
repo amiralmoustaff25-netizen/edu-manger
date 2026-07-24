@@ -70,7 +70,7 @@
 
                         <!-- Formulaire -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            
+
                             <!-- Nom -->
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -95,6 +95,82 @@
                                 @enderror
                             </div>
 
+                            <!-- Téléphone -->
+                            <div>
+                                <label for="telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Téléphone') }}
+                                </label>
+                                <input type="text" id="telephone" name="telephone" value="{{ old('telephone', $user->telephone) }}"
+                                       class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('telephone')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Date de naissance -->
+                            <div>
+                                <label for="date_naissance" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Date de naissance') }}
+                                </label>
+                                <input type="date" id="date_naissance" name="date_naissance" value="{{ old('date_naissance', $user->date_naissance?->format('Y-m-d')) }}"
+                                       class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('date_naissance')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Lieu de naissance -->
+                            <div>
+                                <label for="lieu_naissance" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Lieu de naissance') }}
+                                </label>
+                                <input type="text" id="lieu_naissance" name="lieu_naissance" value="{{ old('lieu_naissance', $user->lieu_naissance) }}"
+                                       class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('lieu_naissance')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Sexe -->
+                            <div>
+                                <label for="sexe" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Sexe') }}
+                                </label>
+                                <select id="sexe" name="sexe"
+                                        class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">{{ __('Sélectionner') }}</option>
+                                    <option value="M" @selected(old('sexe', $user->sexe) === 'M')>{{ __('Masculin') }}</option>
+                                    <option value="F" @selected(old('sexe', $user->sexe) === 'F')>{{ __('Féminin') }}</option>
+                                </select>
+                                @error('sexe')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Nationalité -->
+                            <div>
+                                <label for="nationalite" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Nationalité') }}
+                                </label>
+                                <input type="text" id="nationalite" name="nationalite" value="{{ old('nationalite', $user->nationalite) }}"
+                                       class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('nationalite')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Adresse -->
+                            <div class="md:col-span-2">
+                                <label for="adresse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ __('Adresse') }}
+                                </label>
+                                <input type="text" id="adresse" name="adresse" value="{{ old('adresse', $user->adresse) }}"
+                                       class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                @error('adresse')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             <!-- Matricule (lecture seule) -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -113,6 +189,58 @@
                                        class="w-full rounded-lg border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                             </div>
 
+                        </div>
+
+                        <!-- Coordonnées d'urgence et infos médicales -->
+                        <div class="border-t border-gray-200 dark:border-slate-700 pt-6 mb-8">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                {{ __('Urgence & Santé') }}
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        {{ __('Contact d\'urgence (nom)') }}
+                                    </label>
+                                    <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ old('emergency_contact_name', $user->emergency_contact_name) }}"
+                                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                    @error('emergency_contact_name')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        {{ __('Téléphone d\'urgence') }}
+                                    </label>
+                                    <input type="text" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ old('emergency_contact_phone', $user->emergency_contact_phone) }}"
+                                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                    @error('emergency_contact_phone')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="allergies" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        {{ __('Allergies') }}
+                                    </label>
+                                    <input type="text" id="allergies" name="allergies" value="{{ old('allergies', $user->allergies) }}"
+                                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                                    @error('allergies')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label for="medical_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        {{ __('Notes médicales') }}
+                                    </label>
+                                    <textarea id="medical_notes" name="medical_notes" rows="3"
+                                              class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">{{ old('medical_notes', $user->medical_notes) }}</textarea>
+                                    @error('medical_notes')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Informations complémentaires (lecture seule) -->

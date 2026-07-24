@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
@@ -205,7 +206,15 @@ class PaymentController extends Controller
             );
 
             if ($payment->status === 'complet') {
-                $registration->user->notify(new PaymentReceived($payment));
+                $student = $registration->user;
+
+                $student->notify(new PaymentReceived($payment));
+
+                $parentUsers = $student->parents()->with('user')->get()->pluck('user')->filter();
+
+                if ($parentUsers->isNotEmpty()) {
+                    Notification::send($parentUsers, new PaymentReceived($payment));
+                }
             }
 
             $this->activateRegistrationIfNeeded($registration);

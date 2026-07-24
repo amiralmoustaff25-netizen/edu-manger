@@ -47,14 +47,6 @@
             @endcan
 
             @role('eleve')
-            <!-- Mon Dossier -->
-            <div class="mt-6">
-                <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Mon Dossier') }}</p>
-                <div class="mt-2 space-y-1">
-                    <!-- Placeholder if needed, removed duplicate Mon Profil -->
-                </div>
-            </div>
-
             <!-- Vie Scolaire -->
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Vie Scolaire') }}</p>

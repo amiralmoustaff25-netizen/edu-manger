@@ -13,6 +13,8 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
+        abort_if($request->user()->hasRole('eleve'), 403);
+
         $user = $request->user();
         $user->load('latestRegistration.classroom.schoolYear');
 
@@ -39,6 +41,8 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        abort_if($request->user()->hasRole('eleve'), 403);
+
         $user = $request->user();
         $user->fill($request->validated());
 

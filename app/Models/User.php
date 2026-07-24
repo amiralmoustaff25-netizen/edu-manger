@@ -103,6 +103,7 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'contract_started_at' => 'date',
         'password_must_change' => 'boolean',
+        'date_naissance' => 'date',
     ];
 
     public function creator()

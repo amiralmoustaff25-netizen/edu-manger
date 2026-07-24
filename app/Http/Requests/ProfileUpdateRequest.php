@@ -26,7 +26,16 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            'matricule' => ['sometimes', 'required', 'string', 'max:20', Rule::unique(User::class)->ignore($this->user()->id)],
+            'telephone' => ['nullable', 'string', 'max:20'],
+            'date_naissance' => ['nullable', 'date'],
+            'lieu_naissance' => ['nullable', 'string', 'max:255'],
+            'sexe' => ['nullable', Rule::in(['M', 'F'])],
+            'nationalite' => ['nullable', 'string', 'max:255'],
+            'adresse' => ['nullable', 'string', 'max:500'],
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
+            'medical_notes' => ['nullable', 'string', 'max:1000'],
+            'allergies' => ['nullable', 'string', 'max:500'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
     }
