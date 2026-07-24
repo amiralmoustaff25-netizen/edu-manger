@@ -48,6 +48,7 @@ class StudentEnrollmentService
                 'classroom_id' => $data['classroom_id'],
                 'registration_fee_paid' => $data['registration_fee_paid'] ?? 0,
                 'monthly_fee' => $data['monthly_fee'] ?? 0,
+                'options' => $this->normalizeOptions($data['options'] ?? []),
                 'registration_date' => now()->toDateString(),
                 'academic_year' => $activeYear->year_string,
                 'school_year_id' => $activeYear->id,
@@ -106,5 +107,13 @@ class StudentEnrollmentService
         } while (Registration::where('matricule', $matricule)->exists());
 
         return $matricule;
+    }
+
+    private function normalizeOptions(array $options): array
+    {
+        return collect($options)
+            ->only(['cantine', 'transport', 'internat'])
+            ->map(fn ($value) => (bool) $value)
+            ->toArray();
     }
 }

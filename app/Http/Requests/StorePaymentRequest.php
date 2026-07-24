@@ -15,12 +15,13 @@ class StorePaymentRequest extends FormRequest
     {
         return [
             'registration_id' => ['required', 'exists:registrations,id'],
-            'amount_paid' => ['required', 'numeric', 'min:0'],
+            'amount_paid' => ['required', 'numeric', 'min:0.01'],
             'month' => ['required', 'string', 'max:50'],
             'payment_date' => ['nullable', 'date'],
             'payment_method' => ['nullable', 'string', 'max:50'],
             'payment_type' => ['nullable', 'string', 'max:50'],
             'comment' => ['nullable', 'string'],
+            'selected_fees' => ['nullable', 'json'],
         ];
     }
 
@@ -30,7 +31,7 @@ class StorePaymentRequest extends FormRequest
             'registration_id.required' => 'L\'inscription est obligatoire.',
             'amount_paid.required' => 'Le montant est obligatoire.',
             'amount_paid.numeric' => 'Le montant doit être un nombre.',
-            'amount_paid.min' => 'Le montant ne peut pas être négatif.',
+            'amount_paid.min' => 'Le montant doit être supérieur à 0.',
             'month.required' => 'Le mois est obligatoire.',
         ];
     }

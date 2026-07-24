@@ -10,60 +10,68 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
-    public function canPayInvoice(Invoice $invoice): bool
+    /**
+     * Applique un paiement aux factures en attente de l'inscription.
+     * Renvoie le montant non alloué aux factures (non compté comme surplus cash).
+     */
+    public function applyPaymentToInvoices(Payment $payment, Registration $registration, ?float $maxAmount = null): float
     {
-        $registration = $invoice->registration;
+        $remaining = $maxAmount ?? (float) $payment->amount;
 
-        $previousInvoices = Invoice::where('registration_id', $registration->id)
-            ->where('id', '<', $invoice->id)
-            ->orderBy('id', 'asc')
+        if ($remaining <= 0) {
+            return 0;
+        }
+
+        $invoices = Invoice::where('registration_id', $registration->id)
+            ->whereIn('status', ['draft', 'sent', 'partial', 'overdue'])
+            ->orderBy('due_date')
             ->get();
 
-        foreach ($previousInvoices as $prevInvoice) {
-            if (!in_array($prevInvoice->status, ['paid', 'partial'])) {
-                return false;
+        foreach ($invoices as $invoice) {
+            if ($remaining <= 0) {
+                break;
             }
 
-            if ($prevInvoice->status === 'partial' && $prevInvoice->remaining_balance > 0) {
-                return false;
+            $toApply = min($remaining, (float) $invoice->remaining_balance);
+            if ($toApply <= 0) {
+                continue;
             }
+
+            $invoice->remaining_balance -= $toApply;
+            $invoice->status = $invoice->remaining_balance <= 0 ? 'paid' : 'partial';
+            $invoice->save();
+
+            $payment->invoices()->attach($invoice->id, [
+                'amount_applied' => $toApply,
+            ]);
+
+            $remaining -= $toApply;
         }
 
-        return true;
+        return $remaining;
     }
 
-    public function applyPaymentToInvoice(Payment $payment, Invoice $invoice): void
+    /**
+     * Enregistre un surplus de paiement comme crédit disponible pour l'élève.
+     */
+    public function recordSurplusCredit(Payment $payment, float $amount): void
     {
-        $remainingToPay = min($payment->amount, $invoice->remaining_balance);
-        $invoice->remaining_balance -= $remainingToPay;
-
-        if ($invoice->remaining_balance <= 0) {
-            $invoice->status = 'paid';
-        } else {
-            $invoice->status = 'partial';
-        }
-        $invoice->save();
-
-        $payment->invoices()->attach($invoice->id, [
-            'amount_applied' => $remainingToPay,
-        ]);
-    }
-
-    public function handleSurplusAsCredit(Registration $registration, float $surplus): void
-    {
-        if ($surplus <= 0) {
+        if ($amount <= 0) {
             return;
         }
 
-        CreditNote::create([
-            'registration_id' => $registration->id,
-            'amount' => $surplus,
+        \App\Models\Credit::create([
+            'registration_id' => $payment->registration_id,
+            'payment_id' => $payment->id,
+            'amount' => $amount,
             'reason' => 'Surplus de paiement',
-            'used_amount' => 0,
             'status' => 'available',
         ]);
     }
 
+    /**
+     * Journalise une action comptable dans la table d'audit.
+     */
     public function logAction(
         string $action,
         string $modelType,

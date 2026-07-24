@@ -45,7 +45,7 @@
                             <div>
                                 <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois</label>
                                 <select name="month" id="month" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    @foreach(['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'] as $m)
+                                    @foreach(config('edu.school_months') as $m)
                                         <option value="{{ $m }}" {{ $payment->month === $m ? 'selected' : '' }}>{{ $m }}</option>
                                     @endforeach
                                 </select>

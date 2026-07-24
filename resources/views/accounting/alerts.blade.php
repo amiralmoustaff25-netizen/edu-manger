@@ -81,8 +81,11 @@
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ number_format($student['total_paid'], 0, ',', ' ') }} FCFA</td>
                                         <td class="px-4 py-3 text-sm text-red-600 dark:text-red-400 font-medium">{{ number_format($student['total_remaining'], 0, ',', ' ') }} FCFA</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $student['last_payment_date']?->format('d/m/Y') ?? '-' }}</td>
-                                        <td class="px-4 py-3 text-right text-sm font-medium">
+                                        <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('payments.index', ['search' => $student['student']->name]) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Voir paiements</a>
+                                            @can('enregistrer-paiement')
+                                                <a href="{{ route('payments.create', ['matricule' => $student['student']->matricule]) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">Payer</a>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @empty
@@ -169,8 +172,11 @@
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $student['classroom']?->name ?? 'Non assigné' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $student['last_payment_date']?->format('d/m/Y') ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-yellow-600 dark:text-yellow-400 font-medium">{{ $student['days_since_last_payment'] }} jours</td>
-                                        <td class="px-4 py-3 text-right text-sm font-medium">
+                                        <td class="px-4 py-3 text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('payments.index', ['search' => $student['student']->name]) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Voir paiements</a>
+                                            @can('enregistrer-paiement')
+                                                <a href="{{ route('payments.create', ['matricule' => $student['student']->matricule]) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">Payer</a>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @empty

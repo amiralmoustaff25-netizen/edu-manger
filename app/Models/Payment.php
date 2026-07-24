@@ -32,6 +32,7 @@ class Payment extends Model
         'validated_by',       // ID du manager qui a validé si partiel
         'validated_at',       // Date de validation
         'receipt_number',     // Numéro de reçu
+        'fee_breakdown',      // Détail des frais couverts
     ];
 
     /**
@@ -44,6 +45,7 @@ class Payment extends Model
             'validated_at' => 'datetime',
             'amount' => 'decimal:2',
             'remaining_balance' => 'decimal:2',
+            'fee_breakdown' => 'array',
         ];
     }
 

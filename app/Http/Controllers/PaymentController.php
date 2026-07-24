@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
-use App\Models\Credit;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Notifications\PaymentReceived;
+use App\Services\FeeService;
+use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -17,7 +19,7 @@ class PaymentController extends Controller
 {
     public function index(Request $request): View
     {
-        $this->authorize('voir-comptabilite');
+        $this->authorize('viewAny', Payment::class);
 
         $query = Payment::with(['registration.user', 'registration.classroom', 'validatedBy']);
 
@@ -48,14 +50,14 @@ class PaymentController extends Controller
 
     public function create(): View
     {
-        $this->authorize('enregistrer-paiement');
+        $this->authorize('create', Payment::class);
 
         return view('accounting.payments.create');
     }
 
     public function show(Payment $payment): View
     {
-        $this->authorize('voir-comptabilite');
+        $this->authorize('view', $payment);
 
         $payment->load(['registration.user', 'registration.classroom', 'validatedBy']);
 
@@ -104,7 +106,7 @@ class PaymentController extends Controller
 
     public function exportReceipt(Payment $payment)
     {
-        $this->authorize('voir-comptabilite');
+        $this->authorize('view', $payment);
 
         $payment->load(['registration.user', 'registration.classroom', 'validatedBy']);
 
@@ -113,96 +115,264 @@ class PaymentController extends Controller
         return $pdf->download('recu-' . $payment->receipt_number . '.pdf');
     }
 
-    public function store(StorePaymentRequest $request): RedirectResponse|JsonResponse
+    public function store(StorePaymentRequest $request, FeeService $feeService, PaymentService $paymentService): RedirectResponse|JsonResponse
     {
-        $validated = $request->validated();
+        return DB::transaction(function () use ($request, $feeService, $paymentService) {
+            $validated = $request->validated();
 
-        $registration = Registration::findOrFail($validated['registration_id']);
-        $amountPaid = (float) $validated['amount_paid'];
-        
-        // Récupérer les frais sélectionnés si présents
-        $selectedFees = $request->input('selected_fees', []);
-        
-        if (empty($selectedFees)) {
-            // Mode ancien : paiement simple mensuel
-            $expectedMonthlyFee = (float) $registration->monthly_fee;
-            $isPartial = $amountPaid < $expectedMonthlyFee;
+            $registration = Registration::with(['user', 'classroom', 'schoolYear'])->findOrFail($validated['registration_id']);
+            $amountPaid = (float) $validated['amount_paid'];
 
-            if ($isPartial && Gate::denies('validatePartial', Payment::class)) {
-                abort(403, 'Seul le manager-comptable peut valider un paiement partiel.');
+            $selectedFees = $this->decodeSelectedFees($validated['selected_fees'] ?? null);
+
+            if (!empty($selectedFees)) {
+                $breakdown = $this->buildMultipleFeeBreakdown($registration, $feeService, $selectedFees);
+            } else {
+                $breakdown = $this->buildSimpleFeeBreakdown($registration, $feeService, $validated, $amountPaid);
             }
 
-            $payment = Payment::create([
-                'registration_id' => $registration->id,
-                'amount' => $amountPaid,
-                'status' => $isPartial ? 'partiel' : 'complet',
-                'remaining_balance' => $isPartial ? $expectedMonthlyFee - $amountPaid : 0,
-                'month' => $validated['month'],
-                'payment_date' => $validated['payment_date'] ?? now(),
-                'payment_method' => $validated['payment_method'] ?? 'espèces',
-                'payment_type' => $validated['payment_type'] ?? 'mensualité',
-                'comment' => $validated['comment'] ?? null,
-                'validated_by' => auth()->id(),
-            ]);
-
-            // Gestion du trop-perçu
-            if ($amountPaid > $expectedMonthlyFee) {
-                $overpayment = $amountPaid - $expectedMonthlyFee;
-                $this->handleOverpayment($registration, $payment, $overpayment, config('edu.overpayment_mode', 'change'));
+            if (!empty($breakdown['error'])) {
+                return back()->withErrors(['selected_fees' => $breakdown['error']])->withInput();
             }
 
-            // Envoyer la notification au parent/élève
-            if ($payment->status === 'complet') {
-                $registration->user->notify(new PaymentReceived($payment));
+            if (empty($breakdown['items'])) {
+                return back()->withErrors(['amount_paid' => 'Aucun frais valide sélectionné.'])->withInput();
             }
 
-            $this->activateRegistrationIfNeeded($registration);
-        } else {
-            // Mode nouveau : paiement de plusieurs frais
-            $totalExpected = collect($selectedFees)->sum('amount');
+            $totalExpected = $breakdown['total_expected'];
+
+            if ($amountPaid <= 0) {
+                return back()->withErrors(['amount_paid' => 'Le montant versé doit être supérieur à 0.'])->withInput();
+            }
+
+            $items = $breakdown['items'];
+            $remaining = $amountPaid;
+            $allocatedItems = [];
+            foreach ($items as $item) {
+                $due = (float) ($item['remaining_amount'] ?? $item['amount']);
+                $applied = min($remaining, $due);
+                $item['amount_paid'] = $applied;
+                $item['remaining_balance'] = $due - $applied;
+                $remaining -= $applied;
+                $allocatedItems[] = $item;
+                if ($remaining <= 0) {
+                    break;
+                }
+            }
+
             $isPartial = $amountPaid < $totalExpected;
 
-            if ($isPartial && Gate::denies('validatePartial', Payment::class)) {
-                abort(403, 'Seul le manager-comptable peut valider un paiement partiel.');
+            if ($isPartial) {
+                Gate::authorize('validatePartial');
             }
 
-            // Créer un paiement principal regroupé
+            $remainingBalance = max(0, $totalExpected - $amountPaid);
+            $canValidatePartial = Gate::allows('validatePartial');
+
             $payment = Payment::create([
                 'registration_id' => $registration->id,
                 'amount' => $amountPaid,
                 'status' => $isPartial ? 'partiel' : 'complet',
-                'remaining_balance' => $isPartial ? $totalExpected - $amountPaid : 0,
-                'month' => $validated['month'] ?? 'Multiple',
+                'remaining_balance' => $remainingBalance,
+                'month' => $this->getPaymentMonth($allocatedItems, $validated['month'] ?? null),
                 'payment_date' => $validated['payment_date'] ?? now(),
                 'payment_method' => $validated['payment_method'] ?? 'espèces',
-                'payment_type' => 'multiple',
-                'comment' => $validated['comment'] ?? 'Paiement de plusieurs frais: ' . collect($selectedFees)->pluck('description')->implode(', '),
-                'validated_by' => auth()->id(),
-                'receipt_number' => $this->generateReceiptNumber(),
+                'payment_type' => $this->getPaymentType($allocatedItems, $validated['payment_type'] ?? null),
+                'comment' => $validated['comment'] ?? null,
+                'fee_breakdown' => $allocatedItems,
+                'validated_by' => ($isPartial && $canValidatePartial) ? auth()->id() : ($isPartial ? null : auth()->id()),
             ]);
 
-            // Gestion du trop-perçu
+            $paymentService->applyPaymentToInvoices($payment, $registration, min($amountPaid, $totalExpected));
+
             if ($amountPaid > $totalExpected) {
-                $overpayment = $amountPaid - $totalExpected;
-                $this->handleOverpayment($registration, $payment, $overpayment, config('edu.overpayment_mode', 'change'));
+                $surplus = $amountPaid - $totalExpected;
+                if (config('edu.overpayment_mode', 'change') === 'credit') {
+                    $paymentService->recordSurplusCredit($payment, $surplus);
+                } else {
+                    $payment->comment = trim(($payment->comment ?? '') . ' [Monnaie rendue: ' . number_format($surplus, 2) . ' FCFA]');
+                    $payment->save();
+                }
             }
 
-            // Envoyer la notification au parent/élève
+            $paymentService->logAction(
+                'created',
+                Payment::class,
+                $payment->id,
+                null,
+                $payment->toArray(),
+                'Paiement enregistré via formulaire'
+            );
+
             if ($payment->status === 'complet') {
                 $registration->user->notify(new PaymentReceived($payment));
             }
 
             $this->activateRegistrationIfNeeded($registration);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Paiement enregistré.', 'payment' => $payment], 201);
+            }
+
+            return redirect()->route('payments.show', $payment)->with('success', 'Paiement enregistré avec succès. Reçu : ' . $payment->receipt_number);
+        });
+    }
+
+    private function decodeSelectedFees(mixed $selectedFees): array
+    {
+        if (is_string($selectedFees)) {
+            $decoded = json_decode($selectedFees, true);
+            return is_array($decoded) ? $decoded : [];
         }
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Paiement enregistré avec succès.',
-                'payment' => $payment,
-            ], 201);
+        return is_array($selectedFees) ? $selectedFees : [];
+    }
+
+    private function buildMultipleFeeBreakdown(Registration $registration, FeeService $feeService, array $selectedFees): array
+    {
+        $pendingFees = collect($feeService->getPendingFees($registration))->keyBy('id');
+        $items = [];
+        $totalExpected = 0.0;
+
+        foreach ($selectedFees as $input) {
+            $id = $input['id'] ?? null;
+
+            if (!$id || !$pendingFees->has($id)) {
+                return ['items' => [], 'total_expected' => 0, 'error' => 'Un frais sélectionné est invalide ou a déjà été payé.'];
+            }
+
+            $fee = $pendingFees->get($id);
+
+            if ($fee['status'] === 'paid') {
+                return ['items' => [], 'total_expected' => 0, 'error' => "Frais déjà payé : {$fee['description']}"];
+            }
+
+            $inputAmount = (float) ($input['amount'] ?? 0);
+            $remainingAmount = (float) ($fee['remaining_amount'] ?? $fee['amount']);
+
+            if (abs($inputAmount - $remainingAmount) > 0.01) {
+                return ['items' => [], 'total_expected' => 0, 'error' => "Montant du frais modifié : {$fee['description']}"];
+            }
+
+            $totalExpected += $remainingAmount;
+            $items[] = $fee;
         }
 
-        return back()->with('success', 'Paiement enregistré avec succès.');
+        return ['items' => $items, 'total_expected' => $totalExpected, 'error' => null];
+    }
+
+    private function buildSimpleFeeBreakdown(Registration $registration, FeeService $feeService, array $validated, float $amountPaid): array
+    {
+        $pendingFees = collect($feeService->getPendingFees($registration))->keyBy('id');
+        $code = $this->normalizePaymentType($validated['payment_type'] ?? 'mensualité');
+        $month = $validated['month'] ?? null;
+
+        if ($code === 'inscription') {
+            $fee = $pendingFees->first(fn ($f) => $f['code'] === 'inscription');
+            if ($fee) {
+                return ['items' => [$fee], 'total_expected' => (float) $fee['remaining_amount'], 'error' => null];
+            }
+        }
+
+        if ($month) {
+            $fee = $pendingFees->first(fn ($f) => $f['code'] === $code && ($f['month'] ?? null) === $month);
+            if ($fee) {
+                return ['items' => [$fee], 'total_expected' => (float) $fee['remaining_amount'], 'error' => null];
+            }
+        }
+
+        $expected = match ($code) {
+            'inscription' => (float) $registration->registration_fee_paid,
+            'mensualite' => (float) $registration->monthly_fee,
+            'autre' => $amountPaid,
+            default => $this->getOptionalFeeAmount($registration, $code),
+        };
+
+        if ($expected <= 0 && $code !== 'autre') {
+            return ['items' => [], 'total_expected' => 0, 'error' => 'Aucun montant configuré pour ce type de frais.'];
+        }
+
+        $fee = [
+            'id' => $month ? "{$code}-{$month}" : $code,
+            'code' => $code,
+            'description' => $month ? "Paiement {$code} - {$month}" : "Paiement {$code}",
+            'month' => $month,
+            'amount' => $expected,
+            'remaining_amount' => $expected,
+            'status' => 'pending',
+            'priority' => 'medium',
+            'due_date' => $validated['payment_date'] ?? now()->toDateString(),
+        ];
+
+        return ['items' => [$fee], 'total_expected' => $expected, 'error' => null];
+    }
+
+    private function getOptionalFeeAmount(Registration $registration, string $code): float
+    {
+        $classroomFee = \App\Models\ClassroomFee::with('feeType')
+            ->where('classroom_id', $registration->classroom_id)
+            ->where('school_year_id', $registration->school_year_id)
+            ->whereHas('feeType', fn ($q) => $q->where('code', $code))
+            ->first();
+
+        return $classroomFee ? (float) $classroomFee->amount : 0;
+    }
+
+    private function getPaymentMonth(array $allocatedItems, ?string $defaultMonth): string
+    {
+        $months = array_filter(array_map(fn ($item) => $item['month'] ?? null, $allocatedItems));
+
+        if (empty($months)) {
+            return $defaultMonth ?? 'Multiple';
+        }
+
+        $unique = array_unique($months);
+
+        return count($unique) === 1 ? array_values($unique)[0] : 'Multiple';
+    }
+
+    private function getPaymentType(array $allocatedItems, ?string $defaultType): string
+    {
+        $codes = array_filter(array_map(fn ($item) => $item['code'] ?? null, $allocatedItems));
+
+        if (empty($codes)) {
+            return $this->displayPaymentType($this->normalizePaymentType($defaultType)) ?: 'Multiple';
+        }
+
+        $unique = array_unique($codes);
+
+        if (count($unique) !== 1) {
+            return 'Multiple';
+        }
+
+        return $this->displayPaymentType(array_values($unique)[0]);
+    }
+
+    private function displayPaymentType(string $code): string
+    {
+        return match ($code) {
+            'inscription' => 'inscription',
+            'mensualite' => 'mensualité',
+            'cantine' => 'cantine',
+            'transport' => 'transport',
+            'internat' => 'internat',
+            'autre' => 'autre',
+            default => $code,
+        };
+    }
+
+    private function normalizePaymentType(?string $type): string
+    {
+        $map = [
+            'mensualité' => 'mensualite',
+            'inscription' => 'inscription',
+            'cantine' => 'cantine',
+            'transport' => 'transport',
+            'internat' => 'internat',
+            'autre' => 'autre',
+        ];
+
+        return $map[mb_strtolower($type ?? '')] ?? mb_strtolower($type ?? '');
     }
 
     private function activateRegistrationIfNeeded(Registration $registration): void
@@ -213,59 +383,9 @@ class PaymentController extends Controller
         }
     }
 
-    private function handleOverpayment(Registration $registration, Payment $payment, float $overpayment, string $mode): void
-    {
-        if ($mode === 'credit') {
-            // Mode crédit : créer un avoir pour l'élève
-            Credit::create([
-                'registration_id' => $registration->id,
-                'payment_id' => $payment->id,
-                'amount' => $overpayment,
-                'reason' => 'Trop-perçu lors du paiement',
-                'status' => 'available',
-            ]);
-            
-            // Ajouter une note au commentaire du paiement
-            $payment->comment .= ' (Avoir créé: ' . number_format($overpayment, 2) . ' FCFA)';
-            $payment->save();
-        }
-        // Mode 'change' : la monnaie est rendue immédiatement, rien à stocker
-    }
-
-    private function validateSequentialPayment(Registration $registration, string $targetMonth): void
-    {
-        $monthsOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        $targetIndex = array_search($targetMonth, $monthsOrder);
-        
-        if ($targetIndex === false) {
-            return; // Mois non reconnu, on ignore
-        }
-
-        // Récupérer tous les paiements de l'élève
-        $payments = Payment::where('registration_id', $registration->id)
-            ->where('status', 'complet')
-            ->pluck('month')
-            ->toArray();
-
-        // Vérifier si tous les mois précédents sont payés
-        for ($i = 0; $i < $targetIndex; $i++) {
-            $previousMonth = $monthsOrder[$i];
-            if (!in_array($previousMonth, $payments)) {
-                abort(400, "Les échéances précédentes doivent être soldées. Le mois de {$previousMonth} n'est pas payé.");
-            }
-        }
-    }
-
-    private function generateReceiptNumber(): string
-    {
-        $date = now()->format('Ymd');
-        $random = strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
-        return "REC-{$date}-{$random}";
-    }
-
     public function validationIndex(): View
     {
-        $this->authorize('manager-comptable');
+        Gate::authorize('validatePartial');
 
         $pendingPayments = Payment::with(['registration.user', 'registration.classroom'])
             ->pendingValidation()
@@ -277,7 +397,7 @@ class PaymentController extends Controller
 
     public function validatePayment(Payment $payment): RedirectResponse
     {
-        $this->authorize('manager-comptable');
+        Gate::authorize('validatePartial');
 
         if ($payment->status !== 'partiel' || $payment->validated_at) {
             return back()->with('error', 'Ce paiement ne peut pas être validé.');
@@ -290,7 +410,7 @@ class PaymentController extends Controller
 
     public function rejectPayment(Payment $payment, Request $request): RedirectResponse
     {
-        $this->authorize('manager-comptable');
+        Gate::authorize('validatePartial');
 
         if ($payment->status !== 'partiel' || $payment->validated_at) {
             return back()->with('error', 'Ce paiement ne peut pas être rejeté.');

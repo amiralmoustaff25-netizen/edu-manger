@@ -13,12 +13,13 @@ class Registration extends Model
 
     protected $fillable = [
         'user_id', 'classroom_id', 'registration_fee_paid',
-        'monthly_fee', 'registration_date', 'academic_year',
+        'monthly_fee', 'options', 'registration_date', 'academic_year',
         'school_year_id', 'matricule', 'status',
     ];
 
     protected $casts = [
         'registration_date' => 'date',
+        'options' => 'array',
     ];
 
     protected static function newFactory()

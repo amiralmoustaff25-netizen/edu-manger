@@ -11,6 +11,7 @@ use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,7 +122,7 @@ class StudentController extends Controller
         return redirect()->route('students.index')->with('success', 'Élève créé avec succès. Matricule : '.$student->matricule.' | Mot de passe temporaire : password');
     }
 
-    public function show(User $student): View
+    public function show(User $student, FeeService $feeService): View
     {
         $this->authorize('voir-detail-eleve', $student);
 
@@ -132,15 +133,17 @@ class StudentController extends Controller
         ]);
 
         $currentRegistration = $student->registrations->first();
-        $totalPaid = $student->registrations->flatMap->payments->sum('amount');
-        $remainingBalance = $student->registrations->flatMap->payments->sum('remaining_balance');
+        $financialSituation = $currentRegistration
+            ? $feeService->getFinancialSituation($currentRegistration)
+            : ['expected' => 0, 'paid' => 0, 'remaining' => 0, 'overdue' => 0, 'next_due' => null, 'monthly_fee' => 0];
 
         return view('students.show', [
             'student' => $student,
             'currentRegistration' => $currentRegistration,
             'classrooms' => Classroom::orderBy('name')->get(),
-            'totalPaid' => $totalPaid,
-            'remainingBalance' => $remainingBalance,
+            'totalPaid' => $financialSituation['paid'],
+            'remainingBalance' => $financialSituation['remaining'],
+            'financialSituation' => $financialSituation,
         ]);
     }
 
@@ -202,7 +205,12 @@ class StudentController extends Controller
 
             $currentRegistration = $student->latestRegistration;
             if ($currentRegistration) {
-                $currentRegistration->update(['classroom_id' => $validated['classroom_id']]);
+                $currentRegistration->update([
+                    'classroom_id' => $validated['classroom_id'],
+                    'registration_fee_paid' => $validated['registration_fee_paid'] ?? $currentRegistration->registration_fee_paid,
+                    'monthly_fee' => $validated['monthly_fee'] ?? $currentRegistration->monthly_fee,
+                    'options' => $this->normalizeOptions($validated['options'] ?? []),
+                ]);
             }
 
             if (isset($validated['parents'])) {
@@ -277,5 +285,13 @@ class StudentController extends Controller
         }
 
         return back()->with('success', 'Photo de l\'élève supprimée avec succès.');
+    }
+
+    private function normalizeOptions(?array $options): array
+    {
+        return collect($options ?? [])
+            ->only(['cantine', 'transport', 'internat'])
+            ->map(fn ($value) => (bool) $value)
+            ->toArray();
     }
 }

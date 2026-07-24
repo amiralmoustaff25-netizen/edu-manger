@@ -93,6 +93,22 @@
             color: #666;
             font-size: 12px;
         }
+        .fee-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .fee-table th, .fee-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .fee-table th {
+            background: #f0f0f0;
+        }
+        .fee-table td:last-child {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -142,8 +158,8 @@
                     <span>{{ $payment->registration->classroom?->name ?? 'Non assigné' }}</span>
                 </div>
                 <div class="info-row">
-                    <label>Mensualité:</label>
-                    <span>{{ number_format($payment->registration->monthly_fee, 0, ',', ' ') }} FCFA</span>
+                    <label>Année:</label>
+                    <span>{{ $payment->registration->schoolYear?->year_string ?? '-' }}</span>
                 </div>
             </div>
         </div>
@@ -152,8 +168,32 @@
             Montant Payé: {{ number_format($payment->amount, 0, ',', ' ') }} FCFA
         </div>
 
+        @if($payment->fee_breakdown && count($payment->fee_breakdown))
+            <h3 style="border-bottom: 1px solid #ddd; padding-bottom: 10px;">Détail des frais</h3>
+            <table class="fee-table">
+                <thead>
+                    <tr>
+                        <th>Frais</th>
+                        <th>Montant dû</th>
+                        <th>Montant payé</th>
+                        <th>Reste</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($payment->fee_breakdown as $fee)
+                        <tr>
+                            <td>{{ $fee['description'] ?? '-' }}</td>
+                            <td>{{ number_format(($fee['amount'] ?? 0) + ($fee['amount_paid'] ?? 0), 0, ',', ' ') }} FCFA</td>
+                            <td>{{ number_format($fee['amount_paid'] ?? 0, 0, ',', ' ') }} FCFA</td>
+                            <td>{{ number_format($fee['remaining_balance'] ?? 0, 0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @if($payment->status === 'partiel')
-            <div class="info-section">
+            <div class="info-section" style="margin-top: 20px;">
                 <h3>Reste à Payer</h3>
                 <div class="info-row">
                     <label>Reste:</label>
@@ -163,14 +203,14 @@
         @endif
 
         @if($payment->comment)
-            <div class="info-section">
+            <div class="info-section" style="margin-top: 20px;">
                 <h3>Commentaire</h3>
                 <p>{{ $payment->comment }}</p>
             </div>
         @endif
 
         @if($payment->validatedBy)
-            <div class="info-section">
+            <div class="info-section" style="margin-top: 20px;">
                 <h3>Validation</h3>
                 <div class="info-row">
                     <label>Validé par:</label>

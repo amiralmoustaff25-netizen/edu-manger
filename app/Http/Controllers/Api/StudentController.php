@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,19 +14,29 @@ class StudentController extends Controller
 {
     public function getByMatricule($matricule): JsonResponse
     {
-        // 1. Recherche par le matricule de l'élève (User)
-        $student = User::role('eleve')
+        // 1. Recherche par le matricule de l'élève (User) — rôle coloîne OU rôle Spatie
+        $student = User::query()
+            ->where(function ($query) {
+                $query->where('role', 'eleve')
+                    ->orWhereHas('roles', fn ($q) => $q->where('name', 'eleve'));
+            })
             ->where(function ($query) use ($matricule) {
                 $query->where('matricule', $matricule)
                     ->orWhere('matricule', 'like', "%{$matricule}%");
             })
             ->first();
 
-        // 2. Fallback sur l'ancien matricule d'inscription (Registration)
+        // 2. Fallback par matricule d'inscription (Registration) ou par matricule utilisateur
         if (!$student) {
             $registration = Registration::with(['user', 'classroom', 'schoolYear', 'payments'])
-                ->where('matricule', $matricule)
-                ->orWhere('matricule', 'like', "%{$matricule}%")
+                ->where(function ($query) use ($matricule) {
+                    $query->where('matricule', $matricule)
+                        ->orWhere('matricule', 'like', "%{$matricule}%")
+                        ->orWhereHas('user', function ($q) use ($matricule) {
+                            $q->where('matricule', $matricule)
+                                ->orWhere('matricule', 'like', "%{$matricule}%");
+                        });
+                })
                 ->first();
 
             if ($registration) {
@@ -51,6 +62,8 @@ class StudentController extends Controller
             return response()->json(['error' => 'Aucune inscription en cours pour cet élève.'], 404);
         }
 
+        $feeService = new FeeService();
+
         return response()->json([
             'registration_id' => $registration->id,
             'matricule' => $registration->matricule,
@@ -58,55 +71,24 @@ class StudentController extends Controller
             'classroom' => $registration->classroom,
             'school_year' => $registration->schoolYear,
             'monthly_fee' => $registration->monthly_fee,
+            'options' => $registration->options ?? [],
+            'parents' => $registration->user->parents ?? [],
             'payments' => $registration->payments,
+            'situation' => $feeService->getFinancialSituation($registration),
         ]);
     }
 
-    public function getStudentFees($registrationId): JsonResponse
+    public function getStudentFees($registrationId, FeeService $feeService): JsonResponse
     {
         $registration = Registration::with(['classroom', 'schoolYear', 'payments'])
             ->findOrFail($registrationId);
 
-        $months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        $paidMonths = $registration->payments()->where('status', 'complet')->pluck('month')->toArray();
-        
-        // Générer les frais mensuels basés sur le mois actuel
-        $currentMonthIndex = now()->month - 1; // 0-based index
-        $fees = [];
-
-        // Frais d'inscription (si pas payé)
-        $hasPaidRegistration = $registration->payments()->where('payment_type', 'inscription')->exists();
-        if (!$hasPaidRegistration) {
-            $fees[] = [
-                'id' => 'inscription',
-                'description' => 'Frais d\'inscription',
-                'type' => 'inscription',
-                'amount' => 50000, // À configurer dynamiquement
-                'status' => 'pending',
-                'due_date' => now()->format('Y-m-d'),
-                'priority' => 'high',
-            ];
-        }
-
-        // Générer les mensualités à partir du mois actuel
-        for ($i = $currentMonthIndex; $i < min($currentMonthIndex + 3, 12); $i++) {
-            $monthName = $months[$i];
-            $isPaid = in_array($monthName, $paidMonths);
-            
-            $fees[] = [
-                'id' => 'mensualite-' . $i,
-                'description' => 'Mensualité ' . $monthName,
-                'type' => 'mensualité',
-                'amount' => (float) $registration->monthly_fee,
-                'status' => $isPaid ? 'paid' : 'pending',
-                'due_date' => now()->month($i + 1)->endOfMonth()->format('Y-m-d'),
-                'priority' => $isPaid ? 'none' : 'medium',
-            ];
-        }
+        $fees = $feeService->getPendingFees($registration);
+        $situation = $feeService->getFinancialSituation($registration);
 
         return response()->json([
             'fees' => $fees,
-            'total_due' => collect($fees)->where('status', 'pending')->sum('amount'),
+            'total_due' => $situation['remaining'],
             'monthly_fee' => $registration->monthly_fee,
         ]);
     }

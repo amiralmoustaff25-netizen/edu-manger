@@ -10,15 +10,18 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <!-- Boutons d'action -->
-                    <div class="mb-6 flex gap-2">
+                    <div class="mb-6 flex flex-wrap gap-2">
                         <a href="{{ route('payments.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                             ← Retour
                         </a>
                         <a href="{{ route('payments.edit', $payment) }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                             Modifier
                         </a>
+                        <a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            Télécharger le reçu (PDF)
+                        </a>
                         <button onclick="window.print()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                            Imprimer le reçu
+                            Imprimer
                         </button>
                     </div>
 
@@ -102,6 +105,34 @@
                             @endif
                         </div>
                     </div>
+
+                    @if($payment->fee_breakdown && count($payment->fee_breakdown))
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Détail des frais couverts</h3>
+                            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                                    <thead class="bg-gray-50 dark:bg-slate-700">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Frais</th>
+                                            <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Montant dû</th>
+                                            <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Montant payé</th>
+                                            <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Reste</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                                        @foreach($payment->fee_breakdown as $fee)
+                                            <tr>
+                                                <td class="px-4 py-3 text-gray-900 dark:text-white">{{ $fee['description'] ?? '-' }}</td>
+                                                <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{{ number_format($fee['amount'] ?? ($fee['remaining_amount'] ?? 0) + ($fee['amount_paid'] ?? 0), 0, ',', ' ') }} FCFA</td>
+                                                <td class="px-4 py-3 text-right font-medium text-green-600 dark:text-green-400">{{ number_format($fee['amount_paid'] ?? 0, 0, ',', ' ') }} FCFA</td>
+                                                <td class="px-4 py-3 text-right font-medium text-amber-700 dark:text-amber-400">{{ number_format($fee['remaining_balance'] ?? ($fee['remaining_amount'] ?? 0), 0, ',', ' ') }} FCFA</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

@@ -12,14 +12,17 @@ class FeeType extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'description',
         'is_recurring',
+        'is_optional',
     ];
 
     protected function casts(): array
     {
         return [
             'is_recurring' => 'boolean',
+            'is_optional' => 'boolean',
         ];
     }
 

@@ -31,6 +31,10 @@ class UpdateStudentRequest extends FormRequest
             'telephone' => ['nullable', 'string', 'max:20'],
             'nationalite' => ['nullable', 'string', 'max:255'],
             'adresse' => ['nullable', 'string'],
+            'registration_fee_paid' => ['nullable', 'numeric', 'min:0'],
+            'monthly_fee' => ['nullable', 'numeric', 'min:0'],
+            'options' => ['nullable', 'array'],
+            'options.*' => ['boolean'],
             'photo' => ['nullable', 'image', 'max:2048'], // 2MB max
             'supprimer_photo' => ['nullable', 'boolean'], // Option to delete photo
         ];

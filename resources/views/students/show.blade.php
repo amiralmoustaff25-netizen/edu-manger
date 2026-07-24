@@ -11,6 +11,11 @@
                 </div>
             </div>
             <div class="flex gap-3">
+                @can('enregistrer-paiement')
+                    <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                        Effectuer un paiement
+                    </a>
+                @endcan
                 <a href="{{ route('students.edit', $student) }}" class="inline-flex items-center justify-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
                     Modifier
                 </a>
@@ -50,11 +55,22 @@
                 </div>
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total payé</p>
-                    <p class="mt-3 text-xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($totalPaid, 0, ',', ' ') }} FCFA</p>
+                    <p class="mt-3 text-xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($financialSituation['paid'] ?? 0, 0, ',', ' ') }} FCFA</p>
                 </div>
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reste à payer</p>
-                    <p class="mt-3 text-xl font-bold text-amber-700 dark:text-amber-400">{{ number_format($remainingBalance, 0, ',', ' ') }} FCFA</p>
+                    <p class="mt-3 text-xl font-bold text-amber-700 dark:text-amber-400">{{ number_format($financialSituation['remaining'] ?? 0, 0, ',', ' ') }} FCFA</p>
+                </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Montant total attendu</p>
+                    <p class="mt-3 text-xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($financialSituation['expected'] ?? 0, 0, ',', ' ') }} FCFA</p>
+                </div>
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Impayés en retard</p>
+                    <p class="mt-3 text-xl font-bold text-red-600 dark:text-red-400">{{ number_format($financialSituation['overdue'] ?? 0, 0, ',', ' ') }} FCFA</p>
                 </div>
             </div>
 
