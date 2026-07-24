@@ -6,6 +6,7 @@ use App\Models\Classroom;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +28,25 @@ class DatabaseSeeder extends Seeder
         $manager = $this->user('MCO-260001', 'Manager Comptable', 'manager.comptable@edumanager.sn', 'manager-comptable');
         $this->user('CPT-260001', 'Comptable', 'comptable@edumanager.sn', 'comptable');
         $teacher = $this->user('PROF001', 'Moussa Sall', 'moussa@ecole.sn', 'professeur');
+        Teacher::firstOrCreate(
+            ['user_id' => $teacher->id],
+            [
+                'matricule' => Teacher::generateMatricule(),
+                'date_naissance' => '1990-01-01',
+                'lieu_naissance' => 'Dakar',
+                'sexe' => 'masculin',
+                'nationalite' => 'Sénégalaise',
+                'diplomes' => 'Non renseigné',
+                'etablissements_formation' => 'Non renseigné',
+                'statut' => 'contractuel',
+                'date_recrutement' => now()->toDateString(),
+                'specialites' => [],
+                'filiation' => 'Non renseignée',
+                'contact_urgence_nom' => 'Non renseigné',
+                'contact_urgence_tel' => 'Non renseigné',
+                'nombre_heures_semaine' => 0,
+            ]
+        );
         $studentOne = $this->user('ELE-260001', 'Amadou Diallo', 'amadou@edumanager.sn', 'eleve');
         $studentTwo = $this->user('ELE-260002', 'Aïssatou Ndiaye', 'aissatou@edumanager.sn', 'eleve');
 

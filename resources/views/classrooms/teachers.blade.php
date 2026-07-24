@@ -80,10 +80,10 @@
                                                 {{ $teacher->pivot->volume_horaire_hebdo }}h/semaine
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <form action="{{ route('classrooms.detach-teacher', [$classroom, $teacher]) }}" method="POST" class="inline">
+                                                <form action="{{ route('classrooms.detach-teacher', [$classroom, $teacher]) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Retirer le professeur', message: 'Retirer {{ addslashes((string) $teacher->user->name) }} de la classe {{ addslashes((string) $classroom->name) }} ?', confirmLabel: 'Retirer' })">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300" onclick="return confirm('Êtes-vous sûr de vouloir retirer ce professeur de la classe ?');">
+                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
                                                         Retirer
                                                     </button>
                                                 </form>

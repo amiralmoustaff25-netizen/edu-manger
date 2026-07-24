@@ -2,8 +2,8 @@
 @csrf
 
 @php
-    $studentNom = $student->name ? explode(' ', $student->name)[0] ?? '';
-    $studentPrenom = $student->name ? implode(' ', array_slice(explode(' ', $student->name), 1)) ?? '';
+    $studentNom = $student->name ? (explode(' ', $student->name)[0] ?? '') : '';
+    $studentPrenom = $student->name ? (implode(' ', array_slice(explode(' ', $student->name), 1)) ?? '') : '';
 @endphp
 
 <div x-data='@json([
@@ -124,6 +124,32 @@
         <x-input-error :messages="$errors->get('adresse')" class="mt-2" />
     </div>
 
+    @if($enrollment ?? false)
+        <input name="role" value="eleve" type="hidden">
+        <div class="lg:col-span-2 rounded-lg border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-800 dark:bg-indigo-900/20">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informations de l'inscription</h3>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                    <label for="registration_fee_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frais d'inscription payés</label>
+                    <input id="registration_fee_paid" name="registration_fee_paid" type="number" min="0" step="0.01" value="{{ old('registration_fee_paid', 0) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('registration_fee_paid')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="monthly_fee" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scolarité mensuelle</label>
+                    <input id="monthly_fee" name="monthly_fee" type="number" min="0" step="0.01" value="{{ old('monthly_fee', 0) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('monthly_fee')" class="mt-2" />
+                </div>
+                <div class="md:col-span-2 flex items-center justify-between gap-4 rounded-md bg-white p-4 dark:bg-slate-800">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Compte élève actif</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Année scolaire : {{ $activeYear->year_string }}</p>
+                    </div>
+                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', true)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if($parents->count() > 0)
         <div class="lg:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Parents associés</label>
@@ -138,23 +164,23 @@
                             <select name="parents[{{ $i }}][parent_id]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Aucun</option>
                                 @foreach($parents as $p)
-                                    <option value="{{ $p->id }}" @selected(old("parents.{$i}.parent_id", optional($parent)->id === $p->id)>{{ $p->nom }} {{ $p->prenom }}</option>
+                                    <option value="{{ $p->id }}" @selected(old("parents.{$i}.parent_id", optional($parent)->id === $p->id))>{{ $p->nom }} {{ $p->prenom }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lien de parenté</label>
-                            <input name="parents[{{ $i }}][lien_parente]" type="text" value="{{ old("parents.{$i}.lien_parente", optional($parent->pivot)->lien_parente) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input name="parents[{{ $i }}][lien_parente]" type="text" value="{{ old("parents.{$i}.lien_parente", optional(optional($parent)->pivot)->lien_parente) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div class="flex items-end gap-2">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" name="parents[{{ $i }}][est_responsable_financier]" value="1" @checked(old("parents.{$i}.est_responsable_financier", optional($parent->pivot)->est_responsable_financier)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <input type="checkbox" name="parents[{{ $i }}][est_responsable_financier]" value="1" @checked(old("parents.{$i}.est_responsable_financier", optional(optional($parent)->pivot)->est_responsable_financier)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Resp. financier</span>
                             </label>
                         </div>
                         <div class="flex items-end gap-2">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" name="parents[{{ $i }}][est_contact_urgence]" value="1" @checked(old("parents.{$i}.est_contact_urgence", optional($parent->pivot)->est_contact_urgence)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <input type="checkbox" name="parents[{{ $i }}][est_contact_urgence]" value="1" @checked(old("parents.{$i}.est_contact_urgence", optional(optional($parent)->pivot)->est_contact_urgence)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Contact urgence</span>
                             </label>
                         </div>
@@ -167,7 +193,13 @@
 
 <div class="mt-6 flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
     <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-        {{ $student->exists ? 'Enregistrer les modifications' : 'Créer l\'élève' }}
+        @if($student->exists)
+            Enregistrer les modifications
+        @elseif($enrollment ?? false)
+            Créer et inscrire l'élève
+        @else
+            Créer l'élève
+        @endif
     </button>
     <a href="{{ $student->exists ? route('students.show', $student) : route('students.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
 </div>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Registration;
+use App\Models\SchoolYear;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -11,25 +13,42 @@ class StudentController extends Controller
 {
     public function getByMatricule($matricule): JsonResponse
     {
-        // Recherche flexible du matricule
+        // 1. Recherche par le matricule de l'élève (User)
+        $student = User::role('eleve')
+            ->where(function ($query) use ($matricule) {
+                $query->where('matricule', $matricule)
+                    ->orWhere('matricule', 'like', "%{$matricule}%");
+            })
+            ->first();
+
+        // 2. Fallback sur l'ancien matricule d'inscription (Registration)
+        if (!$student) {
+            $registration = Registration::with(['user', 'classroom', 'schoolYear', 'payments'])
+                ->where('matricule', $matricule)
+                ->orWhere('matricule', 'like', "%{$matricule}%")
+                ->first();
+
+            if ($registration) {
+                $student = $registration->user;
+            }
+        }
+
+        if (!$student) {
+            return response()->json(['error' => 'Élève non trouvé. Vérifiez le matricule.'], 404);
+        }
+
+        // 3. Rechercher l'inscription en cours (pending ou active) de l'année active
+        $activeYear = SchoolYear::where('is_active', true)->first();
+
         $registration = Registration::with(['user', 'classroom', 'schoolYear', 'payments'])
-            ->where('matricule', 'like', "%{$matricule}%")
-            ->where('status', 'active')
+            ->where('user_id', $student->id)
+            ->when($activeYear, fn ($q) => $q->where('school_year_id', $activeYear->id))
+            ->whereIn('status', ['pending', 'active'])
+            ->latest()
             ->first();
 
         if (!$registration) {
-            // Si pas trouvé avec like, essayer recherche exacte
-            $registration = Registration::with(['user', 'classroom', 'schoolYear', 'payments'])
-                ->where('matricule', $matricule)
-                ->first();
-            
-            if (!$registration) {
-                return response()->json(['error' => 'Élève non trouvé. Vérifiez le matricule.'], 404);
-            }
-            
-            if ($registration->status !== 'active') {
-                return response()->json(['error' => 'Inscription inactive. Statut: ' . $registration->status], 404);
-            }
+            return response()->json(['error' => 'Aucune inscription en cours pour cet élève.'], 404);
         }
 
         return response()->json([

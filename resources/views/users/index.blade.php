@@ -79,7 +79,7 @@
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $user->email ?? 'Email non renseigné' }}</p>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <span class="rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:text-sky-300">{{ $user->role }}</span>
+                                        <span class="rounded-full bg-sky-100 dark:bg-sky-900/50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:text-sky-300">{{ $user->getRoleNames()->first() ?? 'Sans rôle' }}</span>
                                     </td>
                                     <td class="px-4 py-3">
                                         <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $user->is_active ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
@@ -91,13 +91,13 @@
                                         <div class="flex flex-wrap justify-end gap-2">
                                             <a href="{{ route('users.edit', $user) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Modifier</a>
 
-                                            <form method="POST" action="{{ route('users.reset-password', $user) }}">
+                                            <form method="POST" action="{{ route('users.reset-password', $user) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Réinitialiser le mot de passe', message: 'Le mot de passe sera remplacé par un mot de passe temporaire et l’utilisateur devra le changer à sa prochaine connexion.', confirmLabel: 'Réinitialiser' })">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="rounded-md border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/50">Réinitialiser</button>
                                             </form>
 
-                                            <form method="POST" action="{{ route('users.toggle', $user) }}">
+                                            <form method="POST" action="{{ route('users.toggle', $user) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: '{{ $user->is_active ? 'Désactiver' : 'Activer' }} l’utilisateur', message: '{{ $user->is_active ? 'Le compte sera désactivé mais son historique sera conservé.' : 'Le compte pourra de nouveau se connecter.' }}', confirmLabel: '{{ $user->is_active ? 'Désactiver' : 'Activer' }}' })">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="rounded-md border border-amber-200 dark:border-amber-700 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/50">
@@ -105,7 +105,7 @@
                                                 </button>
                                             </form>
 
-                                            <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Archiver cet utilisateur ? Son historique sera conservé.');">
+                                            <form method="POST" action="{{ route('users.destroy', $user) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver l’utilisateur', message: 'Le compte {{ addslashes($user->name) }} sera désactivé et archivé. Son historique sera conservé.', confirmLabel: 'Archiver' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="rounded-md border border-red-200 dark:border-red-700 px-3 py-1.5 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/50">Archiver</button>

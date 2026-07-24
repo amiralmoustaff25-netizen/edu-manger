@@ -52,7 +52,7 @@ class ParentModel extends Model
         return $this->belongsToMany(User::class, 'parent_user', 'parent_id', 'user_id')
             ->withPivot('lien_parente', 'est_responsable_financier', 'est_contact_urgence')
             ->withTimestamps()
-            ->where('role', 'eleve');
+            ->role('eleve');
     }
 
     /**

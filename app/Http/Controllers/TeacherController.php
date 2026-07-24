@@ -23,7 +23,7 @@ class TeacherController extends Controller
         Gate::authorize('viewAny', Teacher::class);
 
         $teachers = Teacher::query()
-            ->with(['user', 'classrooms', 'classrooms.pivot'])
+            ->with(['user', 'classrooms'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
                 $query->whereHas('user', function ($query) use ($search) {
@@ -128,7 +128,7 @@ class TeacherController extends Controller
     {
         Gate::authorize('view', $teacher);
 
-        $teacher->load(['user', 'classrooms', 'classrooms.pivot', 'classrooms.schoolYear']);
+        $teacher->load(['user', 'classrooms.schoolYear']);
 
         return view('teachers.show', [
             'teacher' => $teacher,
@@ -140,7 +140,7 @@ class TeacherController extends Controller
     {
         Gate::authorize('update', $teacher);
 
-        $teacher->load(['user', 'classrooms', 'classrooms.pivot']);
+        $teacher->load(['user', 'classrooms']);
 
         return view('teachers.edit', [
             'teacher' => $teacher,

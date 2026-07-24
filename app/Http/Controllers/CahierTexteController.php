@@ -53,41 +53,44 @@ class CahierTexteController extends Controller
             abort(403);
         }
 
-        return DB::transaction(function () use ($chapter, $request, $program) {
+        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
+
+        return DB::transaction(function () use ($chapter, $date, $program) {
             $existing = ChapterCompletion::where('program_chapter_id', $chapter->id)
-                ->where('date_traitement', $request->date)
+                ->whereDate('date_traitement', $date)
                 ->first();
 
             if ($existing) {
                 $existing->delete();
                 $program->invalidateProgressCache();
 
-                return response()->json(['toggled' => false, 'chapter' => ['id' => $chapter->id, 'completed' => false, 'date' => $request->date], 'progress' => $this->service->computeProgress($program)]);
+                return response()->json(['toggled' => false, 'chapter' => ['id' => $chapter->id, 'completed' => false, 'date' => $date], 'progress' => $this->service->computeProgress($program)]);
             }
 
             ChapterCompletion::create([
                 'program_chapter_id' => $chapter->id,
-                'date_traitement' => $request->date,
+                'date_traitement' => $date,
                 'completed_by' => auth()->id(),
                 'remarque' => null,
             ]);
             $program->invalidateProgressCache();
             ProgramHistory::create(['program_annual_id' => $program->id, 'user_id' => auth()->id(), 'action' => 'saisie', 'description' => 'Coche ajoutée', 'metadata' => ['chapter_id' => $chapter->id], 'created_at' => now()]);
 
-            return response()->json(['toggled' => true, 'chapter' => ['id' => $chapter->id, 'completed' => true, 'date' => $request->date], 'progress' => $this->service->computeProgress($program)]);
+            return response()->json(['toggled' => true, 'chapter' => ['id' => $chapter->id, 'completed' => true, 'date' => $date], 'progress' => $this->service->computeProgress($program)]);
         });
     }
 
     public function bulkToggle(BulkToggleRequest $request): \Illuminate\Http\JsonResponse
     {
+        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
         $program = ProgramChapter::findOrFail($request->chapter_ids[0])->program;
         foreach ($request->chapter_ids as $chapterId) {
             $chapter = ProgramChapter::findOrFail($chapterId);
-            $existing = ChapterCompletion::where('program_chapter_id', $chapter->id)->where('date_traitement', $request->date)->first();
+            $existing = ChapterCompletion::where('program_chapter_id', $chapter->id)->whereDate('date_traitement', $date)->first();
             if ($existing) {
                 $existing->delete();
             } else {
-                ChapterCompletion::create(['program_chapter_id' => $chapter->id, 'date_traitement' => $request->date, 'completed_by' => auth()->id()]);
+                ChapterCompletion::create(['program_chapter_id' => $chapter->id, 'date_traitement' => $date, 'completed_by' => auth()->id()]);
             }
         }
 
@@ -106,10 +109,11 @@ class CahierTexteController extends Controller
         $lesson = ProgramChapter::findOrFail($request->lesson_id);
         $chapterIds = collect([$lesson->id])
             ->merge($lesson->children()->pluck('id'));
+        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
 
         foreach ($chapterIds as $chapterId) {
             ChapterCompletion::firstOrCreate(
-                ['program_chapter_id' => $chapterId, 'date_traitement' => $request->date],
+                ['program_chapter_id' => $chapterId, 'date_traitement' => $date],
                 ['completed_by' => auth()->id()]
             );
         }

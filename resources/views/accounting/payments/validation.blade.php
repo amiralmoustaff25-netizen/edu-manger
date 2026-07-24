@@ -74,7 +74,7 @@
                                     @endif
 
                                     <div class="mt-4 flex gap-2 justify-end">
-                                        <form action="{{ route('payments.reject', $payment) }}" method="POST" class="flex gap-2">
+                                        <form action="{{ route('payments.reject', $payment) }}" method="POST" class="flex gap-2" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
                                             @csrf
                                             <input type="text" name="reason" placeholder="Motif du rejet..." required
                                                 class="px-3 py-2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -82,7 +82,7 @@
                                                 Rejeter
                                             </button>
                                         </form>
-                                        <form action="{{ route('payments.validate', $payment) }}" method="POST">
+                                        <form action="{{ route('payments.validate', $payment) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera validé et pourra modifier le solde de la facture associée.', confirmLabel: 'Valider' })">
                                             @csrf
                                             <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
                                                 ✓ Valider

@@ -1,0 +1,205 @@
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_list_all_classrooms(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_show_create_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_store_a_new_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_show_edit_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_update_a_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_delete_a_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_returns_404_for_nonexistent_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_filter_classrooms_by_niveau(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_list_all_parents(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_show_a_single_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_create_a_new_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_update_an_existing_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_delete_a_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_validates_required_fields_on_creation(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_returns_404_for_nonexistent_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_show_registration_create_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_store_a_new_registration(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_generates_matricule_on_registration(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_prevents_duplicate_registration_same_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_requires_active_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_complete_full_registration_cycle(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_calculates_registration_with_payments(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_list_all_school_years(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_store_a_new_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_activate_a_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_delete_a_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_returns_404_for_nonexistent_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_prevents_duplicate_active_school_years(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_show_only_active_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+﻿﻿﻿﻿
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                                                                                                          4.87s  
+  ✓ users can authenticate using the login screen                                                                                                         1.46s  
+  ✓ users can not authenticate with invalid password                                                                                                      1.46s  
+  ✓ users can logout                                                                                                                                      1.06s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                                                                                                             1.31s  
+  ✓ email can be verified                                                                                                                                 1.01s  
+  ✓ email is not verified with invalid hash                                                                                                               0.93s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                                                                                                               2.12s  
+  ✓ password can be confirmed                                                                                                                             1.04s  
+  ✓ password is not confirmed with invalid password                                                                                                       1.23s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                                                                                                            2.41s  
+  ✓ reset password link can be requested                                                                                                                  1.84s  
+  ✓ reset password screen can be rendered                                                                                                                 4.13s  
+  ✓ password can be reset with valid token                                                                                                                1.49s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                                                                                                               1.24s  
+  ✓ correct password must be provided to update password                                                                                                  1.06s  
+
+   PASS  Tests\Feature\Auth\RegistrationTest
+  ✓ registration screen can be rendered                                                                                                                   5.47s  
+  ✓ new users can register                                                                                                                                1.11s  
+
+   PASS  Tests\Feature\CahierTexteDashboardTest
+  ✓ it_returns_timeline_data_for_year                                                                                                                     1.57s  
+  ✓ it_calculates_global_progress                                                                                                                         1.52s  
+  ✓ it_shows_only_own_programs_for_teacher                                                                                                                1.84s  
+
+   PASS  Tests\Feature\CahierTexteTest
+  ✓ it_toggles_chapter_completion                                                                                                                         2.19s  
+  ✓ it_undoes_toggle_on_second_click                                                                                                                      1.76s  
+  ✓ it_bulk_toggles_chapters                                                                                                                              1.55s  
+  ✓ it_marks_entire_lesson_as_done                                                                                                                        1.85s  
+  ✓ it_blocks_non_owner_teacher_from_toggling                                                                                                             2.61s  
+  ✓ it_autosaves_remark_via_api                                                                                                                           2.05s  
+
+   PASS  Tests\Feature\ClassroomControllerTest
+  ✓ it can list all classrooms                                                                                                                            2.38s  
+  ✓ it can show create form                                                                                                                               2.44s  
+  ✓ it can store a new classroom                                                                                                                          2.41s  
+  ✓ it validates required fields on store                                                                                                                 1.92s  
+  ✓ it can show edit form                                                                                                                                 2.15s  
+  ✓ it can update a classroom                                                                                                                             2.07s  
+  ✓ it can delete a classroom                                                                                                                             1.61s  
+  ✓ it returns 404 for nonexistent classroom                                                                                                              1.58s  
+  ✓ it can filter classrooms by niveau                                                                                                                    1.47s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ it returns a successful response                                                                                                                      1.14s  
+
+   PASS  Tests\Feature\LoginLogControllerTest
+  ✓ admin can view login logs                                                                                                                             1.98s  
+  ✓ comptable cannot access login logs                                                                                                                    0.97s  
+  ✓ admin can view single login log details                                                                                                               1.04s  
+
+   PASS  Tests\Feature\ParentControllerTest
+  ✓ it can list all parents                                                                                                                               3.47s  
+  ✓ it can show a single parent                                                                                                                           2.79s  
+  ✓ it can create a new parent                                                                                                                            2.66s  
+  ✓ it can update an existing parent                                                                                                                      2.43s  
+  ✓ it can delete a parent                                                                                                                                1.93s  
+  ✓ it validates required fields on creation                                                                                                              1.81s  
+  ✓ it returns 404 for nonexistent parent                                                                                                                 1.69s  
+
+   PASS  Tests\Feature\PaymentControllerTest
+  ✓ manager comptable can store a payment                                                                                                                 1.71s  
+  ✓ comptable can store a complete payment                                                                                                                1.34s  
+  ✓ comptable cannot store a partial payment                                                                                                              1.09s  
+
+   PASS  Tests\Feature\PaymentSecurityTest
+  ✓ un comptable simple ne peut pas valider un paiement partiel                                                                                           1.05s  
+  ✓ un manager comptable peut valider un paiement partiel                                                                                                 0.87s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                                                                                                             1.37s  
+  ✓ profile information can be updated                                                                                                                    1.11s  
+  ✓ email verification status is unchanged when the email address is unchanged                                                                            0.96s  
+  ✓ user can delete their account                                                                                                                         1.00s  
+  ✓ correct password must be provided to delete account                                                                                                   0.85s  
+
+   PASS  Tests\Feature\ProgramAnnualTest
+  ✓ it_creates_program_with_chapters_hierarchy                                                                                                            2.26s  
+  ✓ it_validates_chapter_max_depth_3_levels                                                                                                               2.05s  
+  ✓ it_submits_program_to_surveillant                                                                                                                     2.08s  
+  ✓ it_validates_transitions_surveillant_then_directeur                                                                                                   1.92s  
+  ✓ it_blocks_invalid_transitions                                                                                                                         1.70s  
+  ✓ it_rejects_program_with_mandatory_motif                                                                                                               1.59s  
+
+   PASS  Tests\Feature\RegistrationControllerTest
+  ✓ it can show registration create form                                                                                                                  5.59s  
+  ✓ it can store a new registration                                                                                                                       1.76s  
+  ✓ it validates required fields on store                                                                                                                 1.70s  
+  ✓ it generates matricule on registration                                                                                                                1.66s  
+  ✓ it prevents duplicate registration same year                                                                                                          1.41s  
+  ✓ it requires active school year                                                                                                                        1.35s  
+  ✓ it can complete full registration cycle                                                                                                               1.43s  
+  ✓ it calculates registration with payments                                                                                                              2.35s  
+
+   PASS  Tests\Feature\SchoolYearControllerTest
+  ✓ it can list all school years                                                                                                                          2.55s  
+  ✓ it can store a new school year                                                                                                                        1.99s  
+  ✓ it validates required fields on store                                                                                                                 2.07s  
+  ✓ it can activate a school year                                                                                                                         2.00s  
+  ✓ it can delete a school year                                                                                                                           2.01s  
+  ✓ it returns 404 for nonexistent school year                                                                                                            1.64s  
+  ✓ it prevents duplicate active school years                                                                                                             1.37s  
+  ✓ it can show only active school year                                                                                                                   1.45s  
+
+   PASS  Tests\Feature\StudentManagementTest
+  ✓ admin can view students listing                                                                                                                       1.39s  
+  ✓ comptable cannot access student management                                                                                                            1.14s  
+  ✓ admin can view student detail with registration history                                                                                               2.02s  
+  ✓ admin can transfer student to another classroom                                                                                                       1.07s  
+  ✓ admin can update student status                                                                                                                       0.86s  
+
+   PASS  Tests\Feature\TeacherControllerTest
+  ✓ admin can view teachers index                                                                                                                         2.48s  
+  ✓ admin can create a new teacher                                                                                                                        2.37s  
+  ✓ admin can view a teacher detail page                                                                                                                  2.15s  
+  ✓ admin can update a teacher                                                                                                                            2.23s  
+  ✓ admin can delete a teacher                                                                                                                            1.88s  
+
+   PASS  Tests\Feature\UserManagementTest
+  ✓ admin can view the user listing                                                                                                                       1.87s  
+  ✓ comptable cannot access user management                                                                                                               1.24s  
+  ✓ admin can create a user with a generated matricule and temporary password                                                                             1.33s  
+  ✓ admin can deactivate and reactivate a user                                                                                                            1.16s  
+  ✓ admin archives users with soft delete                                                                                                                 1.28s  
+  ✓ admin can reset a user password                                                                                                                       1.34s  
+
+  Tests:    95 passed (239 assertions)
+  Duration: 174.40s
+

@@ -57,7 +57,7 @@ class PaymentReceived extends Notification implements ShouldQueue
 
         // Attacher le reçu PDF si disponible
         if ($this->payment->receipt_number) {
-            $pdf = \PDF::loadView('accounting.payments.receipt', compact('payment'));
+            $pdf = \PDF::loadView('accounting.payments.receipt', ['payment' => $this->payment]);
             $mail->attachData($pdf->output(), "recu-{$this->payment->receipt_number}.pdf", [
                 'mime' => 'application/pdf',
             ]);

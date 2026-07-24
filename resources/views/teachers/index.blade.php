@@ -91,7 +91,7 @@
                                                 <a href="{{ route('teachers.edit', $teacher) }}" class="rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">Modifier</a>
                                             @endcan
                                             @can('supprimer-professeur')
-                                                <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" onsubmit="return confirm('Confirmer la suppression du professeur ?');">
+                                                <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer le professeur', message: 'Le profil de {{ addslashes($teacher->user->name) }} sera supprimé. Vérifiez ses affectations avant de confirmer.', confirmLabel: 'Supprimer' })">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Supprimer</button>

@@ -11,11 +11,11 @@ use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\StudentEnrollmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Intervention\Image\ImageManagerStatic as Image;
@@ -64,16 +64,11 @@ class StudentController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(): RedirectResponse
     {
         $this->authorize('voir-eleves');
 
-        return view('students.create', [
-            'student' => new User(['is_active' => true]),
-            'classrooms' => Classroom::all(),
-            'parents' => ParentModel::actifs()->get(),
-            'activeYear' => SchoolYear::where('is_active', true)->first(),
-        ]);
+        return redirect()->route('registrations.create');
     }
 
     /**
@@ -90,82 +85,40 @@ class StudentController extends Controller
             Storage::disk('public')->delete($user->profile_photo_path);
         }
 
-        // Resize and store the photo
         $filename = $user->matricule . '_' . time() . '.jpg';
         $path = 'photos/eleves/' . $filename;
 
-        $image = Image::make($photo)
-            ->fit(150, 150)
-            ->encode('jpg', 90);
+        try {
+            if (extension_loaded('imagick')) {
+                Image::configure(['driver' => 'imagick']);
+            }
 
-        Storage::disk('public')->put($path, $image);
+            $image = Image::make($photo)
+                ->fit(150, 150)
+                ->encode('jpg', 90);
+
+            Storage::disk('public')->put($path, $image);
+        } catch (\Throwable $e) {
+            $ext = $photo->getClientOriginalExtension() ?: 'jpg';
+            $filename = $user->matricule . '_' . time() . '.' . $ext;
+            $path = 'photos/eleves/' . $filename;
+            Storage::disk('public')->putFileAs('photos/eleves', $photo, $filename);
+        }
 
         return $path;
     }
 
-    public function store(StoreStudentRequest $request): RedirectResponse
+    public function store(StoreStudentRequest $request, StudentEnrollmentService $enrollmentService): RedirectResponse
     {
         $this->authorize('voir-eleves');
 
-        $validated = $request->validated();
+        $student = $enrollmentService->enroll(
+            $request->validated(),
+            $request->file('photo'),
+            auth()->id()
+        );
 
-        DB::transaction(function () use ($validated, $request) {
-            $user = User::create([
-                'name' => $validated['nom'] . ' ' . $validated['prenom'],
-                'prenom' => $validated['prenom'],
-                'email' => $validated['email'],
-                'password' => Hash::make('password'),
-                'matricule' => User::generateMatricule('eleve'),
-                'role' => 'eleve',
-                'cycle' => $validated['cycle'],
-                'telephone' => $validated['telephone'] ?? null,
-                'date_naissance' => $validated['date_naissance'],
-                'lieu_naissance' => $validated['lieu_naissance'],
-                'sexe' => $validated['sexe'],
-                'nationalite' => $validated['nationalite'] ?? null,
-                'adresse' => $validated['adresse'] ?? null,
-                'created_by' => auth()->id(),
-                'is_active' => true,
-                'password_must_change' => true,
-            ]);
-
-            $user->assignRole('eleve');
-
-            // Process photo if uploaded
-            if ($request->hasFile('photo')) {
-                Gate::authorize('upload-photo-eleve');
-                $photoPath = $this->processStudentPhoto($request->file('photo'), $user);
-                $user->update(['profile_photo_path' => $photoPath]);
-            }
-
-            $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
-
-            Registration::create([
-                'user_id' => $user->id,
-                'classroom_id' => $validated['classroom_id'],
-                'school_year_id' => $activeYear->id,
-                'academic_year' => $activeYear->year_string,
-                'registration_date' => now()->toDateString(),
-                'status' => 'pending',
-                'matricule' => 'REG-' . date('Y') . '-' . str_pad(Registration::count() + 1, 6, '0', STR_PAD_LEFT),
-            ]);
-
-            if (isset($validated['parents'])) {
-                $parentSync = [];
-                foreach ($validated['parents'] as $parentData) {
-                    if (!empty($parentData['parent_id'])) {
-                        $parentSync[$parentData['parent_id']] = [
-                            'lien_parente' => $parentData['lien_parente'] ?? null,
-                            'est_responsable_financier' => $parentData['est_responsable_financier'] ?? false,
-                            'est_contact_urgence' => $parentData['est_contact_urgence'] ?? false,
-                        ];
-                    }
-                }
-                $user->parents()->sync($parentSync);
-            }
-        });
-
-        return redirect()->route('students.index')->with('success', 'Élève créé avec succès. Matricule : ELE-XXXXXX | Mot de passe temporaire : password');
+        return redirect()->route('students.index')->with('success', 'Élève créé avec succès. Matricule : '.$student->matricule.' | Mot de passe temporaire : password');
     }
 
     public function show(User $student): View

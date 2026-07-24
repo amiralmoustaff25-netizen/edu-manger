@@ -38,8 +38,38 @@
                 </div>
             @endif
 
-            {{ $slot }}
+            @if(isset($slot))
+                {{ $slot }}
+            @else
+                @yield('content')
+            @endif
         </x-sidebar>
+
+        <div
+            x-data="{ open: false, form: null, title: '', message: '', confirmLabel: 'Confirmer' }"
+            x-on:open-confirmation.window="form = $event.detail.form; title = $event.detail.title; message = $event.detail.message; confirmLabel = $event.detail.confirmLabel || 'Confirmer'; open = true"
+            x-show="open"
+            x-cloak
+            class="fixed inset-0 z-[60] flex items-center justify-center px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmation-title"
+        >
+            <div class="absolute inset-0 bg-slate-950/60" x-on:click="open = false"></div>
+            <div class="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" x-on:keydown.escape.window="open = false">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">!</div>
+                    <div class="min-w-0">
+                        <h2 id="confirmation-title" class="text-lg font-semibold text-slate-900 dark:text-white" x-text="title"></h2>
+                        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300" x-text="message"></p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" x-on:click="open = false" class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Annuler</button>
+                    <button type="button" x-on:click="open = false; form.submit()" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" x-text="confirmLabel"></button>
+                </div>
+            </div>
+        </div>
 
         @stack('scripts')
     </body>

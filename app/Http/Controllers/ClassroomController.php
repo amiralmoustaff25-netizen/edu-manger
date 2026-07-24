@@ -25,7 +25,9 @@ class ClassroomController extends Controller
     public function index()
     {
         Gate::authorize('viewAny', Classroom::class);
-        $classrooms = Classroom::all();
+        $classrooms = Classroom::withCount([
+            'registrations as students_count' => fn ($query) => $query->where('status', 'active'),
+        ])->get();
 
         return view('classrooms.index', compact('classrooms'));
     }
@@ -47,9 +49,11 @@ class ClassroomController extends Controller
             'max_students' => 'required|integer|min:1|max:60',
         ]);
 
+        $teacherId = $validated['teacher_id'] ?? null;
+
         // Vérifier que le teacher_id est bien un professeur
-        if ($validated['teacher_id']) {
-            $teacher = User::findOrFail($validated['teacher_id']);
+        if ($teacherId) {
+            $teacher = User::findOrFail($teacherId);
             if (! $teacher->hasRole('professeur')) {
                 return back()->withErrors(['teacher_id' => 'L\'utilisateur sélectionné n\'est pas un professeur.']);
             }
@@ -63,7 +67,7 @@ class ClassroomController extends Controller
             'name' => $fullName,
             'cycle' => $cycle,
             'school_year_id' => $activeYear->id,
-            'teacher_id' => $validated['teacher_id'],
+            'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
         ]);
 
@@ -88,9 +92,11 @@ class ClassroomController extends Controller
             'max_students' => 'required|integer|min:1|max:60',
         ]);
 
+        $teacherId = $validated['teacher_id'] ?? null;
+
         // Vérifier que le teacher_id est bien un professeur
-        if ($validated['teacher_id']) {
-            $teacher = User::findOrFail($validated['teacher_id']);
+        if ($teacherId) {
+            $teacher = User::findOrFail($teacherId);
             if (! $teacher->hasRole('professeur')) {
                 return back()->withErrors(['teacher_id' => 'L\'utilisateur sélectionné n\'est pas un professeur.']);
             }
@@ -103,7 +109,7 @@ class ClassroomController extends Controller
         $classroom->update([
             'name' => $fullName,
             'cycle' => $cycle,
-            'teacher_id' => $validated['teacher_id'],
+            'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
         ]);
 

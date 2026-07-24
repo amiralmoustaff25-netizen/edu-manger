@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -17,9 +18,18 @@ class UserController extends Controller
         'admin',
         'manager-comptable',
         'comptable',
+        'surveillant',
         'professeur',
         'parent',
         'eleve',
+    ];
+
+    private const CREATABLE_ROLES = [
+        'super-admin',
+        'admin',
+        'manager-comptable',
+        'comptable',
+        'surveillant',
     ];
 
     public function index(Request $request): View
@@ -27,7 +37,7 @@ class UserController extends Controller
         $this->authorize('voir-utilisateurs');
 
         $users = User::query()
-            ->with('creator')
+            ->with(['creator', 'roles'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
 
@@ -37,7 +47,7 @@ class UserController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('role'), fn ($query) => $query->where('role', $request->string('role')))
+            ->when($request->filled('role'), fn ($query) => $query->role($request->string('role')->toString()))
             ->when($request->filled('status'), function ($query) use ($request) {
                 if ($request->string('status')->toString() === 'active') {
                     $query->where('is_active', true);
@@ -64,7 +74,7 @@ class UserController extends Controller
 
         return view('users.create', [
             'user' => new User(['is_active' => true]),
-            'roles' => self::ROLES,
+            'roles' => self::CREATABLE_ROLES,
         ]);
     }
 
@@ -81,27 +91,12 @@ class UserController extends Controller
         $validated['password_must_change'] = true;
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        $user = User::create($validated);
-        $user->syncRoles([$validated['role']]);
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create($validated);
+            $user->syncRoles([$validated['role']]);
 
-        // Création automatique du profil Teacher si rôle = professeur
-        if ($validated['role'] === 'professeur') {
-            $teacherData = [
-                'user_id' => $user->id,
-                'matricule' => \App\Models\Teacher::generateMatricule(),
-                'statut' => $validated['statut'] ?? 'contractuel',
-                'nombre_heures_semaine' => 18,
-                'date_naissance' => $validated['date_naissance'] ?? null,
-                'lieu_naissance' => $validated['lieu_naissance'] ?? null,
-                'sexe' => $validated['sexe'] ?? null,
-                'nationalite' => $validated['nationalite'] ?? null,
-                'diplomes' => $validated['diplomes'] ?? null,
-                'specialites' => $validated['specialites'] ? explode(',', $validated['specialites']) : null,
-                'created_by' => auth()->id(),
-            ];
-
-            \App\Models\Teacher::create($teacherData);
-        }
+            return $user;
+        });
 
         return redirect()
             ->route('users.index')

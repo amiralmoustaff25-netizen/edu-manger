@@ -1,0 +1,86 @@
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_list_all_classrooms(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_show_create_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_store_a_new_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_show_edit_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_update_a_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_delete_a_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_returns_404_for_nonexistent_classroom(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ClassroomControllerTest::it_can_filter_classrooms_by_niveau(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_list_all_parents(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_show_a_single_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_create_a_new_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_update_an_existing_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_can_delete_a_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_validates_required_fields_on_creation(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\ParentControllerTest::it_returns_404_for_nonexistent_parent(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_show_registration_create_form(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_store_a_new_registration(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_generates_matricule_on_registration(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_prevents_duplicate_registration_same_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_requires_active_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_can_complete_full_registration_cycle(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\RegistrationControllerTest::it_calculates_registration_with_payments(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_list_all_school_years(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_store_a_new_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_validates_required_fields_on_store(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_activate_a_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_delete_a_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_returns_404_for_nonexistent_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_prevents_duplicate_active_school_years(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\SchoolYearControllerTest::it_can_show_only_active_school_year(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+﻿﻿﻿﻿
+   FAIL  Tests\Feature\CahierTexteTest
+  ⨯ it_toggles_chapter_completion                                                                                                                         2.65s  
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\CahierTexteTest > it_toggles_chapter_completion                                                                                         
+  Failed asserting that null is identical to true.
+
+  at tests\Feature\CahierTexteTest.php:27
+     23▕         'chapter_id' => $chapter->id,
+     24▕         'date' => now()->toDateString(),
+     25▕     ]);
+     26▕ 
+  ➜  27▕     $response->assertJsonPath('toggled', true);
+     28▕     $this->assertDatabaseHas('chapter_completions', ['program_chapter_id' => $chapter->id]);
+     29▕ });
+     30▕ 
+     31▕ test('it_undoes_toggle_on_second_click', function () {
+
+
+  Tests:    1 failed (1 assertions)
+  Duration: 3.09s
+

@@ -26,6 +26,7 @@ use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\UserController;
 use App\Models\Classroom;
+use App\Models\Invoice;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
@@ -67,7 +68,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             ->get();
 
         $stats = [
-            'students' => User::where('role', 'eleve')->count(),
+            'students' => User::role('eleve')->count(),
             'classrooms' => Classroom::count(),
             'parents' => ParentModel::count(),
             'active_parents' => ParentModel::where('statut', 'actif')->count(),
@@ -79,17 +80,31 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             'monthly_revenue' => Payment::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
-            'remaining_balance' => Payment::where('status', 'partiel')->sum('remaining_balance'),
+            'remaining_balance' => Invoice::whereIn('status', ['sent', 'partial', 'overdue'])->sum('remaining_balance'),
         ];
 
+        $monthlyRevenue = collect(range(5, 0))->map(function ($monthsAgo) {
+            $date = now()->subMonths($monthsAgo);
+
+            return [
+                'label' => $date->translatedFormat('M Y'),
+                'amount' => Payment::where('status', 'complet')
+                    ->whereMonth('payment_date', $date->month)
+                    ->whereYear('payment_date', $date->year)
+                    ->sum('amount'),
+            ];
+        })->values();
+
         $alerts = [
-            'partial_payments' => Payment::where('status', 'partiel')->count(),
+            'partial_payments' => Invoice::whereIn('status', ['sent', 'partial', 'overdue'])
+                ->where('remaining_balance', '>', 0)
+                ->count(),
             'students_without_class' => Registration::whereNull('classroom_id')->count(),
             'classrooms_without_teacher' => Classroom::whereNull('teacher_id')->count(),
             'missing_active_year' => $activeYear === null,
         ];
 
-        return view('dashboard', compact('registrations', 'recentPayments', 'stats', 'alerts', 'activeYear'));
+        return view('dashboard', compact('registrations', 'recentPayments', 'stats', 'alerts', 'activeYear', 'monthlyRevenue'));
     })->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
@@ -112,7 +127,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/bulletins/{student}/{period}/pdf', [BulletinController::class, 'generatePdf'])->name('bulletins.pdf');
     Route::get('/bulletins/class/{classroom}/{period}/pdf', [BulletinController::class, 'generateClassPdf'])->name('bulletins.class-pdf');
 
-    Route::middleware(['role:manager-comptable|comptable'])->group(function () {
+    Route::middleware(['role:super-admin|manager-comptable|comptable'])->group(function () {
         // Routes comptabilité
         Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.dashboard');
         Route::get('/accounting/reports', [AccountingController::class, 'reports'])->name('accounting.reports');
@@ -127,14 +142,14 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
         
         // Validation des paiements (manager-comptable uniquement)
-        Route::middleware(['role:manager-comptable'])->group(function () {
+        Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
             Route::get('/payments/validation', [PaymentController::class, 'validationIndex'])->name('payments.validation');
             Route::post('/payments/{payment}/validate', [PaymentController::class, 'validatePayment'])->name('payments.validate');
             Route::post('/payments/{payment}/reject', [PaymentController::class, 'rejectPayment'])->name('payments.reject');
         });
         
         // Rappels (manager-comptable uniquement)
-        Route::middleware(['role:manager-comptable'])->group(function () {
+        Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
             Route::resource('reminders', ReminderController::class)->only(['index', 'create', 'store', 'destroy']);
             Route::post('/reminders/generate-overdue', [ReminderController::class, 'generateOverdue'])->name('reminders.generate-overdue');
             Route::post('/reminders/generate-upcoming', [ReminderController::class, 'generateUpcoming'])->name('reminders.generate-upcoming');

@@ -82,7 +82,7 @@
             </div>
 
             <div class="mt-6 flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
-                <form method="POST" action="{{ route('parents.archive', $parent) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir archiver ce parent ?');">
+                <form method="POST" action="{{ route('parents.archive', $parent) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le parent', message: 'Le parent sera archivé et son accès pourra être désactivé. Les associations avec les élèves seront conservées.', confirmLabel: 'Archiver' })">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
@@ -90,7 +90,7 @@
                     </button>
                 </form>
                 @if($parent->user)
-                <form method="POST" action="{{ route('parents.reset-password', $parent) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir réinitialiser le mot de passe ?');">
+                <form method="POST" action="{{ route('parents.reset-password', $parent) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Réinitialiser le mot de passe', message: 'Un mot de passe temporaire sera généré pour ce parent.', confirmLabel: 'Réinitialiser' })">
                     @csrf
                     @method('PATCH')
                     <button type="submit" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
@@ -118,7 +118,7 @@
                         <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Élève</label>
                         <select id="user_id" name="user_id" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-800 dark:text-gray-100">
                             <option value="">Sélectionner un élève</option>
-                            @foreach(\App\Models\User::where('role', 'eleve')->whereNotIn('id', $parent->students->pluck('id'))->get() as $student)
+                            @foreach(\App\Models\User::role('eleve')->whereNotIn('id', $parent->students->pluck('id'))->get() as $student)
                                 <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->matricule }})</option>
                             @endforeach
                         </select>
@@ -204,7 +204,7 @@
                         <a href="{{ route('students.show', $student) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                             Voir la fiche élève
                         </a>
-                        <form method="POST" action="{{ route('parents.detach-student', [$parent, $student]) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir dissocier cet élève ?');" class="inline">
+                        <form method="POST" action="{{ route('parents.detach-student', [$parent, $student]) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Dissocier l’élève', message: 'L’élève ne sera plus associé à ce parent. Le dossier élève ne sera pas supprimé.', confirmLabel: 'Dissocier' })" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">

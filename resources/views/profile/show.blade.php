@@ -47,7 +47,7 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
                                 <span class="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
-                                    {{ ucfirst($user->role) }}
+                                    {{ ucfirst($user->getRoleNames()->first() ?? 'sans rôle') }}
                                 </span>
                             </div>
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $user->name }}</h3>

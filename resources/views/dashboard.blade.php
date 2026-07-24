@@ -14,9 +14,6 @@
                     <a href="{{ route('registrations.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                         Nouvelle inscription
                     </a>
-                    <a href="{{ route('parents.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
-                        Nouveau parent
-                    </a>
                 </div>
             @endrole
         </div>
@@ -53,15 +50,7 @@
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Classes créées dans le système</p>
                 </div>
 
-                @role('super-admin|admin')
-                    <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Parents inscrits</p>
-                        <p class="mt-3 text-3xl font-bold text-indigo-700 dark:text-indigo-400">{{ $stats['parents'] }}</p>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $stats['active_parents'] }} actifs</p>
-                    </div>
-                @endrole
-
-                @role('manager-comptable|comptable')
+                @role('super-admin|manager-comptable|comptable')
                     <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Paiements complets</p>
                         <p class="mt-3 text-3xl font-bold text-emerald-700 dark:text-emerald-400">{{ $stats['paid_this_month'] }}</p>
@@ -76,7 +65,7 @@
                 @endrole
             </div>
 
-            @role('manager-comptable|comptable')
+            @role('super-admin|manager-comptable|comptable')
             <div class="grid gap-6 xl:grid-cols-3">
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 xl:col-span-2">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -159,7 +148,7 @@
             </div>
             @endrole
 
-            @role('manager-comptable|comptable')
+            @role('super-admin|manager-comptable|comptable')
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
                     <div class="flex items-center justify-between">
                         <div>
@@ -220,7 +209,7 @@
                     var options = {
                         series: [{
                             name: 'Encaissements',
-                            data: [400000, 300000, 550000, 600000, 450000, 700000]
+                            data: @json($monthlyRevenue->pluck('amount')->values())
                         }],
                         chart: {
                             type: 'bar',
@@ -246,7 +235,7 @@
                             colors: ['transparent']
                         },
                         xaxis: {
-                            categories: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'],
+                            categories: @json($monthlyRevenue->pluck('label')->values()),
                         },
                         yaxis: {
                             title: {

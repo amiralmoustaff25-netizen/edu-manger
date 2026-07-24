@@ -148,13 +148,15 @@ class PaymentController extends Controller
             // Gestion du trop-perçu
             if ($amountPaid > $expectedMonthlyFee) {
                 $overpayment = $amountPaid - $expectedMonthlyFee;
-                $this->handleOverpayment($registration, $payment, $overpayment, $config->overpayment_mode);
+                $this->handleOverpayment($registration, $payment, $overpayment, config('edu.overpayment_mode', 'change'));
             }
 
             // Envoyer la notification au parent/élève
             if ($payment->status === 'complet') {
                 $registration->user->notify(new PaymentReceived($payment));
             }
+
+            $this->activateRegistrationIfNeeded($registration);
         } else {
             // Mode nouveau : paiement de plusieurs frais
             $totalExpected = collect($selectedFees)->sum('amount');
@@ -182,13 +184,15 @@ class PaymentController extends Controller
             // Gestion du trop-perçu
             if ($amountPaid > $totalExpected) {
                 $overpayment = $amountPaid - $totalExpected;
-                $this->handleOverpayment($registration, $payment, $overpayment, $config->overpayment_mode);
+                $this->handleOverpayment($registration, $payment, $overpayment, config('edu.overpayment_mode', 'change'));
             }
 
             // Envoyer la notification au parent/élève
             if ($payment->status === 'complet') {
                 $registration->user->notify(new PaymentReceived($payment));
             }
+
+            $this->activateRegistrationIfNeeded($registration);
         }
 
         if ($request->expectsJson()) {
@@ -199,6 +203,14 @@ class PaymentController extends Controller
         }
 
         return back()->with('success', 'Paiement enregistré avec succès.');
+    }
+
+    private function activateRegistrationIfNeeded(Registration $registration): void
+    {
+        if ($registration->status === 'pending') {
+            $registration->update(['status' => 'active']);
+            $registration->user->update(['is_active' => true]);
+        }
     }
 
     private function handleOverpayment(Registration $registration, Payment $payment, float $overpayment, string $mode): void

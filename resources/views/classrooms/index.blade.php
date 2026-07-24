@@ -32,6 +32,8 @@
                                     <th class="py-3 px-4">Nom de la classe</th>
                                     <th class="py-3 px-4">Cycle</th>
                                     <th class="py-3 px-4">Enseignant Titulaire</th>
+                                    <th class="py-3 px-4 text-center">Effectif</th>
+                                    <th class="py-3 px-4 text-center">Capacité</th>
                                     <th class="py-3 px-4">Actions</th>
                                 </tr>
                             </thead>
@@ -48,15 +50,22 @@
                                         <td class="py-3 px-4 text-gray-300">
                                             {{ $classroom->teacher->name ?? 'Aucun' }}
                                         </td>
+                                        <td class="py-3 px-4 text-center font-semibold">
+                                            {{ $classroom->students_count }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            {{ $classroom->max_students }}
+                                        </td>
                                         <td class="py-3 px-4 flex space-x-3">
-                                            <a href="{{ route('classrooms.teachers', $classroom->id) }}" class="text-indigo-500 hover:text-indigo-600 font-medium transition">
-                                                Enseignants
-                                            </a>
                                             <a href="{{ route('classrooms.edit', $classroom->id) }}" class="text-yellow-500 hover:text-yellow-600 font-medium transition">
                                                 Modifier
                                             </a>
 
-                                            <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est irréversible.');">
+                                            <a href="{{ route('classrooms.teachers', $classroom->id) }}" class="text-indigo-500 hover:text-indigo-600 font-medium transition">
+                                                Professeurs
+                                            </a>
+
+                                            <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la classe', message: 'La classe {{ addslashes($classroom->name) }} et ses associations seront supprimées. Vérifiez les inscriptions avant de confirmer.', confirmLabel: 'Supprimer' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-500 hover:text-red-600 font-medium transition">

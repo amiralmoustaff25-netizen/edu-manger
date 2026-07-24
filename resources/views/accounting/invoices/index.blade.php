@@ -98,7 +98,7 @@
                                             <a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-2">Voir</a>
                                             <a href="{{ route('invoices.pdf', $invoice) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-2">PDF</a>
                                             <a href="{{ route('invoices.edit', $invoice) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2">Modifier</a>
-                                            <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette facture ?');">
+                                            <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la facture', message: 'La facture {{ addslashes($invoice->invoice_number) }} sera supprimée. Vérifiez qu’aucun paiement ne lui est associé.', confirmLabel: 'Supprimer' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Supprimer</button>

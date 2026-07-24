@@ -17,6 +17,8 @@ class TeacherDashboardController extends Controller
     {
         $teacher = auth()->user();
         $teacherModel = Teacher::where('user_id', $teacher->id)->first();
+
+        abort_if(! $teacherModel, 403, 'Votre profil enseignant est incomplet. Veuillez contacter un administrateur.');
         
         // Récupérer les classes liées au professeur avec les détails
         $classrooms = $teacherModel->classrooms()
@@ -34,9 +36,9 @@ class TeacherDashboardController extends Controller
             // Récupérer les programmes pour cette classe et matière
             $programs = ProgramAnnual::where('classroom_id', $classroom->id)
                 ->when($matiere, function ($query) use ($matiere) {
-                    return $query->where('matiere_id', $matiere->id);
+                    return $query->where('subject_id', $matiere->id);
                 })
-                ->with('chapterCompletions')
+                ->with('chapters.completions')
                 ->get();
 
             // Calculer la progression moyenne des programmes
@@ -44,7 +46,7 @@ class TeacherDashboardController extends Controller
             $programsCount = $programs->count();
             foreach ($programs as $program) {
                 $totalChapters = $program->chapters->count();
-                $completedChapters = $program->chapterCompletions->count();
+                $completedChapters = $program->chapters->sum(fn ($chapter) => $chapter->completions->isNotEmpty() ? 1 : 0);
                 if ($totalChapters > 0) {
                     $totalProgress += ($completedChapters / $totalChapters) * 100;
                 }

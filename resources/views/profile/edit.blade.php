@@ -45,7 +45,7 @@
                                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $user->name }}</h3>
                                 <p class="text-indigo-600 dark:text-indigo-400 font-mono text-lg mt-1">{{ $user->matricule }}</p>
                                 <span class="inline-block mt-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
-                                    {{ ucfirst($user->role) }}
+                                    {{ ucfirst($user->getRoleNames()->first() ?? 'sans rôle') }}
                                 </span>
                                 
                                 <!-- Champ photo -->

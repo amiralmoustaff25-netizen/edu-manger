@@ -7,6 +7,7 @@ use App\Models\Matiere;
 use App\Models\ProgramAnnual;
 use App\Models\ProgramChapter;
 use App\Models\SchoolYear;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -32,6 +33,25 @@ class ProgramDemoSeeder extends Seeder
             'password_must_change' => false,
         ]);
         $teacher->syncRoles(['professeur']);
+        $teacherProfile = Teacher::firstOrCreate(
+            ['user_id' => $teacher->id],
+            [
+                'matricule' => Teacher::generateMatricule(),
+                'date_naissance' => '1990-01-01',
+                'lieu_naissance' => 'Dakar',
+                'sexe' => 'masculin',
+                'nationalite' => 'Sénégalaise',
+                'diplomes' => 'Non renseigné',
+                'etablissements_formation' => 'Non renseigné',
+                'statut' => 'contractuel',
+                'date_recrutement' => now()->toDateString(),
+                'specialites' => [],
+                'filiation' => 'Non renseignée',
+                'contact_urgence_nom' => 'Non renseigné',
+                'contact_urgence_tel' => 'Non renseigné',
+                'nombre_heures_semaine' => 0,
+            ]
+        );
 
         $classrooms = [
             ['name' => 'CM1 A', 'subject' => 'Mathématiques'],
@@ -45,6 +65,13 @@ class ProgramDemoSeeder extends Seeder
                 'school_year_id' => $schoolYear->id,
             ], ['cycle' => 'primaire', 'teacher_id' => $teacher->id]);
             $subject = Matiere::firstOrCreate(['nom' => $entry['subject']]);
+            $teacherProfile->classrooms()->syncWithoutDetaching([
+                $classroom->id => [
+                    'annee_scolaire' => $schoolYear->year_string,
+                    'matiere_id' => $subject->id,
+                    'volume_horaire_hebdo' => 0,
+                ],
+            ]);
 
             $program = ProgramAnnual::firstOrCreate([
                 'classroom_id' => $classroom->id,

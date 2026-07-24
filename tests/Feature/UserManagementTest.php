@@ -28,10 +28,10 @@ test('admin can create a user with a generated matricule and temporary password'
 
     $this->actingAs($admin)
         ->post(route('users.store'), [
-            'name' => 'Nouveau Comptable',
+            'nom' => 'Comptable',
+            'prenom' => 'Nouveau',
             'email' => 'nouveau.comptable@edumanager.sn',
             'role' => 'comptable',
-            'contract_started_at' => '2026-06-17',
             'is_active' => '1',
         ])
         ->assertRedirect(route('users.index'));

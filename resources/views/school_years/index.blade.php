@@ -90,15 +90,14 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     @if(!$year->is_active)
-                                        <form action="{{ route('school-years.activate', $year->id) }}" method="POST" class="inline">
+                                        <form action="{{ route('school-years.activate', $year->id) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Activer l’année scolaire', message: 'L’année {{ addslashes($year->year_string) }} deviendra le contexte actif de l’établissement. Vérifiez que les données de l’année précédente sont prêtes.', confirmLabel: 'Activer l’année' })">
                                             @csrf
                                             <button type="submit" class="text-green-600 hover:text-green-900 font-medium mr-3">Activer</button>
                                         </form>
                                     @endif
 
                                     @if(!$year->is_active)
-                                        <form action="{{ route('school-years.destroy', $year->id) }}" method="POST" class="inline" 
-                                              onsubmit="return confirm('Attention : Êtes-vous sûr de vouloir supprimer cette année scolaire ?');">
+                                        <form action="{{ route('school-years.destroy', $year->id) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer l’année scolaire', message: 'Cette opération peut supprimer les inscriptions et données associées à cette année. Vérifiez qu’elle n’est pas utilisée avant de confirmer.', confirmLabel: 'Supprimer définitivement' })">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900 font-medium">Supprimer</button>

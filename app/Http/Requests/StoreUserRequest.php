@@ -12,9 +12,7 @@ class StoreUserRequest extends FormRequest
         'admin',
         'manager-comptable',
         'comptable',
-        'professeur',
-        'parent',
-        'eleve',
+        'surveillant',
     ];
 
     public function authorize(): bool

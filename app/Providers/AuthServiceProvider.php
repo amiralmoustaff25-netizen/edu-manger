@@ -33,8 +33,12 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Gate::before(function ($user) {
+            return $user->hasRole('super-admin') ? true : null;
+        });
+
         Gate::define('validatePartial', function ($user) {
-            return $user->hasRole('manager-comptable');
+            return $user->hasAnyRole(['super-admin', 'manager-comptable']);
         });
 
         Gate::define('upload-photo-eleve', function ($user) {

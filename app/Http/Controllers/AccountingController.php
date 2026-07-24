@@ -28,11 +28,11 @@ class AccountingController extends Controller
                 ->sum('amount'),
             'total_payments' => Payment::count(),
             'complete_payments' => Payment::where('status', 'complet')->count(),
-            'partial_payments' => Payment::where('status', 'partiel')->count(),
-            'remaining_balance' => Payment::where('status', 'partiel')->sum('remaining_balance'),
+            'partial_payments' => \App\Models\Invoice::whereIn('status', ['partial', 'overdue'])->count(),
+            'remaining_balance' => \App\Models\Invoice::whereIn('status', ['sent', 'partial', 'overdue'])->sum('remaining_balance'),
             'total_invoices' => \App\Models\Invoice::count(),
             'paid_invoices' => \App\Models\Invoice::where('status', 'paid')->count(),
-            'pending_invoices' => \App\Models\Invoice::where('status', 'pending')->count(),
+            'pending_invoices' => \App\Models\Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->count(),
         ];
 
         // Revenus par mois de l'année courante
@@ -289,7 +289,7 @@ class AccountingController extends Controller
 
         // Factures en retard
         $overdueInvoices = \App\Models\Invoice::with(['registration.user', 'registration.classroom'])
-            ->where('status', 'pending')
+            ->whereIn('status', ['sent', 'partial', 'overdue'])
             ->where('due_date', '<', now())
             ->where('remaining_balance', '>', 0)
             ->latest()

@@ -50,8 +50,8 @@
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Vie Scolaire') }}</p>
                 <div class="mt-2 space-y-1">
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('student.dashboard') }}" class="{{ request()->routeIs('student.dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.dashboard') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         {{ __('Emploi du temps') }}
@@ -71,14 +71,14 @@
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Suivi Pédagogique') }}</p>
                 <div class="mt-2 space-y-1">
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('student.dashboard') }}" class="{{ request()->routeIs('student.dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('student.dashboard') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                         {{ __('Mes Notes') }}
                     </a>
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('bulletins.index') }}" class="{{ request()->routeIs('bulletins.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('bulletins.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         {{ __('Bulletins') }}
@@ -87,7 +87,85 @@
             </div>
             @endrole
 
-            @role('super-admin|admin')
+            @role('super-admin')
+            <div class="mt-6 space-y-2">
+                <div x-data="{ open: {{ request()->routeIs('students.*') || request()->routeIs('registrations.*') || request()->routeIs('parents.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Scolarité') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('students.index') }}" class="{{ request()->routeIs('students.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Élèves') }}</a>
+                        <a href="{{ route('registrations.create') }}" class="{{ request()->routeIs('registrations.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Inscriptions') }}</a>
+                        <a href="{{ route('parents.index') }}" class="{{ request()->routeIs('parents.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Parents & Tuteurs') }}</a>
+                    </div>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('classrooms.*') || request()->routeIs('teachers.*') || request()->routeIs('programs.*') || request()->routeIs('cahier-textes.*') || request()->routeIs('bulletins.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Organisation pédagogique') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('classrooms.index') }}" class="{{ request()->routeIs('classrooms.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Classes & Niveaux') }}</a>
+                        <a href="{{ route('teachers.index') }}" class="{{ request()->routeIs('teachers.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Professeurs') }}</a>
+                        <a href="{{ route('programs.index') }}" class="{{ request()->routeIs('programs.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Programmes annuels') }}</a>
+                        <a href="{{ route('cahier-textes.dashboard.index') }}" class="{{ request()->routeIs('cahier-textes.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Cahier de textes') }}</a>
+                        <a href="{{ route('bulletins.index') }}" class="{{ request()->routeIs('bulletins.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Bulletins') }}</a>
+                    </div>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('accounting.*') || request()->routeIs('payments.*') || request()->routeIs('invoices.*') || request()->routeIs('reminders.*') || request()->routeIs('fee-types.*') || request()->routeIs('classroom-fees.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Finance') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('accounting.dashboard') }}" class="{{ request()->routeIs('accounting.dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Vue financière') }}</a>
+                        <a href="{{ route('payments.index') }}" class="{{ request()->routeIs('payments.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Paiements') }}</a>
+                        <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Factures') }}</a>
+                        <a href="{{ route('accounting.alerts') }}" class="{{ request()->routeIs('accounting.alerts') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Impayés & Recouvrement') }}</a>
+                        <a href="{{ route('reminders.index') }}" class="{{ request()->routeIs('reminders.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Rappels') }}</a>
+                        <a href="{{ route('fee-types.index') }}" class="{{ request()->routeIs('fee-types.*') || request()->routeIs('classroom-fees.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Grille tarifaire') }}</a>
+                    </div>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('login-logs.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Utilisateurs & Accès') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Utilisateurs') }}</a>
+                        <a href="{{ route('login-logs.index') }}" class="{{ request()->routeIs('login-logs.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Connexions') }}</a>
+                    </div>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('accounting.reports') || request()->routeIs('accounting.advanced-reports') || request()->routeIs('accounting.cash-flow') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Rapports') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('accounting.reports') }}" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 block px-3 py-2 text-sm rounded-md">{{ __('Rapports financiers') }}</a>
+                        <a href="{{ route('accounting.advanced-reports') }}" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 block px-3 py-2 text-sm rounded-md">{{ __('Analyse avancée') }}</a>
+                        <a href="{{ route('accounting.cash-flow') }}" class="text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 block px-3 py-2 text-sm rounded-md">{{ __('Trésorerie') }}</a>
+                    </div>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('school-years.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-md">
+                        <span>{{ __('Administration') }}</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-collapse class="ml-4 space-y-1">
+                        <a href="{{ route('school-years.index') }}" class="{{ request()->routeIs('school-years.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Années scolaires') }}</a>
+                    </div>
+                </div>
+            </div>
+            @endrole
+
+            @role('admin')
             <!-- Gestion -->
             <div class="mt-6">
                 <p class="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Gestion') }}</p>
@@ -174,7 +252,7 @@
                     </a>
 
                     <!-- Opérations -->
-                    <div x-data="{ open: {{ request()->routeIs('payments.*') || request()->routeIs('invoices.*') ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ request()->routeIs('payments.*') || request()->routeIs('invoices.*') || request()->routeIs('reminders.*') ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="w-full flex items-center justify-between px-2 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100 rounded-md group">
                             <div class="flex items-center">
                                 <svg class="mr-3 flex-shrink-0 h-6 w-6 text-gray-400 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,6 +274,11 @@
                             <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} block px-2 py-2 text-sm font-medium rounded-md">
                                 {{ __('Factures') }}
                             </a>
+                            @role('manager-comptable')
+                                <a href="{{ route('reminders.index') }}" class="{{ request()->routeIs('reminders.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} block px-2 py-2 text-sm font-medium rounded-md">
+                                    {{ __('Rappels') }}
+                                </a>
+                            @endrole
                         </div>
                     </div>
 

@@ -55,16 +55,11 @@ class RegistrationControllerTest extends TestCase
     /** @test */
     public function it_can_store_a_new_registration(): void
     {
-        $student = User::factory()->create(['role' => 'eleve']);
-
-        $response = $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
+        $response = $this->post(route('registrations.store'), $this->registrationPayload());
 
         $response->assertRedirect(route('dashboard'));
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $this->assertTrue($student->hasRole('eleve'));
         $this->assertDatabaseHas('registrations', [
             'user_id' => $student->id,
             'classroom_id' => $this->classroom->id,
@@ -77,49 +72,31 @@ class RegistrationControllerTest extends TestCase
     {
         $response = $this->post(route('registrations.store'), []);
 
-        $response->assertSessionHasErrors(['user_id', 'classroom_id', 'registration_fee_paid', 'monthly_fee']);
+        $response->assertSessionHasErrors(['nom', 'prenom', 'email', 'date_naissance', 'lieu_naissance', 'sexe', 'cycle', 'classroom_id', 'registration_fee_paid', 'monthly_fee']);
     }
 
     /** @test */
     public function it_generates_matricule_on_registration(): void
     {
-        $student = User::factory()->create(['role' => 'eleve']);
+        $this->post(route('registrations.store'), $this->registrationPayload());
 
-        $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
-
+        $student = User::where('email', 'student@example.com')->firstOrFail();
         $registration = Registration::where('user_id', $student->id)->first();
         $this->assertNotNull($registration);
         $this->assertNotNull($registration->matricule);
         $this->assertStringStartsWith('EDU-', $registration->matricule);
+        $this->assertStringStartsWith('ELE-', $student->matricule);
     }
 
     /** @test */
     public function it_prevents_duplicate_registration_same_year(): void
     {
-        $student = User::factory()->create(['role' => 'eleve']);
+        $this->post(route('registrations.store'), $this->registrationPayload());
 
-        // Première inscription
-        $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
+        $response = $this->post(route('registrations.store'), $this->registrationPayload());
 
-        // Deuxième inscription même année → doit échouer
-        $response = $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
-
-        $response->assertSessionHasErrors('user_id');
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseCount('registrations', 1);
     }
 
     /** @test */
@@ -128,14 +105,7 @@ class RegistrationControllerTest extends TestCase
         // Désactiver l'année active
         $this->schoolYear->update(['is_active' => false]);
 
-        $student = User::factory()->create(['role' => 'eleve']);
-
-        $response = $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
+        $response = $this->post(route('registrations.store'), $this->registrationPayload());
 
         // store() uses firstOrFail() which throws 404 when no active year exists
         $response->assertNotFound();
@@ -144,23 +114,16 @@ class RegistrationControllerTest extends TestCase
     /** @test */
     public function it_can_complete_full_registration_cycle(): void
     {
-        // Créer un élève avec le champ name (pas nom/prenom)
-        $student = User::factory()->create([
-            'role' => 'eleve',
-            'name' => 'Jean Dupont',
-        ]);
-        $student->assignRole('eleve');
-
-        // Inscrire l'élève
-        $response = $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
-            'registration_fee_paid' => 5000,
-            'monthly_fee' => 15000,
-        ]);
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'nom' => 'Dupont',
+            'prenom' => 'Jean',
+            'email' => 'jean.dupont@example.com',
+        ]));
 
         $response->assertRedirect(route('dashboard'));
 
+        $student = User::where('email', 'jean.dupont@example.com')->firstOrFail();
+        $this->assertSame('Dupont Jean', $student->name);
         $this->assertDatabaseHas('registrations', [
             'user_id' => $student->id,
             'classroom_id' => $this->classroom->id,
@@ -171,21 +134,36 @@ class RegistrationControllerTest extends TestCase
     /** @test */
     public function it_calculates_registration_with_payments(): void
     {
-        $student = User::factory()->create(['role' => 'eleve']);
-
-        $response = $this->post(route('registrations.store'), [
-            'user_id' => $student->id,
-            'classroom_id' => $this->classroom->id,
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
             'registration_fee_paid' => 10000,
             'monthly_fee' => 20000,
-        ]);
+        ]));
 
         $response->assertRedirect(route('dashboard'));
 
+        $student = User::where('email', 'student@example.com')->firstOrFail();
         $registration = Registration::where('user_id', $student->id)->first();
         $this->assertNotNull($registration);
         $this->assertEquals(20000, $registration->monthly_fee);
         $this->assertEquals(10000, $registration->registration_fee_paid);
         $this->assertEquals('pending', $registration->status);
+    }
+
+    private function registrationPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'nom' => 'Diallo',
+            'prenom' => 'Aminata',
+            'email' => 'student@example.com',
+            'date_naissance' => '2010-05-12',
+            'lieu_naissance' => 'Dakar',
+            'sexe' => 'F',
+            'cycle' => 'primaire',
+            'role' => 'eleve',
+            'is_active' => 1,
+            'classroom_id' => $this->classroom->id,
+            'registration_fee_paid' => 5000,
+            'monthly_fee' => 15000,
+        ], $overrides);
     }
 }
