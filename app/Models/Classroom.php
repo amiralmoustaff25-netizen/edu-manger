@@ -59,4 +59,9 @@ class Classroom extends Model
     {
         return $this->hasMany(Registration::class);
     }
+
+    public function pedagogicalAssignments(): HasMany
+    {
+        return $this->hasMany(PedagogicalAssignment::class);
+    }
 }

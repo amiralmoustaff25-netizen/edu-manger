@@ -113,6 +113,8 @@
                         <a href="{{ route('programs.index') }}" class="{{ request()->routeIs('programs.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Programmes annuels') }}</a>
                         <a href="{{ route('cahier-textes.dashboard.index') }}" class="{{ request()->routeIs('cahier-textes.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Cahier de textes') }}</a>
                         <a href="{{ route('bulletins.index') }}" class="{{ request()->routeIs('bulletins.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Bulletins') }}</a>
+                        <a href="{{ route('attendances.overview') }}" class="{{ request()->routeIs('attendances.overview') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Présences') }}</a>
+                        <a href="{{ route('pedagogical-configuration.index') }}" class="{{ request()->routeIs('pedagogical-configuration.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700' }} block px-3 py-2 text-sm rounded-md">{{ __('Configuration pédagogique') }}</a>
                     </div>
                 </div>
 
@@ -188,6 +190,10 @@
                         </svg>
                         {{ __('Classes') }}
                     </a>
+                    <a href="{{ route('attendances.overview') }}" class="{{ request()->routeIs('attendances.overview') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('attendances.overview') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012-2h2a1 1 0 011 1v1m-6 8l2 2 4-4" /></svg>
+                        {{ __('Présences') }}
+                    </a>
                     <a href="{{ route('students.index') }}" class="{{ request()->routeIs('students.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                         <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('students.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -255,6 +261,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {{ __('Saisie Notes') }}
+                    </a>
+                    <a href="{{ route('professeur.teaching-sessions.index') }}" class="{{ request()->routeIs('professeur.teaching-sessions.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('professeur.teaching-sessions.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {{ __('Pointage des cours') }}
                     </a>
                     <a href="{{ route('professeur.attendances.index') }}" class="{{ request()->routeIs('professeur.attendances.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-gray-100' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                         <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ request()->routeIs('professeur.attendances.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">

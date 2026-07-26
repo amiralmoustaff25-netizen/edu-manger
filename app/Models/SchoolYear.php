@@ -36,6 +36,21 @@ class SchoolYear extends Model
         return $this->hasMany(Registration::class);
     }
 
+    public function pedagogicalAssignments(): HasMany
+    {
+        return $this->hasMany(PedagogicalAssignment::class);
+    }
+
+    public function academicPeriods(): HasMany
+    {
+        return $this->hasMany(AcademicPeriod::class)->orderBy('position');
+    }
+
+    public function gradeSetting()
+    {
+        return $this->hasOne(GradeSetting::class);
+    }
+
     /**
      * Scope pour l'année active
      */

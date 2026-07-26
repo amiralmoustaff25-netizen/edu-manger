@@ -15,6 +15,7 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
+use App\Http\Controllers\PedagogicalConfigurationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\TeachingSessionController;
 use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserNotificationController;
@@ -247,12 +249,25 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             ->parameters(['classes' => 'classroom'])
             ->only(['index', 'show']);
         Route::resource('notes', GradeController::class)->only(['index', 'store']);
+        Route::get('/pointage-cours', [TeachingSessionController::class, 'index'])->name('teaching-sessions.index');
+        Route::post('/pointage-cours', [TeachingSessionController::class, 'store'])->name('teaching-sessions.store');
         Route::get('/attendances/history', [AttendanceController::class, 'history'])->name('attendances.history');
         Route::resource('attendances', AttendanceController::class)->only(['index', 'store']);
     });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
+        Route::prefix('pedagogical-configuration')->name('pedagogical-configuration.')->group(function () {
+            Route::get('/', [PedagogicalConfigurationController::class, 'index'])->name('index');
+            Route::get('/assignments', [PedagogicalConfigurationController::class, 'assignments'])->name('assignments');
+            Route::post('/assignments', [PedagogicalConfigurationController::class, 'storeAssignments'])->name('assignments.store');
+            Route::patch('/assignments/{assignment}/toggle', [PedagogicalConfigurationController::class, 'toggleAssignment'])->name('assignments.toggle');
+            Route::post('/periods', [PedagogicalConfigurationController::class, 'storePeriod'])->name('periods.store');
+            Route::patch('/periods/{period}/toggle', [PedagogicalConfigurationController::class, 'togglePeriod'])->name('periods.toggle');
+            Route::post('/evaluation-types', [PedagogicalConfigurationController::class, 'storeEvaluationType'])->name('evaluation-types.store');
+            Route::post('/subject-configurations', [PedagogicalConfigurationController::class, 'storeSubjectConfiguration'])->name('subjects.store');
+            Route::put('/school-years/{schoolYear}/grade-settings', [PedagogicalConfigurationController::class, 'updateSettings'])->name('settings.update');
+        });
         Route::resource('users', UserController::class)->except(['show']);
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');

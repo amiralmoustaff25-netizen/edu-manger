@@ -54,6 +54,11 @@ class Teacher extends Model
             ->withTimestamps();
     }
 
+    public function pedagogicalAssignments()
+    {
+        return $this->hasMany(PedagogicalAssignment::class);
+    }
+
     public function scopeFonctionnaires($query)
     {
         return $query->where('statut', 'fonctionnaire');

@@ -15,4 +15,14 @@ class Matiere extends Model
     {
         return $this->hasMany(Note::class);
     }
+
+    public function pedagogicalAssignments()
+    {
+        return $this->hasMany(PedagogicalAssignment::class);
+    }
+
+    public function configurations()
+    {
+        return $this->hasMany(SubjectConfiguration::class);
+    }
 }
