@@ -21,6 +21,7 @@
                                 <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('Sélectionnez une classe et une date pour enregistrer les présences') }}</p>
                             </div>
                         </div>
+                        <a href="{{ route('professeur.attendances.history') }}" class="rounded-md border border-indigo-600 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:border-indigo-400 dark:text-indigo-400 dark:hover:bg-slate-700">Voir l'historique</a>
                     </div>
 
                     <form action="{{ route('professeur.attendances.index') }}" method="GET" class="flex items-center space-x-4">

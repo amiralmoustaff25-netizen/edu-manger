@@ -8,6 +8,7 @@ use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RegistrationController extends Controller
 {
@@ -52,6 +53,16 @@ class RegistrationController extends Controller
             'parents.*.lien_parente' => ['nullable', 'string', 'max:255'],
             'parents.*.est_responsable_financier' => ['nullable', 'boolean'],
             'parents.*.est_contact_urgence' => ['nullable', 'boolean'],
+
+            'parent_nom' => ['nullable', 'required_with:parent_prenom,parent_email', 'string', 'max:255'],
+            'parent_prenom' => ['nullable', 'required_with:parent_nom', 'string', 'max:255'],
+            'parent_email' => ['nullable', 'required_with:parent_nom', 'email', 'max:255', Rule::unique('users', 'email'), Rule::unique('parents', 'email')],
+            'parent_telephone' => ['nullable', 'string', 'max:20'],
+            'parent_adresse' => ['nullable', 'string', 'max:500'],
+            'parent_profession' => ['nullable', 'string', 'max:255'],
+            'parent_lien_parente' => ['nullable', 'in:Pere,Mere,Tuteur,Tutrice,Autre'],
+            'parent_est_responsable_financier' => ['nullable', 'boolean'],
+            'parent_est_contact_urgence' => ['nullable', 'boolean'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -61,6 +72,13 @@ class RegistrationController extends Controller
             auth()->id()
         );
 
-        return redirect()->route('dashboard')->with('success', 'Inscription élève réussie. Matricule : '.$student->matricule.' | Mot de passe temporaire : password');
+        $message = 'Inscription élève réussie. Matricule : '.$student->matricule.' | Mot de passe temporaire : password';
+
+        $parentCredentials = $enrollmentService->getParentCredentials();
+        if ($parentCredentials) {
+            $message .= ' | Compte parent — Matricule : '.$parentCredentials['matricule'].' | Email : '.$parentCredentials['email'].' | Mot de passe temporaire : '.$parentCredentials['password'];
+        }
+
+        return redirect()->route('dashboard')->with('success', $message);
     }
 }

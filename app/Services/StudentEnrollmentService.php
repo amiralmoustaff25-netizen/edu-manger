@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
@@ -9,12 +10,22 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Intervention\Image\ImageManagerStatic as Image;
 
 class StudentEnrollmentService
 {
+    public ?array $parentCredentials = null;
+
+    public function getParentCredentials(): ?array
+    {
+        return $this->parentCredentials;
+    }
+
     public function enroll(array $data, ?UploadedFile $photo = null, ?int $createdBy = null): User
     {
+        $this->parentCredentials = null;
+
         return DB::transaction(function () use ($data, $photo, $createdBy) {
             $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
             $student = User::create([
@@ -71,6 +82,10 @@ class StudentEnrollmentService
                 $student->parents()->sync($parents);
             }
 
+            if (! empty($data['parent_nom']) && ! empty($data['parent_prenom'])) {
+                $this->createParentForStudent($student, $data);
+            }
+
             return $student;
         });
     }
@@ -105,6 +120,62 @@ class StudentEnrollmentService
             $matricule = 'EDU-'.date('y').'-'.str_pad($sequence, 6, '0', STR_PAD_LEFT);
             $sequence++;
         } while (Registration::where('matricule', $matricule)->exists());
+
+        return $matricule;
+    }
+
+    private function createParentForStudent(User $student, array $data): void
+    {
+        $parentPassword = Str::random(12);
+
+        $parentUser = User::create([
+            'name' => trim($data['parent_nom'] . ' ' . $data['parent_prenom']),
+            'prenom' => $data['parent_prenom'],
+            'email' => $data['parent_email'],
+            'password' => Hash::make($parentPassword),
+            'matricule' => User::generateMatricule('parent'),
+            'role' => 'parent',
+            'telephone' => $data['parent_telephone'] ?? null,
+            'adresse' => $data['parent_adresse'] ?? null,
+            'is_active' => true,
+            'password_must_change' => true,
+        ]);
+
+        $parentUser->syncRoles(['parent']);
+
+        $parent = ParentModel::create([
+            'matricule_parent' => $this->generateParentMatricule(),
+            'nom' => $data['parent_nom'],
+            'prenom' => $data['parent_prenom'],
+            'email' => $data['parent_email'],
+            'telephone' => $data['parent_telephone'] ?? null,
+            'adresse' => $data['parent_adresse'] ?? null,
+            'profession' => $data['parent_profession'] ?? null,
+            'statut' => 'actif',
+            'user_id' => $parentUser->id,
+        ]);
+
+        $parent->students()->attach($student->id, [
+            'lien_parente' => $data['parent_lien_parente'] ?? 'Parent',
+            'est_responsable_financier' => (bool) ($data['parent_est_responsable_financier'] ?? false),
+            'est_contact_urgence' => (bool) ($data['parent_est_contact_urgence'] ?? false),
+        ]);
+
+        $this->parentCredentials = [
+            'matricule' => $parentUser->matricule,
+            'email' => $parentUser->email,
+            'password' => $parentPassword,
+        ];
+    }
+
+    private function generateParentMatricule(): string
+    {
+        $sequence = ParentModel::withTrashed()->where('matricule_parent', 'like', 'PAR-%')->count() + 1;
+
+        do {
+            $matricule = 'PAR-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
+        } while (ParentModel::withTrashed()->where('matricule_parent', $matricule)->exists());
 
         return $matricule;
     }

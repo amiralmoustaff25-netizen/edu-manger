@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Registration;
 use App\Models\Teacher;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -86,7 +87,7 @@ class AttendanceController extends Controller
         }
 
         // Empêcher la modification des absences passées (règle métier)
-        if (carbon($validated['date'])->lt(today()->subDays(7))) {
+        if (Carbon::parse($validated['date'])->lt(today()->subDays(7))) {
             abort(403, 'Vous ne pouvez pas modifier les absences de plus de 7 jours.');
         }
 
@@ -111,5 +112,46 @@ class AttendanceController extends Controller
                 'date' => $validated['date'],
             ])
             ->with('success', 'Les présences ont été enregistrées avec succès.');
+    }
+
+    public function history(Request $request)
+    {
+        $teacher = Teacher::where('user_id', auth()->id())->firstOrFail();
+        $classrooms = $teacher->classrooms()->with('schoolYear')->get();
+        $selectedClassroom = $request->integer('classroom_id') ?: null;
+
+        if ($selectedClassroom && ! $classrooms->contains('id', $selectedClassroom)) {
+            abort(403, 'Vous n\'êtes pas autorisé à consulter les présences de cette classe.');
+        }
+
+        $attendances = Attendance::query()
+            ->with(['student', 'classroom', 'recordedBy'])
+            ->when($selectedClassroom, fn ($query) => $query->where('classroom_id', $selectedClassroom), fn ($query) => $query->whereIn('classroom_id', $classrooms->pluck('id')))
+            ->when($request->filled('date'), fn ($query) => $query->whereDate('date', $request->date))
+            ->latest('date')
+            ->orderBy('classroom_id')
+            ->orderBy('user_id')
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('teachers.attendances.history', compact('attendances', 'classrooms', 'selectedClassroom'));
+    }
+
+    public function overview(Request $request)
+    {
+        $classrooms = Classroom::with('schoolYear')->orderBy('name')->get();
+        $selectedClassroom = $request->integer('classroom_id') ?: null;
+
+        $attendances = Attendance::query()
+            ->with(['student', 'classroom', 'recordedBy'])
+            ->when($selectedClassroom, fn ($query) => $query->where('classroom_id', $selectedClassroom))
+            ->when($request->filled('date'), fn ($query) => $query->whereDate('date', $request->date))
+            ->latest('date')
+            ->orderBy('classroom_id')
+            ->orderBy('user_id')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('attendances.overview', compact('attendances', 'classrooms', 'selectedClassroom'));
     }
 }

@@ -166,6 +166,64 @@
                 </div>
             </div>
         </div>
+
+        <div class="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informations du parent</h3>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                    <label for="parent_nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
+                    <input id="parent_nom" name="parent_nom" type="text" value="{{ old('parent_nom') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('parent_nom')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="parent_prenom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prénom</label>
+                    <input id="parent_prenom" name="parent_prenom" type="text" value="{{ old('parent_prenom') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('parent_prenom')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="parent_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input id="parent_email" name="parent_email" type="email" value="{{ old('parent_email') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('parent_email')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="parent_telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Téléphone</label>
+                    <input id="parent_telephone" name="parent_telephone" type="text" value="{{ old('parent_telephone') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('parent_telephone')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="parent_profession" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Profession</label>
+                    <input id="parent_profession" name="parent_profession" type="text" value="{{ old('parent_profession') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-input-error :messages="$errors->get('parent_profession')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="parent_lien_parente" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lien de parenté</label>
+                    <select id="parent_lien_parente" name="parent_lien_parente" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Sélectionner</option>
+                        <option value="Pere" @selected(old('parent_lien_parente') === 'Pere')>Père</option>
+                        <option value="Mere" @selected(old('parent_lien_parente') === 'Mere')>Mère</option>
+                        <option value="Tuteur" @selected(old('parent_lien_parente') === 'Tuteur')>Tuteur</option>
+                        <option value="Tutrice" @selected(old('parent_lien_parente') === 'Tutrice')>Tutrice</option>
+                        <option value="Autre" @selected(old('parent_lien_parente') === 'Autre')>Autre</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('parent_lien_parente')" class="mt-2" />
+                </div>
+                <div class="md:col-span-2">
+                    <label for="parent_adresse" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse</label>
+                    <textarea id="parent_adresse" name="parent_adresse" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('parent_adresse') }}</textarea>
+                    <x-input-error :messages="$errors->get('parent_adresse')" class="mt-2" />
+                </div>
+                <div class="md:col-span-2 flex flex-wrap gap-6 rounded-md bg-gray-50 p-4 dark:bg-slate-700/50">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="parent_est_responsable_financier" value="1" @checked(old('parent_est_responsable_financier')) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Responsable financier</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="parent_est_contact_urgence" value="1" @checked(old('parent_est_contact_urgence')) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Contact d'urgence</span>
+                    </label>
+                </div>
+            </div>
+        </div>
     @endif
 
     @if($parents->count() > 0)

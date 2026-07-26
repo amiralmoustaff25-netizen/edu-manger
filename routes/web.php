@@ -243,12 +243,16 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     // Routes pour les professeurs
     Route::middleware(['role:professeur'])->prefix('professeur')->name('professeur.')->group(function () {
         Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
-        Route::resource('classes', TeacherClassController::class)->only(['index', 'show']);
+        Route::resource('classes', TeacherClassController::class)
+            ->parameters(['classes' => 'classroom'])
+            ->only(['index', 'show']);
         Route::resource('notes', GradeController::class)->only(['index', 'store']);
+        Route::get('/attendances/history', [AttendanceController::class, 'history'])->name('attendances.history');
         Route::resource('attendances', AttendanceController::class)->only(['index', 'store']);
     });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {
+        Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
         Route::resource('users', UserController::class)->except(['show']);
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');

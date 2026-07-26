@@ -28,8 +28,6 @@ class TeacherClassController extends Controller
 
     public function show(Classroom $classroom)
     {
-        $this->authorize('view', $classroom);
-
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
         

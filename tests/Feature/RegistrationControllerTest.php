@@ -149,6 +149,46 @@ class RegistrationControllerTest extends TestCase
         $this->assertEquals('pending', $registration->status);
     }
 
+    /** @test */
+    public function it_creates_a_parent_account_during_registration(): void
+    {
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'email' => 'enfant@example.com',
+            'parent_nom' => 'Diallo',
+            'parent_prenom' => 'Mamadou',
+            'parent_email' => 'parent.diallo@example.com',
+            'parent_telephone' => '77 777 77 77',
+            'parent_adresse' => 'Dakar',
+            'parent_profession' => 'Commerçant',
+            'parent_lien_parente' => 'Pere',
+            'parent_est_responsable_financier' => 1,
+            'parent_est_contact_urgence' => 1,
+        ]));
+
+        $response->assertRedirect(route('dashboard'));
+
+        $student = User::where('email', 'enfant@example.com')->firstOrFail();
+        $parentUser = User::where('email', 'parent.diallo@example.com')->firstOrFail();
+
+        $this->assertTrue($parentUser->hasRole('parent'));
+        $this->assertStringStartsWith('PAR-', $parentUser->matricule);
+        $this->assertDatabaseHas('parents', [
+            'user_id' => $parentUser->id,
+            'email' => 'parent.diallo@example.com',
+            'nom' => 'Diallo',
+            'prenom' => 'Mamadou',
+        ]);
+
+        $this->assertDatabaseHas('parent_user', [
+            'user_id' => $student->id,
+            'lien_parente' => 'Pere',
+            'est_responsable_financier' => 1,
+            'est_contact_urgence' => 1,
+        ]);
+
+        $response->assertSessionHas('success');
+    }
+
     private function registrationPayload(array $overrides = []): array
     {
         return array_merge([
