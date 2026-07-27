@@ -49,9 +49,24 @@ class ProgramAnnual extends Model
         return $this->belongsTo(SchoolYear::class);
     }
 
+    public function pedagogicalAssignment(): BelongsTo
+    {
+        return $this->belongsTo(PedagogicalAssignment::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
+    }
+
     public function chapters(): HasMany
     {
         return $this->hasMany(ProgramChapter::class)->orderBy('ordre');
+    }
+
+    public function lessons(): HasMany
+    {
+        return $this->hasMany(ProgramChapter::class)->where('type', 'lecon')->orderBy('ordre');
     }
 
     public function history(): HasMany

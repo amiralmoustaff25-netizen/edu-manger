@@ -14,15 +14,19 @@ class StoreProgramAnnualRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'classroom_id' => ['required', 'exists:classrooms,id'],
-            'subject_id' => ['required', 'exists:matieres,id'],
-            'school_year_id' => ['required', 'exists:school_years,id'],
-            'teacher_id' => ['required', 'exists:users,id'],
-            'chapters' => ['required', 'array'],
+            'pedagogical_assignment_id' => ['required', 'exists:pedagogical_assignments,id'],
+            'academic_period_id' => ['nullable', 'exists:academic_periods,id'],
+            'chapters' => ['required', 'array', 'min:1'],
             'chapters.*.titre' => ['required', 'string', 'max:255'],
             'chapters.*.type' => ['required', 'in:chapitre,lecon,sous_partie'],
             'chapters.*.volume_horaire_prevu' => ['required', 'numeric', 'min:0.5'],
-            'chapters.*.children' => ['nullable', 'array'],
+            'chapters.*.academic_period_id' => ['nullable', 'exists:academic_periods,id'],
+            'chapters.*.planned_at' => ['nullable', 'date'],
+            'chapters.*.children' => ['required', 'array', 'min:1'],
+            'chapters.*.children.*.titre' => ['required', 'string', 'max:255'],
+            'chapters.*.children.*.volume_horaire_prevu' => ['required', 'numeric', 'min:0.5'],
+            'chapters.*.children.*.academic_period_id' => ['nullable', 'exists:academic_periods,id'],
+            'chapters.*.children.*.planned_at' => ['nullable', 'date'], 
         ];
     }
 

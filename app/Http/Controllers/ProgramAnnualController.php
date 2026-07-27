@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ImportProgramRequest;
 use App\Http\Requests\StoreProgramAnnualRequest;
 use App\Http\Requests\UpdateProgramAnnualRequest;
+use App\Models\AcademicPeriod;
+use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
 use App\Models\ProgramChapter;
 use App\Models\ProgramHistory;
@@ -19,7 +21,7 @@ class ProgramAnnualController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher.user']);
+        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher']);
 
         if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
             $query->forTeacher($request->user()->id);
@@ -50,17 +52,41 @@ class ProgramAnnualController extends Controller
         return view('programs.index', compact('programs'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('programs.create');
+        $assignments = PedagogicalAssignment::query()
+            ->with(['classroom', 'matiere', 'schoolYear', 'teacher.user'])
+            ->where('is_active', true)
+            ->when(! $request->user()->hasRole(['super-admin', 'admin', 'surveillant']), function ($query) use ($request) {
+                $query->whereHas('teacher', fn ($teacherQuery) => $teacherQuery->where('user_id', $request->user()->id));
+            })
+            ->orderBy('classroom_id')
+            ->get();
+        $periods = AcademicPeriod::query()->orderBy('starts_at')->get();
+
+        return view('programs.create', compact('assignments', 'periods'));
     }
 
     public function store(StoreProgramAnnualRequest $request): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('create', ProgramAnnual::class);
+        $assignment = PedagogicalAssignment::with('teacher')->whereKey($request->integer('pedagogical_assignment_id'))->where('is_active', true)->firstOrFail();
 
-        return DB::transaction(function () use ($request) {
-            $program = ProgramAnnual::create($request->only(['classroom_id', 'subject_id', 'teacher_id', 'school_year_id']));
+        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+            abort_unless($assignment->teacher->user_id === $request->user()->id, 403);
+        }
+
+        abort_if(ProgramAnnual::where('classroom_id', $assignment->classroom_id)->where('subject_id', $assignment->matiere_id)->where('school_year_id', $assignment->school_year_id)->exists(), 422, 'Un programme existe déjà pour cette classe, cette matière et cette année scolaire.');
+
+        return DB::transaction(function () use ($request, $assignment) {
+            $program = ProgramAnnual::create([
+                'pedagogical_assignment_id' => $assignment->id,
+                'academic_period_id' => $request->input('academic_period_id'),
+                'classroom_id' => $assignment->classroom_id,
+                'subject_id' => $assignment->matiere_id,
+                'teacher_id' => $assignment->teacher->user_id,
+                'school_year_id' => $assignment->school_year_id,
+            ]);
             $this->createChapters($program, $request->input('chapters', []));
             $this->recordHistory($program, $request->user(), 'cree', 'Programme créé');
 
@@ -199,6 +225,9 @@ class ProgramAnnualController extends Controller
                 'type' => $item['type'] ?? 'chapitre',
                 'titre' => $item['titre'] ?? 'Sans titre',
                 'description' => $item['description'] ?? null,
+                'academic_period_id' => $item['academic_period_id'] ?? null,
+                'planned_at' => $item['planned_at'] ?? null,
+                'status' => $item['status'] ?? 'a_faire',
                 'volume_horaire_prevu' => $item['volume_horaire_prevu'] ?? 1,
                 'volume_horaire_realise' => 0,
             ]);

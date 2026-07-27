@@ -24,6 +24,8 @@ class TeacherController extends Controller
 
         $teachers = Teacher::query()
             ->with(['user', 'classrooms'])
+            ->withCount('pedagogicalAssignments')
+            ->withSum(['pedagogicalAssignments' => fn ($query) => $query->where('is_active', true)], 'volume_horaire_hebdo')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
                 $query->whereHas('user', function ($query) use ($search) {
@@ -38,11 +40,6 @@ class TeacherController extends Controller
                     $query->where('name', 'like', "%{$matiere}%");
                 });
             })
-            ->when($request->filled('anciennete'), function ($query) use ($request) {
-                if (preg_match('/^(\d+)$/', $request->string('anciennete')->toString(), $matches)) {
-                    $query->whereDate('date_recrutement', '<=', now()->subYears((int) $matches[1]));
-                }
-            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -50,7 +47,7 @@ class TeacherController extends Controller
         return view('teachers.index', [
             'teachers' => $teachers,
             'statuts' => ['fonctionnaire', 'contractuel', 'vacataire'],
-            'filters' => $request->only(['search', 'statut', 'matiere', 'anciennete']),
+            'filters' => $request->only(['search', 'statut', 'matiere']),
         ]);
     }
 
@@ -128,10 +125,31 @@ class TeacherController extends Controller
     {
         Gate::authorize('view', $teacher);
 
+        $weekStart = now()->startOfWeek()->toDateString();
+        $weekEnd = now()->endOfWeek()->toDateString();
         $teacher->load(['user', 'classrooms.schoolYear']);
+        $assignments = $teacher->pedagogicalAssignments()
+            ->with(['classroom', 'matiere', 'schoolYear'])
+            ->where('is_active', true)
+            ->withCount('teachingSessions')
+            ->withSum('teachingSessions as total_taught_hours', 'duration_hours')
+            ->withSum(['teachingSessions as weekly_taught_hours' => fn ($query) => $query->whereBetween('taught_on', [$weekStart, $weekEnd])], 'duration_hours')
+            ->orderBy('classroom_id')
+            ->get()
+            ->each(function ($assignment) {
+                $assignment->total_taught_hours = (float) ($assignment->total_taught_hours ?? 0);
+                $assignment->weekly_taught_hours = (float) ($assignment->weekly_taught_hours ?? 0);
+                $assignment->remaining_weekly_hours = max(0, (float) $assignment->volume_horaire_hebdo - $assignment->weekly_taught_hours);
+                $assignment->weekly_progress = $assignment->volume_horaire_hebdo > 0
+                    ? min(100, round($assignment->weekly_taught_hours / $assignment->volume_horaire_hebdo * 100))
+                    : 0;
+            });
 
         return view('teachers.show', [
             'teacher' => $teacher,
+            'assignments' => $assignments,
+            'weekStart' => $weekStart,
+            'weekEnd' => $weekEnd,
             'canViewRib' => $this->authorizeCanViewRib(),
         ]);
     }

@@ -2,6 +2,7 @@
 
 use App\Models\Classroom;
 use App\Models\Matiere;
+use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
@@ -23,18 +24,20 @@ function createProgramContext(): array
     $teacherUser = User::factory()->create();
     $teacherUser->assignRole('professeur');
     $teacher = Teacher::factory()->create(['user_id' => $teacherUser->id]);
+    $assignment = PedagogicalAssignment::create(['teacher_id' => $teacher->id, 'classroom_id' => $classroom->id, 'matiere_id' => $subject->id, 'school_year_id' => $schoolYear->id, 'volume_horaire_hebdo' => 4, 'is_active' => true]);
 
-    return compact('schoolYear', 'classroom', 'subject', 'teacherUser', 'teacher');
+    return compact('schoolYear', 'classroom', 'subject', 'teacherUser', 'teacher', 'assignment');
 }
 
 test('it_creates_program_with_chapters_hierarchy', function () {
-    [$schoolYear, $classroom, $subject, $teacherUser] = array_values(createProgramContext());
+    $context = createProgramContext();
+    $schoolYear = $context['schoolYear'];
+    $classroom = $context['classroom'];
+    $subject = $context['subject'];
+    $teacherUser = $context['teacherUser'];
 
     $response = actingAs($teacherUser)->post(route('programs.store'), [
-        'classroom_id' => $classroom->id,
-        'subject_id' => $subject->id,
-        'school_year_id' => $schoolYear->id,
-        'teacher_id' => $teacherUser->id,
+        'pedagogical_assignment_id' => $context['assignment']->id,
         'chapters' => [
             ['type' => 'chapitre', 'titre' => 'Chapitre 1', 'description' => 'Intro', 'volume_horaire_prevu' => 2.5, 'children' => [
                 ['type' => 'lecon', 'titre' => 'Leçon 1', 'description' => 'Leçon', 'volume_horaire_prevu' => 1.5, 'children' => [
@@ -50,13 +53,11 @@ test('it_creates_program_with_chapters_hierarchy', function () {
 });
 
 test('it_validates_chapter_max_depth_3_levels', function () {
-    [$schoolYear, $classroom, $subject, $teacherUser] = array_values(createProgramContext());
+    $context = createProgramContext();
+    $teacherUser = $context['teacherUser'];
 
     $response = actingAs($teacherUser)->post(route('programs.store'), [
-        'classroom_id' => $classroom->id,
-        'subject_id' => $subject->id,
-        'school_year_id' => $schoolYear->id,
-        'teacher_id' => $teacherUser->id,
+        'pedagogical_assignment_id' => $context['assignment']->id,
         'chapters' => [
             ['type' => 'chapitre', 'titre' => 'Chapitre 1', 'description' => 'Intro', 'volume_horaire_prevu' => 2.5, 'children' => [
                 ['type' => 'lecon', 'titre' => 'Leçon 1', 'description' => 'Leçon', 'volume_horaire_prevu' => 1.5, 'children' => [

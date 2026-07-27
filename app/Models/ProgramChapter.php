@@ -18,11 +18,15 @@ class ProgramChapter extends Model
         'type',
         'titre',
         'description',
+        'academic_period_id',
+        'planned_at',
+        'status',
         'volume_horaire_prevu',
         'volume_horaire_realise',
     ];
 
     protected $casts = [
+        'planned_at' => 'date',
         'volume_horaire_prevu' => 'decimal:2',
         'volume_horaire_realise' => 'decimal:2',
     ];
@@ -42,9 +46,19 @@ class ProgramChapter extends Model
         return $this->hasMany(self::class, 'parent_id')->orderBy('ordre');
     }
 
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
+    }
+
     public function completions(): HasMany
     {
         return $this->hasMany(ChapterCompletion::class)->orderBy('date_traitement');
+    }
+
+    public function teachingSessions(): HasMany
+    {
+        return $this->hasMany(TeachingSession::class);
     }
 
     public function isLeaf(): bool

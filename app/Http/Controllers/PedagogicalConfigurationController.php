@@ -57,7 +57,34 @@ class PedagogicalConfigurationController extends Controller
 
     public function storeAssignments(Request $request)
     {
-        $data = $request->validate(['teacher_matricule' => ['required', 'string', 'exists:teachers,matricule'], 'classroom_ids' => ['required', 'array', 'min:1'], 'classroom_ids.*' => ['exists:classrooms,id'], 'classroom_volumes' => ['required', 'array'], 'classroom_volumes.*' => ['required', 'numeric', 'min:0', 'max:50'], 'matiere_ids' => ['nullable', 'array'], 'matiere_ids.*' => ['exists:matieres,id'], 'new_subject_names' => ['nullable', 'string', 'max:1000'], 'school_year_id' => ['required', 'exists:school_years,id']]);
+        $data = $request->validate([
+            'teacher_matricule' => ['required', 'string', 'exists:teachers,matricule'],
+            'classroom_ids' => ['required', 'array', 'min:1'],
+            'classroom_ids.*' => ['exists:classrooms,id'],
+            'classroom_volumes' => ['nullable', 'array'],
+            'matiere_ids' => ['nullable', 'array'],
+            'matiere_ids.*' => ['exists:matieres,id'],
+            'new_subject_names' => ['nullable', 'string', 'max:1000'],
+            'school_year_id' => ['required', 'exists:school_years,id'],
+        ], [
+            'teacher_matricule.required' => 'Saisissez le matricule du professeur.',
+            'teacher_matricule.exists' => 'Aucun professeur ne correspond à ce matricule.',
+            'classroom_ids.required' => 'Sélectionnez au moins une classe.',
+            'classroom_ids.min' => 'Sélectionnez au moins une classe.',
+            'classroom_ids.*.exists' => 'Une classe sélectionnée est invalide.',
+            'school_year_id.required' => 'Sélectionnez une année scolaire.',
+        ]);
+
+        $volumeErrors = [];
+        foreach ($data['classroom_ids'] as $classroomId) {
+            $volume = $request->input("classroom_volumes.$classroomId");
+            if ($volume === null || $volume === '' || ! is_numeric($volume) || $volume < 0 || $volume > 50) {
+                $volumeErrors["classroom_volumes.$classroomId"] = 'Indiquez un volume entre 0 et 50 heures pour chaque classe sélectionnée.';
+            }
+        }
+        if ($volumeErrors !== []) {
+            return back()->withInput()->withErrors($volumeErrors);
+        }
 
         $teacher = Teacher::where('matricule', $data['teacher_matricule'])->firstOrFail();
         $subjectNames = collect(explode(',', $data['new_subject_names'] ?? ''))->map(fn ($name) => trim($name))->filter()->unique();
@@ -72,12 +99,12 @@ class PedagogicalConfigurationController extends Controller
         }
 
         $created = 0;
-        DB::transaction(function () use ($data, $teacher, $subjectIds, &$created) {
+        DB::transaction(function () use ($data, $request, $teacher, $subjectIds, &$created) {
             foreach ($data['classroom_ids'] as $classroomId) {
                 foreach ($subjectIds as $matiereId) {
-                    $assignment = PedagogicalAssignment::firstOrCreate(['teacher_id' => $teacher->id, 'classroom_id' => $classroomId, 'matiere_id' => $matiereId, 'school_year_id' => $data['school_year_id']], ['volume_horaire_hebdo' => $data['classroom_volumes'][$classroomId], 'is_active' => true]);
+                    $assignment = PedagogicalAssignment::firstOrCreate(['teacher_id' => $teacher->id, 'classroom_id' => $classroomId, 'matiere_id' => $matiereId, 'school_year_id' => $data['school_year_id']], ['volume_horaire_hebdo' => $request->input("classroom_volumes.$classroomId"), 'is_active' => true]);
                     if (! $assignment->wasRecentlyCreated) {
-                        $assignment->update(['volume_horaire_hebdo' => $data['classroom_volumes'][$classroomId], 'is_active' => true]);
+                        $assignment->update(['volume_horaire_hebdo' => $request->input("classroom_volumes.$classroomId"), 'is_active' => true]);
                     }
                     if ($assignment->wasRecentlyCreated) { $created++; }
                 }

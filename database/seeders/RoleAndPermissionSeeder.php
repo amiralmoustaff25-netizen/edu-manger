@@ -375,7 +375,7 @@ class RoleAndPermissionSeeder extends Seeder
         // 5. CRÉATION DU SUPER-ADMIN PAR DÉFAUT (si aucun n'existe)
         // =================================================================
 
-        if (! User::role('super-admin')->exists()) {
+        if (! app()->runningUnitTests() && ! User::role('super-admin')->exists()) {
             $superAdminUser = User::create([
                 'name' => 'Super Admin',
                 'email' => 'admin@edu-manager.local',

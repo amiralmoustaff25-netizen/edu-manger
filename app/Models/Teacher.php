@@ -74,13 +74,33 @@ class Teacher extends Model
         return $query->where('statut', 'vacataire');
     }
 
-    public function getVolumeHoraireActuelAttribute(): int
+    public function getVolumeHoraireActuelAttribute(): float
     {
-        if ($this->relationLoaded('classrooms')) {
-            return $this->classrooms->sum(fn ($classroom) => (int) $classroom->pivot->volume_horaire_hebdo);
+        $hasNormalizedAssignments = array_key_exists('pedagogical_assignments_count', $this->attributes)
+            ? $this->attributes['pedagogical_assignments_count'] > 0
+            : $this->pedagogicalAssignments()->exists();
+
+        if ($hasNormalizedAssignments) {
+            if (array_key_exists('pedagogical_assignments_sum_volume_horaire_hebdo', $this->attributes)) {
+                return (float) $this->attributes['pedagogical_assignments_sum_volume_horaire_hebdo'];
+            }
+
+            if ($this->relationLoaded('pedagogicalAssignments')) {
+                return (float) $this->pedagogicalAssignments
+                    ->where('is_active', true)
+                    ->sum('volume_horaire_hebdo');
+            }
+
+            return (float) $this->pedagogicalAssignments()
+                ->where('is_active', true)
+                ->sum('volume_horaire_hebdo');
         }
 
-        return $this->classrooms()->sum('teacher_classroom.volume_horaire_hebdo');
+        if ($this->relationLoaded('classrooms')) {
+            return (float) $this->classrooms->sum(fn ($classroom) => $classroom->pivot->volume_horaire_hebdo);
+        }
+
+        return (float) $this->classrooms()->sum('teacher_classroom.volume_horaire_hebdo');
     }
 
     public function anciennete(): string

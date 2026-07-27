@@ -17,8 +17,10 @@ use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PedagogicalConfigurationController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
@@ -256,6 +258,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     });
 
     Route::middleware(['role:super-admin|admin'])->group(function () {
+        Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
         Route::prefix('pedagogical-configuration')->name('pedagogical-configuration.')->group(function () {
             Route::get('/', [PedagogicalConfigurationController::class, 'index'])->name('index');
@@ -271,6 +274,9 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+        Route::get('/users/roles/assign', [RoleAssignmentController::class, 'index'])->name('users.roles.index');
+        Route::patch('/users/{user}/roles', [RoleAssignmentController::class, 'update'])->name('users.roles.update');
 
         Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
         Route::post('/students', [StudentController::class, 'store'])->name('students.store');

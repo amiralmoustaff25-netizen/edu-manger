@@ -50,16 +50,31 @@
                     </div>
 
                     <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Classes affectées</h3>
+                        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Classes et évolution des cours</h3>
+                            <p class="text-xs text-gray-500">Semaine du {{ \Carbon\Carbon::parse($weekStart)->format('d/m') }} au {{ \Carbon\Carbon::parse($weekEnd)->format('d/m/Y') }}</p>
+                        </div>
                         <div class="mt-4 space-y-4 text-sm text-gray-600">
-                            @forelse($teacher->classrooms as $classroom)
+                            @forelse($assignments as $assignment)
                                 <div class="rounded-md border border-gray-200 p-4">
-                                    <p><span class="font-semibold text-gray-800">Classe :</span> {{ $classroom->name }}</p>
-                                    <p><span class="font-semibold text-gray-800">Année scolaire :</span> {{ $classroom->pivot->annee_scolaire }}</p>
-                                    <p><span class="font-semibold text-gray-800">Heures :</span> {{ $classroom->pivot->volume_horaire_hebdo }}h</p>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <p class="font-semibold text-gray-900">{{ $assignment->classroom->name }} — {{ $assignment->matiere->nom }}</p>
+                                            <p class="mt-1 text-xs text-gray-500">{{ $assignment->schoolYear->year_string }} · {{ $assignment->teaching_sessions_count }} cours pointé(s)</p>
+                                        </div>
+                                        <p class="text-sm font-semibold text-indigo-600">{{ $assignment->remaining_weekly_hours }} h restantes cette semaine</p>
+                                    </div>
+                                    <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-gray-200">
+                                        <div class="h-full rounded-full {{ $assignment->weekly_progress >= 100 ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $assignment->weekly_progress }}%"></div>
+                                    </div>
+                                    <div class="mt-2 flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+                                        <span>{{ $assignment->weekly_taught_hours }} h réalisées cette semaine</span>
+                                        <span>{{ $assignment->volume_horaire_hebdo }} h prévues / semaine</span>
+                                        <span>{{ $assignment->total_taught_hours }} h réalisées au total</span>
+                                    </div>
                                 </div>
                             @empty
-                                <p>Aucune classe affectée.</p>
+                                <p>Aucune affectation pédagogique active pour ce professeur.</p>
                             @endforelse
                         </div>
                     </div>

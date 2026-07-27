@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\Matiere;
+use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
+use App\Models\TeachingSession;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,6 +60,55 @@ test('admin can create a new teacher', function () {
 
     $this->assertDatabaseHas('users', ['email' => 'jean.dupont@ecole.sn']);
     $this->assertDatabaseHas('teachers', ['statut' => 'fonctionnaire']);
+});
+
+test('teacher index displays hours from active pedagogical assignments', function () {
+    $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+    $teacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
+    $matiere = Matiere::factory()->create();
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $matiere->id,
+        'school_year_id' => $schoolYear->id,
+        'volume_horaire_hebdo' => 7,
+        'is_active' => true,
+    ]);
+
+    $this->get(route('teachers.index'))
+        ->assertOk()
+        ->assertSee('7h');
+});
+
+test('teacher detail displays assignment course progress', function () {
+    $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+    $teacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
+    $matiere = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $assignment = PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $matiere->id,
+        'school_year_id' => $schoolYear->id,
+        'volume_horaire_hebdo' => 4,
+        'is_active' => true,
+    ]);
+    TeachingSession::create([
+        'pedagogical_assignment_id' => $assignment->id,
+        'taught_on' => now()->startOfWeek()->addDay(),
+        'duration_hours' => 2,
+        'recorded_by' => $teacher->user_id,
+    ]);
+
+    $this->get(route('teachers.show', $teacher))
+        ->assertOk()
+        ->assertSee('Classes et évolution des cours')
+        ->assertSee($classroom->name)
+        ->assertSee('Mathématiques')
+        ->assertSee('2 h réalisées cette semaine')
+        ->assertSee('2 h restantes cette semaine');
 });
 
 test('admin can view a teacher detail page', function () {
