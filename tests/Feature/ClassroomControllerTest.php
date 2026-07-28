@@ -94,6 +94,7 @@ class ClassroomControllerTest extends TestCase
             'level' => 'CE1',
             'section' => 'B',
             'teacher_id' => null,
+            'max_students' => 30,
         ]);
 
         $response->assertRedirect(route('classrooms.index'));

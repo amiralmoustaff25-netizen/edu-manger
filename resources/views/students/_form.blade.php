@@ -162,7 +162,7 @@
                         <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Compte élève actif</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Année scolaire : {{ $activeYear->year_string }}</p>
                     </div>
-                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', true)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $student->exists ? $student->is_active : false)) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                 </div>
             </div>
         </div>

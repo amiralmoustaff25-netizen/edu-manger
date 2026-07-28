@@ -43,7 +43,7 @@ class StudentEnrollmentService
                 'nationalite' => $data['nationalite'] ?? null,
                 'adresse' => $data['adresse'] ?? null,
                 'created_by' => $createdBy,
-                'is_active' => (bool) ($data['is_active'] ?? true),
+                'is_active' => (bool) ($data['is_active'] ?? false),
                 'password_must_change' => true,
             ]);
 

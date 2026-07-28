@@ -162,6 +162,7 @@
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Montant</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Reste</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Statut</th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
@@ -176,10 +177,28 @@
                                             {{ ucfirst($payment->status ?? 'complet') }}
                                         </span>
                                     </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            @can('update', $payment)
+                                                <a href="{{ route('payments.edit', $payment) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors">
+                                                    Modifier
+                                                </a>
+                                            @endcan
+                                            @can('delete', $payment)
+                                                <form action="{{ route('payments.destroy', $payment) }}" method="POST" class="inline" onsubmit="return confirm('Confirmer la suppression de ce paiement ?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors">
+                                                        Supprimer
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun paiement trouvé.</td>
+                                    <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun paiement trouvé.</td>
                                 </tr>
                             @endforelse
                         </tbody>

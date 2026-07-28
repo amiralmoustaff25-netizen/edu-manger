@@ -68,6 +68,21 @@ class RegistrationControllerTest extends TestCase
     }
 
     /** @test */
+    public function new_registration_is_pending_and_student_account_inactive_by_default(): void
+    {
+        $payload = $this->registrationPayload();
+        unset($payload['is_active']);
+
+        $this->post(route('registrations.store'), $payload);
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $registration = Registration::where('user_id', $student->id)->firstOrFail();
+
+        $this->assertFalse($student->is_active);
+        $this->assertSame('pending', $registration->status);
+    }
+
+    /** @test */
     public function it_validates_required_fields_on_store(): void
     {
         $response = $this->post(route('registrations.store'), []);

@@ -17,11 +17,11 @@ class StudentPhotoPolicy
 
     public function upload(User $user): bool
     {
-        return $user->hasRole(['super-admin', 'admin']);
+        return $user->can('upload-photo-eleve');
     }
 
     public function remove(User $user): bool
     {
-        return $user->hasRole(['super-admin', 'admin']);
+        return $user->can('upload-photo-eleve');
     }
 }

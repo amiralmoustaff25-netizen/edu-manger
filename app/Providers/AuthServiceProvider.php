@@ -41,15 +41,15 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('validatePartial', function ($user) {
-            return $user->hasAnyRole(['super-admin', 'manager-comptable']);
+            return $user->can('valider-paiement-partiel');
         });
 
         Gate::define('upload-photo-eleve', function ($user) {
-            return $user->hasRole(['super-admin', 'admin']);
+            return $user->can('upload-photo-eleve');
         });
 
         Gate::define('remove-photo-eleve', function ($user) {
-            return $user->hasRole(['super-admin', 'admin']);
+            return $user->can('upload-photo-eleve');
         });
 
         RateLimiter::for('login', function (object $request) {

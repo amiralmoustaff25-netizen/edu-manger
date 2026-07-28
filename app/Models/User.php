@@ -9,12 +9,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
+    /**
+     * Cache des noms de permissions révoquées pour la requête en cours.
+     */
+    protected ?Collection $revokedPermissionNamesCache = null;
+
+    /**
+     * Cache des permissions effectives pour la requête en cours.
+     */
+    protected ?Collection $effectivePermissionsCache = null;
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes {
+        HasRoles::hasPermissionTo as private originalHasPermissionTo;
+    }
 
     /**
      * Un utilisateur (élève) peut avoir plusieurs inscriptions (une par année scolaire).
@@ -167,6 +181,81 @@ class User extends Authenticatable
     {
         return $this->parents()->wherePivot('est_contact_urgence', true)->first();
     }
+
+    public function permissionOverrides(): HasMany
+    {
+        return $this->hasMany(UserPermissionOverride::class);
+    }
+
+    public function revokedPermissionNames(): Collection
+    {
+        if ($this->revokedPermissionNamesCache === null) {
+            $this->revokedPermissionNamesCache = $this->permissionOverrides()
+                ->where('type', 'revoke')
+                ->with('permission')
+                ->get()
+                ->pluck('permission.name')
+                ->values();
+        }
+
+        return $this->revokedPermissionNamesCache;
+    }
+
+    public function directGrantedPermissionNames(): Collection
+    {
+        return $this->getDirectPermissions()->pluck('name')->values();
+    }
+
+    public function effectivePermissionNames(): Collection
+    {
+        if ($this->effectivePermissionsCache !== null) {
+            return $this->effectivePermissionsCache;
+        }
+
+        if ($this->hasRole('super-admin')) {
+            return $this->effectivePermissionsCache = Permission::all()->pluck('name')->values();
+        }
+
+        $revoked = $this->revokedPermissionNames();
+
+        return $this->effectivePermissionsCache = $this->getAllPermissions()
+            ->pluck('name')
+            ->diff($revoked)
+            ->values();
+    }
+
+    public function forgetPermissionCache(): void
+    {
+        $this->effectivePermissionsCache = null;
+        $this->revokedPermissionNamesCache = null;
+    }
+
+    public function refresh(): self
+    {
+        $this->forgetPermissionCache();
+
+        return parent::refresh();
+    }
+
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        if ($this->hasRole('super-admin')) {
+            return true;
+        }
+
+        $name = is_string($permission) ? $permission : $permission?->name;
+
+        if ($name && $this->revokedPermissionNames()->contains($name)) {
+            return false;
+        }
+
+        try {
+            return $this->originalHasPermissionTo($permission, $guardName);
+        } catch (PermissionDoesNotExist $e) {
+            return false;
+        }
+    }
+
     // Dans app/Models/User.php
 
     public static function generateMatricule(string $role): string

@@ -203,9 +203,10 @@
         </div>
     </div>
     @push('scripts')
+        @vite(['resources/js/charts/payments-chart.js'])
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                if (typeof ApexCharts !== 'undefined') {
+                if (typeof window.initPaymentsChart === 'function') {
                     var options = {
                         series: [{
                             name: 'Encaissements',
@@ -254,8 +255,7 @@
                         }
                     };
 
-                    var chart = new ApexCharts(document.querySelector("#paymentsChart"), options);
-                    chart.render();
+                    window.initPaymentsChart('paymentsChart', options);
                 }
             });
         </script>

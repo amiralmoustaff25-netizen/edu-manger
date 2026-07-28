@@ -220,8 +220,33 @@ class RoleAndPermissionSeeder extends Seeder
         // --- Super-Admin : tout ---
         $superAdmin->syncPermissions(Permission::all());
 
-        // --- Admin : tout sauf super-admin ---
-        $admin->syncPermissions(Permission::where('name', '!=', 'tout-faire')->get());
+        // --- Admin : tout sauf super-admin, validation/suppression de paiements, finances et rapports ---
+        $excludedForAdmin = [
+            'tout-faire',
+            'valider-paiement-partiel',
+            'supprimer-paiement',
+            'voir-comptabilite',
+            'voir-finances',
+            'voir-recouvrement',
+            'voir-factures',
+            'creer-facture',
+            'modifier-facture',
+            'supprimer-facture',
+            'voir-types-frais',
+            'creer-type-frais',
+            'modifier-type-frais',
+            'supprimer-type-frais',
+            'voir-frais-classe',
+            'creer-frais-classe',
+            'modifier-frais-classe',
+            'supprimer-frais-classe',
+            'voir-rapports-financiers',
+            'voir-rapports-avances',
+            'exporter-rapports-excel',
+            'voir-alertes-impayes',
+            'voir-tresorerie',
+        ];
+        $admin->syncPermissions(Permission::whereNotIn('name', $excludedForAdmin)->get());
 
         // --- Manager-Comptable : finances + paiements ---
         $managerComptable->syncPermissions([
@@ -260,7 +285,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-detail-parent',
         ]);
 
-        // --- Comptable : paiements sans validation partielle ---
+        // --- Comptable : paiements et validation partielle ---
         $comptable->syncPermissions([
             'voir-dashboard',
             'voir-profil',
@@ -268,6 +293,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-notifications',
             'voir-paiements',
             'enregistrer-paiement',
+            'valider-paiement-partiel',
             'voir-comptabilite',
             'voir-finances',
             'voir-recouvrement',

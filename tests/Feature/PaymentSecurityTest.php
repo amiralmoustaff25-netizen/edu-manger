@@ -53,7 +53,7 @@ class PaymentSecurityTest extends TestCase
     }
 
     #[Test]
-    public function un_comptable_simple_ne_peut_pas_valider_un_paiement_partiel()
+    public function un_comptable_simple_peut_valider_un_paiement_partiel()
     {
         $comptable = User::create([
             'matricule' => 'C-COMPTA-01',
@@ -71,7 +71,16 @@ class PaymentSecurityTest extends TestCase
                 'month' => 'Octobre',
             ]);
 
-        $response->assertStatus(403);
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('payments', [
+            'registration_id' => $this->registrationId,
+            'amount' => 10000.00,
+            'status' => 'partiel',
+            'remaining_balance' => 5000.00,
+            'validated_by' => $comptable->id,
+            'payment_method' => 'espèces',
+            'payment_type' => 'mensualité',
+        ]);
     }
 
     #[Test]

@@ -3,15 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\UserRoleHistory;
+use App\Services\UserPermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
 
 class RoleAssignmentController extends Controller
 {
@@ -44,23 +42,29 @@ class RoleAssignmentController extends Controller
             'search' => $search,
             'roles' => $this->availableRoles(),
             'permissions' => $this->groupedPermissions(),
+            'effectivePermissions' => $user?->effectivePermissionNames()->toArray() ?? [],
+            'directPermissions' => $user?->directGrantedPermissionNames()->toArray() ?? [],
+            'revokedPermissions' => $user?->revokedPermissionNames()->toArray() ?? [],
+            'isSuperAdminTarget' => $user?->hasRole('super-admin') ?? false,
         ]);
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(Request $request, User $user, UserPermissionService $service): RedirectResponse
     {
         $this->authorize('modifier-utilisateur', $user);
 
         $validated = $request->validate([
             'roles' => ['nullable', 'array'],
             'roles.*' => [Rule::in($this->availableRoleNames())],
-            'direct_permissions' => ['nullable', 'array'],
-            'direct_permissions.*' => ['string', 'exists:permissions,name'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
             'confirm_super_admin' => ['nullable', 'in:1'],
         ]);
 
         $requestedRoles = collect($validated['roles'] ?? [])->unique()->values();
-        $requestedPermissions = collect($validated['direct_permissions'] ?? [])->unique()->values();
+        $requestedPermissions = $request->has('permissions')
+            ? collect($validated['permissions'] ?? [])->unique()->values()
+            : $user->effectivePermissionNames();
 
         $this->ensureLastSuperAdminNotRemoved($user, $requestedRoles);
 
@@ -68,19 +72,9 @@ class RoleAssignmentController extends Controller
             return back()->withErrors(['confirm_super_admin' => 'L’attribution du rôle Super-Admin nécessite une confirmation renforcée.'])->withInput();
         }
 
-        DB::transaction(function () use ($user, $requestedRoles, $requestedPermissions) {
-            $previousRoles = $user->roles->pluck('name');
-            $previousDirectPermissions = $user->permissions->pluck('name');
+        $service->apply($user, $requestedRoles->toArray(), $requestedPermissions->toArray(), auth()->id());
 
-            $user->syncRoles($requestedRoles->toArray());
-            $user->syncPermissions($requestedPermissions->toArray());
-
-            $this->syncPrimaryRoleColumn($user);
-
-            $this->logChanges($user, $previousRoles, $requestedRoles, $previousDirectPermissions, $requestedPermissions);
-
-            app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        });
+        $this->syncPrimaryRoleColumn($user);
 
         return redirect()
             ->route('users.roles.index', ['search' => $user->matricule])
@@ -151,60 +145,6 @@ class RoleAssignmentController extends Controller
 
         if ($primary && in_array($primary, self::SEARCHABLE_ROLES, true)) {
             $user->update(['role' => $primary]);
-        }
-    }
-
-    private function logChanges(
-        User $user,
-        \Illuminate\Support\Collection $previousRoles,
-        \Illuminate\Support\Collection $newRoles,
-        \Illuminate\Support\Collection $previousDirectPermissions,
-        \Illuminate\Support\Collection $newDirectPermissions
-    ): void {
-        $now = now();
-
-        foreach ($newRoles->diff($previousRoles) as $role) {
-            UserRoleHistory::create([
-                'user_id' => $user->id,
-                'changed_by' => auth()->id(),
-                'action' => 'assigned',
-                'role' => $role,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-
-        foreach ($previousRoles->diff($newRoles) as $role) {
-            UserRoleHistory::create([
-                'user_id' => $user->id,
-                'changed_by' => auth()->id(),
-                'action' => 'removed',
-                'role' => $role,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-
-        foreach ($newDirectPermissions->diff($previousDirectPermissions) as $permission) {
-            UserRoleHistory::create([
-                'user_id' => $user->id,
-                'changed_by' => auth()->id(),
-                'action' => 'direct_permission_assigned',
-                'permission' => $permission,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
-
-        foreach ($previousDirectPermissions->diff($newDirectPermissions) as $permission) {
-            UserRoleHistory::create([
-                'user_id' => $user->id,
-                'changed_by' => auth()->id(),
-                'action' => 'direct_permission_removed',
-                'permission' => $permission,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
         }
     }
 }

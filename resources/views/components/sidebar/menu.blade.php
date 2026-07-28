@@ -31,6 +31,9 @@ $filterVisible = function ($items) use (&$filterVisible, $user) {
         if (!empty($item['roles']) && ! $user->hasAnyRole($item['roles'])) {
             continue;
         }
+        if (!empty($item['permissions']) && ! collect($item['permissions'])->contains(fn ($permission) => $user->can($permission))) {
+            continue;
+        }
         if (!empty($item['permission']) && ! $user->can($item['permission'])) {
             continue;
         }

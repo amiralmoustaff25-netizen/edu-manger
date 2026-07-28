@@ -46,7 +46,7 @@
             @endif
 
             @if ($user)
-                <form id="role-assignment-form" method="POST" action="{{ route('users.roles.update', $user) }}" x-data="roleAssignment()" @submit="return prepareSubmit($event)">
+                <form id="role-assignment-form" method="POST" action="{{ route('users.roles.update', $user) }}" x-data="roleAssignment()" x-init="init()" @submit="return prepareSubmit($event)">
                     @csrf
                     @method('PATCH')
 
@@ -77,7 +77,7 @@
 
                     <section class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rôles</h3>
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" x-data="{ selectedRoles: @js($user->getRoleNames()->toArray()) }">
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($roles as $role)
                                 @php
                                     $sensitive = in_array($role->name, config('permissions.sensitive_roles', []), true);
@@ -85,7 +85,7 @@
                                 @endphp
                                 <label class="relative flex items-start gap-3 rounded-lg border border-gray-200 dark:border-slate-700 p-4 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500">
                                     <input type="checkbox" name="roles[]" value="{{ $role->name }}" class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                        :checked="selectedRoles.includes('{{ $role->name }}')"
+                                        :checked="roles.includes('{{ $role->name }}')"
                                         @change="toggleRole('{{ $role->name }}', $event.target.checked, @js($rolePermissions->values()))"
                                         {{ $role->name === 'super-admin' && ! $user->hasRole('super-admin') ? 'data-super-admin=1' : '' }}>
                                     <div class="flex-1">
@@ -99,56 +99,34 @@
                         </div>
 
                         <input type="hidden" name="confirm_super_admin" :value="confirmSuperAdmin ? '1' : ''">
-
-                        <template x-if="addedRoles.length || removedRoles.length">
-                            <div class="mt-6 rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 p-4">
-                                <h4 class="font-semibold text-indigo-900 dark:text-indigo-200 mb-2">Résumé des changements</h4>
-                                <ul class="space-y-1 text-sm text-indigo-800 dark:text-indigo-300">
-                                    <template x-for="role in addedRoles" :key="role">
-                                        <li>+ Attribuer le rôle <strong x-text="label(role)"></strong></li>
-                                    </template>
-                                    <template x-for="role in removedRoles" :key="role">
-                                        <li>− Retirer le rôle <strong x-text="label(role)"></strong></li>
-                                    </template>
-                                </ul>
-                                <template x-if="addedSensitive.length">
-                                    <div class="mt-3 rounded border border-amber-300 bg-amber-100 dark:bg-amber-900/30 p-3 text-sm text-amber-900 dark:text-amber-200">
-                                        <p class="font-semibold">Attention : accès sensibles accordés</p>
-                                        <ul class="mt-1 list-disc pl-5">
-                                            <template x-for="role in addedSensitive" :key="role"><li x-text="label(role)"></li></template>
-                                        </ul>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
                     </section>
 
-                    <section class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700" x-data="{ open: false }">
+                    <section class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700" x-data="{ open: true }">
                         <button type="button" @click="open = !open" class="flex w-full items-center justify-between text-left">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Permissions détaillées <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(exceptionnelles)</span></h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Permissions détaillées</h3>
                             <span x-text="open ? '−' : '+'" class="text-xl text-gray-500 dark:text-gray-400"></span>
                         </button>
                         <div x-show="open" x-collapse class="mt-4 space-y-6">
+                            @if ($isSuperAdminTarget)
+                                <div class="rounded border border-amber-200 bg-amber-50 dark:bg-amber-900/20 p-3 text-sm text-amber-800 dark:text-amber-200">
+                                    Cet utilisateur est Super-Admin : toutes les permissions sont effectives par bypass global. Les cases ci-dessous sont données à titre indicatif.
+                                </div>
+                            @endif
                             @foreach ($permissions as $module => $modulePermissions)
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white mb-2">{{ config('permissions.modules.'.$module, $module) }}</h4>
                                     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        @php
-                                            $directPermissions = $user->getDirectPermissions()->pluck('name')->toArray();
-                                            $effectivePermissions = $user->getPermissionNames()->toArray();
-                                        @endphp
                                         @foreach ($modulePermissions as $permission)
                                             @php
                                                 $isSensitive = in_array($permission['name'], config('permissions.sensitive_permissions', []), true);
-                                                $isChecked = in_array($permission['name'], $effectivePermissions, true);
-                                                $isInherited = $isChecked && ! in_array($permission['name'], $directPermissions, true);
                                             @endphp
-                                            <label class="flex items-start gap-2 rounded border border-gray-200 dark:border-slate-700 p-2 text-sm {{ $isSensitive ? 'bg-amber-50 dark:bg-amber-900/10' : '' }} {{ $isInherited ? 'opacity-75' : '' }}" title="{{ $isInherited ? 'Accordé via un rôle' : '' }}">
-                                                <input type="checkbox" name="direct_permissions[]" value="{{ $permission['name'] }}" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" @checked($isChecked) @disabled($isInherited)>
+                                            <label class="flex items-start gap-2 rounded border border-gray-200 dark:border-slate-700 p-2 text-sm {{ $isSensitive ? 'bg-amber-50 dark:bg-amber-900/10' : '' }}">
+                                                <input type="checkbox" name="permissions[]" value="{{ $permission['name'] }}" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                    :checked="isChecked('{{ $permission['name'] }}')"
+                                                    @change="togglePermission('{{ $permission['name'] }}', $event.target.checked)"
+                                                    :disabled="isSuperAdminTarget">
                                                 <span class="text-gray-700 dark:text-gray-300">{{ $permission['label'] }}</span>
-                                                @if ($isInherited)
-                                                    <span class="ml-auto text-xs text-gray-500 dark:text-gray-400">(rôle)</span>
-                                                @endif
+                                                <span class="ml-auto text-xs text-gray-500 dark:text-gray-400" x-text="originLabel('{{ $permission['name'] }}')"></span>
                                             </label>
                                         @endforeach
                                     </div>
@@ -158,8 +136,59 @@
                     </section>
 
                     <section class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Accès résultants</h3>
-                        <div id="permissions-preview" class="space-y-4"></div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Résumé des modifications</h3>
+                            <span class="text-sm font-medium text-indigo-600 dark:text-indigo-300" x-text="(addedRoles.length + removedRoles.length + addedPermissions.length + removedPermissions.length) + ' modification(s) en attente'"></span>
+                        </div>
+                        <div class="space-y-4">
+                            <template x-if="addedRoles.length || removedRoles.length || addedPermissions.length || removedPermissions.length">
+                                <div class="space-y-3">
+                                    <template x-if="addedRoles.length">
+                                        <div class="rounded border border-green-200 bg-green-50 dark:bg-green-900/20 p-3">
+                                            <p class="text-sm font-semibold text-green-900 dark:text-green-200">Rôles ajoutés</p>
+                                            <ul class="mt-1 text-sm text-green-800 dark:text-green-300 list-disc pl-5">
+                                                <template x-for="role in addedRoles" :key="role"><li x-text="label(role)"></li></template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                    <template x-if="removedRoles.length">
+                                        <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/20 p-3">
+                                            <p class="text-sm font-semibold text-red-900 dark:text-red-200">Rôles retirés</p>
+                                            <ul class="mt-1 text-sm text-red-800 dark:text-red-300 list-disc pl-5">
+                                                <template x-for="role in removedRoles" :key="role"><li x-text="label(role)"></li></template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                    <template x-if="addedPermissions.length">
+                                        <div class="rounded border border-green-200 bg-green-50 dark:bg-green-900/20 p-3">
+                                            <p class="text-sm font-semibold text-green-900 dark:text-green-200">Permissions ajoutées</p>
+                                            <ul class="mt-1 text-sm text-green-800 dark:text-green-300 list-disc pl-5">
+                                                <template x-for="name in addedPermissions" :key="name"><li x-text="permissionLabel(name)"></li></template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                    <template x-if="removedPermissions.length">
+                                        <div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/20 p-3">
+                                            <p class="text-sm font-semibold text-red-900 dark:text-red-200">Permissions retirées</p>
+                                            <ul class="mt-1 text-sm text-red-800 dark:text-red-300 list-disc pl-5">
+                                                <template x-for="name in removedPermissions" :key="name"><li x-text="permissionLabel(name)"></li></template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                    <template x-if="addedSensitive.length">
+                                        <div class="rounded border border-amber-300 bg-amber-100 dark:bg-amber-900/30 p-3 text-sm text-amber-900 dark:text-amber-200">
+                                            <p class="font-semibold">Attention : rôles sensibles accordés</p>
+                                            <ul class="mt-1 list-disc pl-5">
+                                                <template x-for="role in addedSensitive" :key="role"><li x-text="label(role)"></li></template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="!(addedRoles.length || removedRoles.length || addedPermissions.length || removedPermissions.length)">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Aucune modification en attente.</p>
+                            </template>
+                        </div>
                     </section>
 
                     <div class="flex justify-end gap-3">
@@ -201,61 +230,97 @@
     <script>
         window.roleLabels = @js($roles->mapWithKeys(fn ($role) => [$role->name => ucfirst(str_replace('-', ' ', $role->name))]));
         window.rolePermissions = @js($roles->mapWithKeys(fn ($role) => [$role->name => $role->permissions->pluck('name')->values()]));
-        window.permissionLabels = @js(collect($permissions)->flatten(1)->mapWithKeys(fn ($p) => [$p['name'] => $p['label']])));
+        window.permissionLabels = @js(collect($permissions)->flatten(1)->mapWithKeys(fn ($p) => [$p['name'] => $p['label']]));
         window.userRoles = @js($user?->getRoleNames()->toArray() ?? []);
-        window.userPermissions = @js($user?->getPermissionNames()->toArray() ?? []);
+        window.effectivePermissions = @js($effectivePermissions);
+        window.directPermissions = @js($directPermissions);
+        window.revokedPermissions = @js($revokedPermissions);
+        window.isSuperAdminTarget = @js($isSuperAdminTarget);
         window.sensitiveRoles = @js(config('permissions.sensitive_roles', []));
         window.sensitivePermissions = @js(config('permissions.sensitive_permissions', []));
 
         function roleAssignment() {
             return {
-                roles: window.userRoles,
+                roles: [...window.userRoles],
+                initialRoles: [...window.userRoles],
                 rolePermissions: window.rolePermissions,
                 permissionLabels: window.permissionLabels,
                 sensitiveRoles: window.sensitiveRoles,
+                sensitivePermissions: window.sensitivePermissions,
+                isSuperAdminTarget: window.isSuperAdminTarget,
+                manualPermissions: new Set(window.directPermissions),
+                manualRevokes: new Set(window.revokedPermissions),
+                confirmSuperAdmin: false,
                 addedRoles: [],
                 removedRoles: [],
-                confirmSuperAdmin: false,
+                addedPermissions: [],
+                removedPermissions: [],
+                addedSensitive: [],
+                init() {
+                    this.computeDelta();
+                },
+                get inheritedPermissions() {
+                    const perms = new Set();
+                    this.roles.forEach(r => (this.rolePermissions[r] || []).forEach(p => perms.add(p)));
+                    return perms;
+                },
+                get effectivePermissions() {
+                    if (this.isSuperAdminTarget) {
+                        return new Set(Object.keys(this.permissionLabels));
+                    }
+                    const inherited = this.inheritedPermissions;
+                    const effective = new Set([...inherited, ...this.manualPermissions]);
+                    this.manualRevokes.forEach(p => effective.delete(p));
+                    return effective;
+                },
+                isChecked(name) {
+                    return this.effectivePermissions.has(name);
+                },
+                isInherited(name) {
+                    return this.inheritedPermissions.has(name);
+                },
+                originLabel(name) {
+                    if (this.isSuperAdminTarget) return 'Super-Admin';
+                    if (this.isChecked(name)) {
+                        return this.isInherited(name) ? 'rôle' : 'personnalisé';
+                    }
+                    if (this.isInherited(name)) return 'restreint manuellement';
+                    return '';
+                },
                 toggleRole(role, checked, perms) {
                     if (checked && !this.roles.includes(role)) this.roles.push(role);
                     if (!checked) this.roles = this.roles.filter(r => r !== role);
-                    this.computeDelta();
-                    this.renderPreview();
-                    if (role === 'super-admin' && checked && !window.userRoles.includes('super-admin')) {
+                    if (role === 'super-admin' && checked && !this.initialRoles.includes('super-admin')) {
                         this.confirmSuperAdmin = confirm('Vous allez attribuer le rôle Super-Admin. Confirmez-vous ?');
                     }
+                    this.computeDelta();
+                },
+                togglePermission(name, checked) {
+                    const inherited = this.isInherited(name);
+                    if (checked) {
+                        this.manualRevokes.delete(name);
+                        if (!inherited) this.manualPermissions.add(name);
+                    } else {
+                        this.manualPermissions.delete(name);
+                        if (inherited) this.manualRevokes.add(name);
+                    }
+                    this.computeDelta();
                 },
                 computeDelta() {
-                    this.addedRoles = this.roles.filter(r => !window.userRoles.includes(r));
-                    this.removedRoles = window.userRoles.filter(r => !this.roles.includes(r));
+                    this.addedRoles = this.roles.filter(r => !this.initialRoles.includes(r));
+                    this.removedRoles = this.initialRoles.filter(r => !this.roles.includes(r));
+
+                    const current = this.effectivePermissions;
+                    const initial = new Set(window.effectivePermissions);
+                    this.addedPermissions = [...current].filter(p => !initial.has(p));
+                    this.removedPermissions = [...initial].filter(p => !current.has(p));
                     this.addedSensitive = this.addedRoles.filter(r => this.sensitiveRoles.includes(r));
                 },
                 label(role) {
                     return window.roleLabels[role] || role;
                 },
-                renderPreview() {
-                    const container = document.getElementById('permissions-preview');
-                    const gained = new Set();
-                    const lost = new Set();
-                    this.addedRoles.forEach(r => this.rolePermissions[r]?.forEach(p => gained.add(p)));
-                    this.removedRoles.forEach(r => {
-                        this.rolePermissions[r]?.forEach(p => {
-                            const stillGranted = this.roles.some(role => role !== r && this.rolePermissions[role]?.includes(p));
-                            if (!stillGranted) lost.add(p);
-                        });
-                    });
-                    let html = '';
-                    if (gained.size) {
-                        html += '<div class="rounded border border-green-200 bg-green-50 dark:bg-green-900/20 p-3"><p class="text-sm font-semibold text-green-900 dark:text-green-200 mb-1">Nouveaux accès accordés</p><ul class="text-sm text-green-800 dark:text-green-300 list-disc pl-5">';
-                        gained.forEach(p => html += `<li>${this.permissionLabels[p] || p}</li>`);
-                        html += '</ul></div>';
-                    }
-                    if (lost.size) {
-                        html += '<div class="rounded border border-red-200 bg-red-50 dark:bg-red-900/20 p-3"><p class="text-sm font-semibold text-red-900 dark:text-red-200 mb-1">Accès qui seront retirés</p><ul class="text-sm text-red-800 dark:text-red-300 list-disc pl-5">';
-                        lost.forEach(p => html += `<li>${this.permissionLabels[p] || p}</li>`);
-                        html += '</ul></div>';
-                    }
-                    container.innerHTML = html || '<p class="text-sm text-gray-500 dark:text-gray-400">Aucun changement de rôle.</p>';
+                permissionLabel(name) {
+                    return this.permissionLabels[name] || name;
                 },
                 prepareSubmit(e) {
                     if (this.addedSensitive.length && !confirm('Des rôles sensibles vont être attribués. Confirmez-vous l’enregistrement ?')) {

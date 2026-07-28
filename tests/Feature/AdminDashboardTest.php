@@ -20,6 +20,10 @@ test('admin_can_access_admin_dashboard_with_allowed_modules', function () {
     $response->assertSee('Administration');
     $response->assertSee('Scolarité');
     $response->assertSee('Finance');
+    $response->assertSee('Paiements');
+    $response->assertDontSee('Rapports');
+    $response->assertSee('Paramètres système');
+    $response->assertSee('Années scolaires');
 });
 
 test('super_admin_sees_admin_dashboard_with_super_admin_badge', function () {
@@ -30,6 +34,8 @@ test('super_admin_sees_admin_dashboard_with_super_admin_badge', function () {
 
     $response->assertOk();
     $response->assertSee('Super Admin');
+    $response->assertSee('Finance');
+    $response->assertSee('Rapports');
 });
 
 test('teacher_cannot_access_admin_dashboard', function () {

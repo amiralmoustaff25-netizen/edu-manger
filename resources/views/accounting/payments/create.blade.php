@@ -236,6 +236,7 @@
     </div>
 
     <script>
+        const canOverridePaidFees = @json(auth()->user()->hasAnyRole(['super-admin', 'manager-comptable']));
         let selectedFees = [];
         let studentData = null;
         let allFees = [];
@@ -352,7 +353,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <input type="checkbox" id="fee-${index}"
-                                ${isPaid ? 'disabled' : ''}
+                                ${(isPaid && !canOverridePaidFees) ? 'disabled' : ''}
                                 onchange="toggleFee(${index})"
                                 class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600 focus:ring-indigo-500 h-5 w-5">
                             <div>
@@ -378,7 +379,7 @@
             if (!fee) return;
 
             if (checkbox.checked) {
-                if (fee.status === 'paid') {
+                if (fee.status === 'paid' && !canOverridePaidFees) {
                     checkbox.checked = false;
                     return;
                 }
@@ -390,7 +391,7 @@
         }
 
         function updateSelectedTotal() {
-            const total = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount ?? fee.amount) || 0), 0);
+            const total = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount || fee.amount) || 0), 0);
             document.getElementById('selected-total').textContent = formatCurrency(total);
             document.getElementById('amount_paid').value = total;
             updateHiddenFields();
@@ -403,7 +404,7 @@
                 code: f.code,
                 description: f.description,
                 month: f.month,
-                amount: parseFloat(f.remaining_amount ?? f.amount) || 0,
+                amount: parseFloat(f.remaining_amount || f.amount) || 0,
             }));
 
             document.getElementById('selected_fees').value = JSON.stringify(payload);
@@ -417,7 +418,7 @@
 
         function calculateChange() {
             const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0;
-            const selectedTotal = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount ?? fee.amount) || 0), 0);
+            const selectedTotal = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount || fee.amount) || 0), 0);
 
             if (amountPaid > selectedTotal && selectedTotal > 0) {
                 const change = amountPaid - selectedTotal;
@@ -430,7 +431,7 @@
 
         function openConfirmModal() {
             const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0;
-            const selectedTotal = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount ?? fee.amount) || 0), 0);
+            const selectedTotal = selectedFees.reduce((sum, fee) => sum + (parseFloat(fee.remaining_amount || fee.amount) || 0), 0);
 
             if (selectedFees.length === 0 && selectedTotal === 0) {
                 alert('Veuillez sélectionner au moins un frais.');
@@ -455,7 +456,7 @@
             feesList.innerHTML = '';
             selectedFees.forEach(fee => {
                 const li = document.createElement('li');
-                li.textContent = `${fee.description} - ${formatCurrency(parseFloat(fee.remaining_amount ?? fee.amount) || 0)}`;
+                li.textContent = `${fee.description} - ${formatCurrency(parseFloat(fee.remaining_amount || fee.amount) || 0)}`;
                 feesList.appendChild(li);
             });
 

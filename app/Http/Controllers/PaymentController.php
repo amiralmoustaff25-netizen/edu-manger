@@ -67,7 +67,7 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment): View
     {
-        $this->authorize('modifier-paiement', $payment);
+        $this->authorize('update', $payment);
 
         $payment->load(['registration.user', 'registration.classroom']);
 
@@ -76,7 +76,7 @@ class PaymentController extends Controller
 
     public function update(Request $request, Payment $payment): RedirectResponse
     {
-        $this->authorize('modifier-paiement', $payment);
+        $this->authorize('update', $payment);
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
@@ -97,7 +97,7 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment): RedirectResponse
     {
-        $this->authorize('supprimer-paiement', $payment);
+        $this->authorize('delete', $payment);
 
         $payment->delete();
 
@@ -206,15 +206,7 @@ class PaymentController extends Controller
             );
 
             if ($payment->status === 'complet') {
-                $student = $registration->user;
-
-                $student->notify(new PaymentReceived($payment));
-
-                $parentUsers = $student->parents()->with('user')->get()->pluck('user')->filter();
-
-                if ($parentUsers->isNotEmpty()) {
-                    Notification::send($parentUsers, new PaymentReceived($payment));
-                }
+                $this->notifyPaymentReceived($payment, $registration);
             }
 
             $this->activateRegistrationIfNeeded($registration);
@@ -255,12 +247,16 @@ class PaymentController extends Controller
 
             $fee = $pendingFees->get($id);
 
-            if ($fee['status'] === 'paid') {
+            if ($fee['status'] === 'paid' && !auth()->user()->hasAnyRole(['super-admin', 'manager-comptable'])) {
                 return ['items' => [], 'total_expected' => 0, 'error' => "Frais déjà payé : {$fee['description']}"];
             }
 
+            if ($fee['status'] === 'paid') {
+                $fee['remaining_amount'] = $fee['amount'];
+            }
+
             $inputAmount = (float) ($input['amount'] ?? 0);
-            $remainingAmount = (float) ($fee['remaining_amount'] ?? $fee['amount']);
+            $remainingAmount = (float) ($fee['remaining_amount'] ?: $fee['amount']);
 
             if (abs($inputAmount - $remainingAmount) > 0.01) {
                 return ['items' => [], 'total_expected' => 0, 'error' => "Montant du frais modifié : {$fee['description']}"];
@@ -395,6 +391,19 @@ class PaymentController extends Controller
         }
     }
 
+    private function notifyPaymentReceived(Payment $payment, Registration $registration): void
+    {
+        $student = $registration->user;
+
+        $student->notify(new PaymentReceived($payment));
+
+        $parentUsers = $student->parents()->with('user')->get()->pluck('user')->filter();
+
+        if ($parentUsers->isNotEmpty()) {
+            Notification::send($parentUsers, new PaymentReceived($payment));
+        }
+    }
+
     public function validationIndex(): View
     {
         Gate::authorize('validatePartial');
@@ -417,7 +426,11 @@ class PaymentController extends Controller
 
         $payment->validatePayment(auth()->id());
 
-        return back()->with('success', 'Paiement validé avec succès.');
+        $this->notifyPaymentReceived($payment, $payment->registration);
+
+        $this->activateRegistrationIfNeeded($payment->registration);
+
+        return back()->with('success', 'Paiement validé avec succès. Le compte de l\'élève est maintenant actif.');
     }
 
     public function rejectPayment(Payment $payment, Request $request): RedirectResponse

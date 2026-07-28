@@ -57,4 +57,8 @@
         </aside>
     </div>
 </div>
+
+@push('scripts')
+    @vite(['resources/js/cahier-textes.js'])
+@endpush
 @endsection

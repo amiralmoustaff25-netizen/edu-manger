@@ -3,6 +3,7 @@
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -33,6 +34,7 @@ test('permissions_inherited_from_roles_are_shown_checked', function () {
         ->get(route('users.roles.index', ['search' => 'MGR-260001']));
 
     $response->assertOk();
+    $response->assertSee('value="voir-paiements"', false);
     $response->assertSee('checked', false);
 });
 
@@ -40,14 +42,22 @@ test('super_admin_can_assign_role_and_sync_permissions', function () {
     $user = User::factory()->create(['is_active' => true]);
     $user->assignRole('professeur');
 
+    $desiredRoles = ['professeur', 'manager-comptable'];
+    $expectedPermissions = Permission::whereHas('roles', fn ($query) => $query->whereIn('name', $desiredRoles))
+        ->pluck('name')
+        ->unique()
+        ->values()
+        ->toArray();
+
     actingAs($this->superAdmin)
         ->patch(route('users.roles.update', $user), [
-            'roles' => ['professeur', 'manager-comptable'],
+            'roles' => $desiredRoles,
+            'permissions' => $expectedPermissions,
         ])
         ->assertRedirect();
 
     $user->refresh();
-    expect($user->hasRole(['professeur', 'manager-comptable']))->toBeTrue();
+    expect($user->hasRole($desiredRoles))->toBeTrue();
     expect($user->can('voir-paiements'))->toBeTrue();
     expect($user->role)->toBe('professeur');
 });
@@ -57,7 +67,10 @@ test('removing_role_also_removes_its_permissions_when_not_granted_elsewhere', fu
     $user->assignRole('comptable');
 
     actingAs($this->superAdmin)
-        ->patch(route('users.roles.update', $user), ['roles' => []])
+        ->patch(route('users.roles.update', $user), [
+            'roles' => [],
+            'permissions' => [],
+        ])
         ->assertRedirect();
 
     $user->refresh();
@@ -112,11 +125,11 @@ test('direct_permissions_can_be_assigned_exceptionally', function () {
     actingAs($this->superAdmin)
         ->patch(route('users.roles.update', $user), [
             'roles' => ['comptable'],
-            'direct_permissions' => ['modifier-paiement'],
+            'permissions' => ['modifier-paiement'],
         ]);
 
     $user->refresh();
-    expect($user->hasDirectPermission('modifier-paiement'))->toBeTrue();
+    expect($user->can('modifier-paiement'))->toBeTrue();
 });
 
 test('non_admin_cannot_access_role_assignment', function () {
@@ -125,5 +138,63 @@ test('non_admin_cannot_access_role_assignment', function () {
 
     actingAs($teacher)
         ->get(route('users.roles.index'))
+        ->assertForbidden();
+});
+
+test('inherited_permission_can_be_revoked_for_a_user', function () {
+    $user = User::factory()->create(['is_active' => true]);
+    $user->assignRole('manager-comptable');
+
+    expect($user->can('valider-paiement-partiel'))->toBeTrue();
+
+    actingAs($this->superAdmin)
+        ->patch(route('users.roles.update', $user), [
+            'roles' => ['manager-comptable'],
+            'permissions' => array_values(array_diff(
+                $user->getAllPermissions()->pluck('name')->toArray(),
+                ['valider-paiement-partiel']
+            )),
+        ])
+        ->assertRedirect();
+
+    $user->refresh();
+    expect($user->can('valider-paiement-partiel'))->toBeFalse();
+});
+
+test('revoked_permission_can_be_granted_back_directly', function () {
+    $user = User::factory()->create(['is_active' => true]);
+    $user->assignRole('comptable');
+
+    actingAs($this->superAdmin)
+        ->patch(route('users.roles.update', $user), [
+            'roles' => ['comptable'],
+            'permissions' => array_merge(
+                $user->getAllPermissions()->pluck('name')->toArray(),
+                ['valider-paiement-partiel']
+            ),
+        ])
+        ->assertRedirect();
+
+    $user->refresh();
+    expect($user->can('valider-paiement-partiel'))->toBeTrue();
+});
+
+test('payment_validation_route_respects_permission_revocation', function () {
+    $user = User::factory()->create(['is_active' => true]);
+    $user->assignRole('manager-comptable');
+
+    actingAs($this->superAdmin)
+        ->patch(route('users.roles.update', $user), [
+            'roles' => ['manager-comptable'],
+            'permissions' => array_values(array_diff(
+                $user->getAllPermissions()->pluck('name')->toArray(),
+                ['valider-paiement-partiel']
+            )),
+        ])
+        ->assertRedirect();
+
+    $user->refresh();
+    actingAs($user)
+        ->get(route('payments.validation'))
         ->assertForbidden();
 });

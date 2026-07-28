@@ -65,7 +65,7 @@ class RegistrationController extends Controller
             'parent_est_contact_urgence' => ['nullable', 'boolean'],
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active', false);
         $student = $enrollmentService->enroll(
             $validated,
             $request->file('photo'),

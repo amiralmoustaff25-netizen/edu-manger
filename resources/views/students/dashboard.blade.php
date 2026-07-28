@@ -44,7 +44,7 @@
                         <div class="ml-4">
                             <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ __('Ma Classe') }}</p>
                             <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                                {{ $registration->classroom->name ?? __('Classe non assignée') }}
+                                {{ $registration?->classroom?->name ?? __('Classe non assignée') }}
                             </p>
                         </div>
                     </div>
@@ -59,7 +59,7 @@
                         <div class="ml-4">
                             <p class="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">{{ __('Professeur Principal') }}</p>
                             <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                                {{ $registration->classroom->teacher->name ?? __('Aucun professeur') }}
+                                {{ $registration?->classroom?->teacher?->name ?? __('Aucun professeur') }}
                             </p>
                         </div>
                     </div>

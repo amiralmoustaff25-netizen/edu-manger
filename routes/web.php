@@ -144,16 +144,16 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/accounting/cash-flow', [AccountingController::class, 'cashFlow'])->name('accounting.cash-flow');
         
         // Paiements
-        Route::resource('payments', PaymentController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
-        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
-        Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
-        
-        // Validation des paiements (manager-comptable uniquement)
-        Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
+        // Validation des paiements (permission explicite) — déclaré avant la ressource pour éviter le conflit avec /payments/{payment}
+        Route::middleware(['permission:valider-paiement-partiel'])->group(function () {
             Route::get('/payments/validation', [PaymentController::class, 'validationIndex'])->name('payments.validation');
             Route::post('/payments/{payment}/validate', [PaymentController::class, 'validatePayment'])->name('payments.validate');
             Route::post('/payments/{payment}/reject', [PaymentController::class, 'rejectPayment'])->name('payments.reject');
         });
+
+        Route::resource('payments', PaymentController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
+        Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
         
         // Rappels (manager-comptable uniquement)
         Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
