@@ -6,6 +6,7 @@ use App\Models\ClassroomFee;
 use App\Models\Classroom;
 use App\Models\FeeType;
 use App\Models\SchoolYear;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,7 +16,7 @@ class ClassroomFeeController extends Controller
     {
         $this->authorize('voir-comptabilite');
 
-        $query = ClassroomFee::with(['classroom', 'feeType', 'schoolYear']);
+        $query = ClassroomFee::with(['classroom', 'feeType', 'schoolYear'])->current();
 
         // Filtres
         if ($request->filled('classroom_id')) {
@@ -49,7 +50,7 @@ class ClassroomFeeController extends Controller
         return view('accounting.classroom-fees.create', compact('classrooms', 'feeTypes', 'schoolYears'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('creer-frais-classe');
 
@@ -60,7 +61,24 @@ class ClassroomFeeController extends Controller
             'amount' => 'required|numeric|min:0',
         ]);
 
-        ClassroomFee::create($validated);
+        $schoolYearGuard->assertNotLocked(SchoolYear::find($validated['school_year_id']));
+
+        $existing = ClassroomFee::current()
+            ->where('classroom_id', $validated['classroom_id'])
+            ->where('fee_type_id', $validated['fee_type_id'])
+            ->where('school_year_id', $validated['school_year_id'])
+            ->first();
+
+        if ($existing) {
+            return back()->withInput()->with('error', 'Un tarif actif existe déjà pour cette combinaison classe / type de frais / année scolaire. Modifiez-le plutôt.');
+        }
+
+        ClassroomFee::create([
+            ...$validated,
+            'version' => 1,
+            'is_current' => true,
+            'created_by' => $request->user()->id,
+        ]);
 
         return redirect()->route('classroom-fees.index')
             ->with('success', 'Frais de classe créés avec succès.');
@@ -78,9 +96,11 @@ class ClassroomFeeController extends Controller
         return view('accounting.classroom-fees.edit', compact('classroomFee', 'classrooms', 'feeTypes', 'schoolYears'));
     }
 
-    public function update(Request $request, ClassroomFee $classroomFee)
+    public function update(Request $request, ClassroomFee $classroomFee, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('modifier-frais-classe', $classroomFee);
+
+        $schoolYearGuard->assertNotLocked($classroomFee->schoolYear);
 
         $validated = $request->validate([
             'classroom_id' => 'required|exists:classrooms,id',
@@ -89,19 +109,58 @@ class ClassroomFeeController extends Controller
             'amount' => 'required|numeric|min:0',
         ]);
 
-        $classroomFee->update($validated);
+        $schoolYearGuard->assertNotLocked(SchoolYear::find($validated['school_year_id']));
+
+        // Versionnement : on ne modifie jamais un tarif en place, on crée une
+        // nouvelle version et on archive l'ancienne pour garder l'historique complet.
+        $newVersion = ClassroomFee::create([
+            ...$validated,
+            'version' => $classroomFee->version + 1,
+            'is_current' => true,
+            'previous_id' => $classroomFee->id,
+            'created_by' => $request->user()->id,
+        ]);
+
+        $classroomFee->update(['is_current' => false]);
 
         return redirect()->route('classroom-fees.index')
-            ->with('success', 'Frais de classe modifiés avec succès.');
+            ->with('success', "Nouvelle version (v{$newVersion->version}) du tarif enregistrée avec succès.");
     }
 
-    public function destroy(ClassroomFee $classroomFee)
+    public function destroy(Request $request, ClassroomFee $classroomFee, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('supprimer-frais-classe', $classroomFee);
 
+        $schoolYearGuard->assertNotLocked($classroomFee->schoolYear);
+
+        $classroomFee->update(['deleted_by' => $request->user()->id]);
         $classroomFee->delete();
 
         return redirect()->route('classroom-fees.index')
             ->with('success', 'Frais de classe supprimés avec succès.');
+    }
+
+    public function history(ClassroomFee $classroomFee): View
+    {
+        $this->authorize('voir-comptabilite');
+
+        $classroomFee->load(['classroom', 'feeType', 'schoolYear']);
+
+        // Remonte jusqu'à la première version, puis liste toute la chaîne.
+        $root = $classroomFee;
+        while ($root->previousVersion) {
+            $root = $root->previousVersion;
+        }
+
+        $versions = collect([$root]);
+        $current = $root;
+        while ($next = $current->nextVersions()->withTrashed()->first()) {
+            $versions->push($next);
+            $current = $next;
+        }
+
+        $versions = $versions->sortByDesc('version')->values()->load('createdBy', 'deletedBy');
+
+        return view('accounting.classroom-fees.history', compact('classroomFee', 'versions'));
     }
 }

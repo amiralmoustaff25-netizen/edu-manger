@@ -11,7 +11,9 @@ class Note extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'classroom_id', 'matiere_id', 'valeur', 'type_evaluation', 'periode', 'appreciation'];
+    protected $fillable = ['user_id', 'classroom_id', 'matiere_id', 'valeur', 'type_evaluation', 'periode', 'appreciation', 'validated_at', 'validated_by'];
+
+    protected $casts = ['validated_at' => 'datetime'];
 
     protected static function newFactory()
     {
@@ -34,6 +36,38 @@ class Note extends Model
     public function matiere(): BelongsTo
     {
         return $this->belongsTo(Matiere::class);
+    }
+
+    // Utilisateur (administration) ayant validé la note
+    public function validatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    // Une note validée est verrouillée : seule une réouverture privilégiée permet de la modifier.
+    public function isValidated(): bool
+    {
+        return $this->validated_at !== null;
+    }
+
+    public function validate(int $validatorId): void
+    {
+        $this->update(['validated_at' => now(), 'validated_by' => $validatorId]);
+    }
+
+    public function reopen(): void
+    {
+        $this->update(['validated_at' => null, 'validated_by' => null]);
+    }
+
+    public function scopeValidated($query)
+    {
+        return $query->whereNotNull('validated_at');
+    }
+
+    public function scopeNotValidated($query)
+    {
+        return $query->whereNull('validated_at');
     }
 
     // Scope pour filtrer par période

@@ -24,6 +24,7 @@ class ReminderService
             // Vérifier les mois impayés
             $paidMonths = $registration->payments()
                 ->where('status', 'complet')
+                ->notCancelled()
                 ->pluck('month')
                 ->toArray();
 

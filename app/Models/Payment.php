@@ -33,6 +33,9 @@ class Payment extends Model
         'validated_at',       // Date de validation
         'receipt_number',     // Numéro de reçu
         'fee_breakdown',      // Détail des frais couverts
+        'cancelled_at',       // Date d'annulation (audit, jamais de suppression physique d'un paiement validé)
+        'cancelled_by',       // ID de l'utilisateur ayant annulé le paiement
+        'cancellation_reason', // Motif obligatoire de l'annulation
     ];
 
     /**
@@ -43,6 +46,7 @@ class Payment extends Model
         return [
             'payment_date' => 'date',
             'validated_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'amount' => 'decimal:2',
             'remaining_balance' => 'decimal:2',
             'fee_breakdown' => 'array',
@@ -85,6 +89,14 @@ class Payment extends Model
     public function validatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    /**
+     * Relation avec l'utilisateur qui a annulé le paiement.
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     public function invoices(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -177,5 +189,42 @@ class Payment extends Model
     {
         $this->status = 'partiel';
         $this->save();
+    }
+
+    /**
+     * Un paiement est considéré "validé" (donc protégé contre la suppression physique)
+     * dès qu'il est complet, ou qu'un partiel a été explicitement validé.
+     */
+    public function isValidated(): bool
+    {
+        return $this->status === 'complet' || ! is_null($this->validated_at);
+    }
+
+    /**
+     * Vérifie si le paiement a été annulé.
+     */
+    public function isCancelled(): bool
+    {
+        return ! is_null($this->cancelled_at);
+    }
+
+    /**
+     * Annule le paiement avec traçabilité complète (auteur + motif + date).
+     * Règle métier : un paiement validé n'est jamais supprimé, uniquement annulé.
+     */
+    public function cancel(int $userId, string $reason): void
+    {
+        $this->cancelled_at = now();
+        $this->cancelled_by = $userId;
+        $this->cancellation_reason = $reason;
+        $this->save();
+    }
+
+    /**
+     * Scope excluant les paiements annulés (pour les totaux financiers).
+     */
+    public function scopeNotCancelled($query)
+    {
+        return $query->whereNull('cancelled_at');
     }
 }

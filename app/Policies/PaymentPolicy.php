@@ -34,7 +34,25 @@ class PaymentPolicy
 
     public function delete(User $user, Payment $payment): bool
     {
+        // Règle métier : un paiement validé (complet ou partiel validé) ne peut jamais
+        // être supprimé physiquement, uniquement annulé via cancel() (traçabilité obligatoire).
+        if ($payment->isValidated()) {
+            return false;
+        }
+
         return $user->can('supprimer-paiement');
+    }
+
+    /**
+     * Annulation d'un paiement validé avec motif et traçabilité (remplace la suppression).
+     */
+    public function cancel(User $user, Payment $payment): bool
+    {
+        if ($payment->isCancelled()) {
+            return false;
+        }
+
+        return $user->can('annuler-paiement');
     }
 
     public function restore(User $user, Payment $payment): bool

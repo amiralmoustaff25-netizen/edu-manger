@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StudentStatus;
 use Database\Factories\RegistrationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ class Registration extends Model
     protected $fillable = [
         'user_id', 'classroom_id', 'registration_fee_paid',
         'monthly_fee', 'options', 'registration_date', 'academic_year',
-        'school_year_id', 'matricule', 'status',
+        'school_year_id', 'matricule', 'status', 'status_reason',
     ];
 
     protected $casts = [
@@ -95,12 +96,6 @@ class Registration extends Model
     // Accessor pour le statut formaté
     public function getFormattedStatusAttribute(): string
     {
-        return match($this->status) {
-            'active' => 'Actif',
-            'pending' => 'En attente',
-            'completed' => 'Complété',
-            'cancelled' => 'Annulé',
-            default => ucfirst($this->status),
-        };
+        return StudentStatus::label($this->status);
     }
 }

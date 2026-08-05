@@ -9,6 +9,7 @@ use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ClassroomFeeController;
+use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FeeTypeController;
 use App\Http\Controllers\GradeController;
@@ -42,7 +43,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
 // Routes pour tester les exports (PDF/Excel)
@@ -154,6 +155,9 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::resource('payments', PaymentController::class)->only(['index', 'create', 'show', 'edit', 'update', 'destroy']);
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'exportReceipt'])->name('payments.receipt');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::middleware(['permission:annuler-paiement'])->group(function () {
+            Route::patch('/payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
+        });
         
         // Rappels (manager-comptable uniquement)
         Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
@@ -171,6 +175,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
         // Frais par classe
         Route::resource('classroom-fees', ClassroomFeeController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+        Route::get('classroom-fees/{classroomFee}/history', [ClassroomFeeController::class, 'history'])->name('classroom-fees.history');
     });
 
     Route::middleware(['auth'])->group(function () {
@@ -257,9 +262,17 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::resource('attendances', AttendanceController::class)->only(['index', 'store']);
     });
 
+    Route::middleware(['permission:voir-detail-eleve'])->group(function () {
+        Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
+        Route::post('/registrations/{registration}/discounts', [DiscountController::class, 'store'])->name('discounts.store');
+        Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy'])->name('discounts.destroy');
+    });
+
     Route::middleware(['role:super-admin|admin'])->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
+        Route::post('/notes/validate', [GradeController::class, 'validateNotes'])->name('notes.validate');
+        Route::post('/notes/reopen', [GradeController::class, 'reopenNotes'])->name('notes.reopen');
         Route::prefix('pedagogical-configuration')->name('pedagogical-configuration.')->group(function () {
             Route::get('/', [PedagogicalConfigurationController::class, 'index'])->name('index');
             Route::get('/assignments', [PedagogicalConfigurationController::class, 'assignments'])->name('assignments');
@@ -281,7 +294,6 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
         Route::post('/students', [StudentController::class, 'store'])->name('students.store');
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
-        Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');

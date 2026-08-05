@@ -8,6 +8,7 @@ use App\Models\Registration;
 use App\Notifications\PaymentReceived;
 use App\Services\FeeService;
 use App\Services\PaymentService;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,9 +75,16 @@ class PaymentController extends Controller
         return view('accounting.payments.edit', compact('payment'));
     }
 
-    public function update(Request $request, Payment $payment): RedirectResponse
+    public function update(Request $request, Payment $payment, SchoolYearGuardService $schoolYearGuard): RedirectResponse
     {
         $this->authorize('update', $payment);
+
+        // Un paiement annulé est figé ; toute correction nécessite un nouveau paiement.
+        if ($payment->isCancelled()) {
+            return back()->with('error', 'Ce paiement est annulé et ne peut plus être modifié.');
+        }
+
+        $schoolYearGuard->assertNotLocked($payment->registration->schoolYear);
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
@@ -89,20 +97,60 @@ class PaymentController extends Controller
             'comment' => 'nullable|string',
         ]);
 
+        $oldValues = $payment->toArray();
         $payment->update($validated);
+
+        app(PaymentService::class)->logAction('updated', Payment::class, $payment->id, $oldValues, $payment->toArray(), 'Paiement modifié');
 
         return redirect()->route('payments.show', $payment)
             ->with('success', 'Paiement modifié avec succès.');
     }
 
-    public function destroy(Payment $payment): RedirectResponse
+    public function destroy(Payment $payment, SchoolYearGuardService $schoolYearGuard): RedirectResponse
     {
+        // Un paiement validé n'est jamais supprimable (voir PaymentPolicy::delete) :
+        // il doit être annulé via cancel() pour conserver une trace d'audit complète.
         $this->authorize('delete', $payment);
 
+        $schoolYearGuard->assertNotLocked($payment->registration->schoolYear);
+
+        $oldValues = $payment->toArray();
         $payment->delete();
+
+        app(PaymentService::class)->logAction('deleted', Payment::class, $oldValues['id'] ?? null, $oldValues, null, 'Paiement supprimé (non validé)');
 
         return redirect()->route('payments.index')
             ->with('success', 'Paiement supprimé avec succès.');
+    }
+
+    /**
+     * Annule un paiement validé avec motif obligatoire, au lieu de le supprimer.
+     * Conserve une trace d'audit complète (qui, quand, pourquoi).
+     */
+    public function cancel(Request $request, Payment $payment, SchoolYearGuardService $schoolYearGuard): RedirectResponse
+    {
+        $this->authorize('cancel', $payment);
+
+        $schoolYearGuard->assertNotLocked($payment->registration->schoolYear);
+
+        $request->validate([
+            'cancellation_reason' => 'required|string|max:500',
+        ]);
+
+        $oldValues = $payment->toArray();
+
+        $payment->cancel(auth()->id(), $request->string('cancellation_reason')->toString());
+
+        app(PaymentService::class)->logAction(
+            'cancelled',
+            Payment::class,
+            $payment->id,
+            $oldValues,
+            $payment->toArray(),
+            'Annulation de paiement'
+        );
+
+        return back()->with('success', 'Paiement annulé avec succès.');
     }
 
     public function exportReceipt(Payment $payment)
@@ -116,12 +164,16 @@ class PaymentController extends Controller
         return $pdf->download('recu-' . $payment->receipt_number . '.pdf');
     }
 
-    public function store(StorePaymentRequest $request, FeeService $feeService, PaymentService $paymentService): RedirectResponse|JsonResponse
+    public function store(StorePaymentRequest $request, FeeService $feeService, PaymentService $paymentService, SchoolYearGuardService $schoolYearGuard): RedirectResponse|JsonResponse
     {
-        return DB::transaction(function () use ($request, $feeService, $paymentService) {
+        return DB::transaction(function () use ($request, $feeService, $paymentService, $schoolYearGuard) {
             $validated = $request->validated();
 
             $registration = Registration::with(['user', 'classroom', 'schoolYear'])->findOrFail($validated['registration_id']);
+
+            // Aucun paiement ne peut être enregistré sur une année scolaire clôturée.
+            $schoolYearGuard->assertNotLocked($registration->schoolYear);
+
             $amountPaid = (float) $validated['amount_paid'];
 
             $selectedFees = $this->decodeSelectedFees($validated['selected_fees'] ?? null);
@@ -163,10 +215,11 @@ class PaymentController extends Controller
 
             $isPartial = $amountPaid < $totalExpected;
 
-            if ($isPartial) {
-                Gate::authorize('validatePartial');
-            }
-
+            // Un paiement partiel reste autorisé pour tout utilisateur ayant le droit
+            // 'enregistrer-paiement' : s'il n'a pas 'valider-paiement-partiel', le paiement
+            // est simplement créé en attente (validated_by = null) et apparaît dans le
+            // workflow de validation (cf. validationIndex/validatePayment/rejectPayment).
+            // Bloquer ici avec Gate::authorize empêcherait purement et simplement ce workflow.
             $remainingBalance = max(0, $totalExpected - $amountPaid);
             $canValidatePartial = Gate::allows('validatePartial');
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\StudentStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,8 @@ class UpdateStudentStatusRequest extends FormRequest
     {
         return [
             'registration_id' => ['required', 'exists:registrations,id'],
-            'status' => ['required', Rule::in(['pending', 'active'])],
+            'status' => ['required', Rule::in(StudentStatus::ALL)],
+            'status_reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -25,7 +27,7 @@ class UpdateStudentStatusRequest extends FormRequest
         return [
             'registration_id.required' => 'L\'inscription est obligatoire.',
             'status.required' => 'Le statut est obligatoire.',
-            'status.in' => 'Le statut doit être pending ou active.',
+            'status.in' => 'Le statut sélectionné est invalide.',
         ];
     }
 }

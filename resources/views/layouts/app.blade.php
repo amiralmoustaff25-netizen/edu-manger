@@ -19,24 +19,13 @@
             @isset($header)
                 <header class="bg-white dark:bg-slate-800 shadow">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                        @isset($breadcrumbs)
+                            {{ $breadcrumbs }}
+                        @endisset
                         {{ $header }}
                     </div>
                 </header>
             @endisset
-
-            @if (session('success'))
-                <div x-data="{ show: true }"
-                    x-init="setTimeout(() => show = false, 3000)"
-                    x-show="show"
-                    x-transition:leave="transition ease-in duration-500"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
-                    <div class="bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-200 px-4 py-3 rounded">
-                        {{ session('success') }}
-                    </div>
-                </div>
-            @endif
 
             @if(isset($slot))
                 {{ $slot }}
@@ -44,6 +33,36 @@
                 @yield('content')
             @endif
         </x-sidebar>
+
+        {{-- Notifications toast (remplace les pages/bandeaux de confirmation) --}}
+        <div
+            x-data="{ toasts: [] }"
+            x-init="
+                @if(session('success')) toasts.push({ id: Date.now(), type: 'success', message: @js(session('success')) }); @endif
+                @if(session('error')) toasts.push({ id: Date.now() + 1, type: 'error', message: @js(session('error')) }); @endif
+                toasts.forEach(t => setTimeout(() => toasts = toasts.filter(x => x.id !== t.id), 4000));
+            "
+            class="fixed top-4 right-4 z-[70] flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0"
+        >
+            <template x-for="toast in toasts" :key="toast.id">
+                <div
+                    x-show="true"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-x-4"
+                    x-transition:enter-end="opacity-100 translate-x-0"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="rounded-lg shadow-lg px-4 py-3 text-sm font-medium flex items-start gap-3"
+                    :class="toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/80 dark:text-emerald-100 dark:ring-emerald-700' : 'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-900/80 dark:text-red-100 dark:ring-red-700'"
+                >
+                    <span x-text="toast.message" class="flex-1"></span>
+                    <button type="button" @click="toasts = toasts.filter(x => x.id !== toast.id)" class="opacity-60 hover:opacity-100">&times;</button>
+                </div>
+            </template>
+        </div>
+
+        <x-cancel-payment-modal />
 
         <div
             x-data="{ open: false, form: null, title: '', message: '', confirmLabel: 'Confirmer' }"

@@ -2,14 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\Attendance;
 use App\Models\ChapterCompletion;
+use App\Models\Classroom;
 use App\Models\LoginLog;
+use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\ProgramAnnual;
 use App\Models\User;
+use App\Policies\AttendancePolicy;
 use App\Policies\ChapterCompletionPolicy;
+use App\Policies\ClassroomPolicy;
 use App\Policies\LoginLogPolicy;
+use App\Policies\NotePolicy;
 use App\Policies\ParentModelPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\ProgramAnnualPolicy;
@@ -30,6 +36,9 @@ class AuthServiceProvider extends ServiceProvider
         ProgramAnnual::class => ProgramAnnualPolicy::class,
         ChapterCompletion::class => ChapterCompletionPolicy::class,
         \App\Models\Teacher::class => \App\Policies\TeacherPolicy::class,
+        Classroom::class => ClassroomPolicy::class,
+        Attendance::class => AttendancePolicy::class,
+        Note::class => NotePolicy::class,
     ];
 
     public function boot(): void

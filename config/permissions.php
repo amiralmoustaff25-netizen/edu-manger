@@ -95,6 +95,7 @@ return [
         'creer-frais-classe' => 'Créer des frais par classe',
         'modifier-frais-classe' => 'Modifier des frais par classe',
         'supprimer-frais-classe' => 'Supprimer des frais par classe',
+        'gerer-derogations-tarifaires' => 'Gérer les dérogations tarifaires exceptionnelles',
 
         'voir-rapports-financiers' => 'Voir les rapports financiers',
         'voir-rapports-avances' => 'Voir les rapports avancés',
@@ -104,6 +105,8 @@ return [
 
         'voir-sa-classe' => 'Voir ses classes',
         'saisir-notes' => 'Saisir les notes',
+        'valider-notes' => 'Valider les notes (verrouillage)',
+        'rouvrir-notes-validees' => 'Rouvrir des notes validées',
         'marquer-absences' => 'Marquer les absences',
 
         'voir-ses-enfants' => 'Voir ses enfants',
@@ -150,9 +153,10 @@ return [
         'school-years' => ['voir-annees-scolaires', 'creer-annee-scolaire', 'supprimer-annee-scolaire', 'activer-annee-scolaire'],
         'payments' => ['voir-paiements', 'enregistrer-paiement', 'valider-paiement-partiel', 'modifier-paiement', 'supprimer-paiement', 'voir-comptabilite', 'voir-finances', 'voir-recouvrement'],
         'invoices' => ['voir-factures', 'creer-facture', 'modifier-facture', 'supprimer-facture'],
-        'fees' => ['voir-types-frais', 'creer-type-frais', 'modifier-type-frais', 'supprimer-type-frais', 'voir-frais-classe', 'creer-frais-classe', 'modifier-frais-classe', 'supprimer-frais-classe'],
+        'fees' => ['voir-types-frais', 'creer-type-frais', 'modifier-type-frais', 'supprimer-type-frais', 'voir-frais-classe', 'creer-frais-classe', 'modifier-frais-classe', 'supprimer-frais-classe', 'gerer-derogations-tarifaires'],
         'reports' => ['voir-rapports-financiers', 'voir-rapports-avances', 'exporter-rapports-excel', 'voir-alertes-impayes', 'voir-tresorerie'],
         'attendances' => ['marquer-absences'],
+        'grades' => ['voir-sa-classe', 'saisir-notes', 'valider-notes', 'rouvrir-notes-validees'],
         'notifications' => ['voir-notifications', 'creer-notification', 'publier-notification', 'programmer-notification', 'modifier-notification', 'archiver-notification', 'voir-historique-notifications', 'voir-statistiques-lecture'],
         'programmes' => ['voir-programmes', 'creer-programme', 'modifier-programme', 'soumettre-programme', 'supprimer-programme', 'valider-programme-surveillant', 'valider-programme-directeur', 'rejeter-programme', 'voir-cahier-textes', 'saisir-cahier-textes', 'modifier-cahier-textes', 'voir-tableau-bord-cahier-textes', 'voir-historique-cahier-textes'],
         'admin' => ['tout-faire'],
@@ -183,5 +187,6 @@ return [
         'reinitialiser-mot-de-passe-utilisateur',
         'valider-programme-surveillant',
         'valider-programme-directeur',
+        'rouvrir-notes-validees',
     ],
 ];

@@ -90,6 +90,7 @@ class RoleAndPermissionSeeder extends Seeder
             'valider-paiement-partiel',
             'modifier-paiement',
             'supprimer-paiement',
+            'annuler-paiement',
             'voir-comptabilite',
             'voir-finances',
             'voir-recouvrement',
@@ -111,6 +112,7 @@ class RoleAndPermissionSeeder extends Seeder
             'creer-frais-classe',
             'modifier-frais-classe',
             'supprimer-frais-classe',
+            'gerer-derogations-tarifaires',
 
             // --- Rapports financiers ---
             'voir-rapports-financiers',
@@ -122,6 +124,8 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Pédagogie (professeur) ---
             'voir-sa-classe',
             'saisir-notes',
+            'valider-notes',
+            'rouvrir-notes-validees',
             'marquer-absences',
 
             // --- Parent (espace famille) ---
@@ -225,6 +229,9 @@ class RoleAndPermissionSeeder extends Seeder
             'tout-faire',
             'valider-paiement-partiel',
             'supprimer-paiement',
+            'annuler-paiement',
+            // Réouverture d'une note validée : action privilégiée réservée au super-admin.
+            'rouvrir-notes-validees',
             'voir-comptabilite',
             'voir-finances',
             'voir-recouvrement',
@@ -240,6 +247,7 @@ class RoleAndPermissionSeeder extends Seeder
             'creer-frais-classe',
             'modifier-frais-classe',
             'supprimer-frais-classe',
+            'gerer-derogations-tarifaires',
             'voir-rapports-financiers',
             'voir-rapports-avances',
             'exporter-rapports-excel',
@@ -259,6 +267,7 @@ class RoleAndPermissionSeeder extends Seeder
             'valider-paiement-partiel',
             'modifier-paiement',
             'supprimer-paiement',
+            'annuler-paiement',
             'voir-comptabilite',
             'voir-finances',
             'voir-recouvrement',
@@ -274,6 +283,7 @@ class RoleAndPermissionSeeder extends Seeder
             'creer-frais-classe',
             'modifier-frais-classe',
             'supprimer-frais-classe',
+            'gerer-derogations-tarifaires',
             'voir-rapports-financiers',
             'voir-rapports-avances',
             'exporter-rapports-excel',
@@ -300,9 +310,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-factures',
             'creer-facture',
             'voir-types-frais',
-            'creer-type-frais',
             'voir-frais-classe',
-            'creer-frais-classe',
             'voir-rapports-financiers',
             'voir-rapports-avances',
             'exporter-rapports-excel',

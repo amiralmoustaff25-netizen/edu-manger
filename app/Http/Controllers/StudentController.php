@@ -13,6 +13,7 @@ use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
 use App\Services\StudentEnrollmentService;
+use App\Services\StudentStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -134,7 +135,7 @@ class StudentController extends Controller
             'attendances.classroom',
             'attendances.recordedBy',
             'sanctions.author',
-            'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments'])->latest(),
+            'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments', 'discounts.appliedBy'])->latest(),
         ]);
 
         $currentRegistration = $student->registrations->first();
@@ -262,7 +263,7 @@ class StudentController extends Controller
         return back()->with('success', 'Classe de l\'élève mise à jour.');
     }
 
-    public function updateStatus(UpdateStudentStatusRequest $request, User $student)
+    public function updateStatus(UpdateStudentStatusRequest $request, User $student, StudentStatusService $studentStatusService)
     {
         $this->authorize('modifier-statut-eleve', $student);
 
@@ -271,9 +272,8 @@ class StudentController extends Controller
         $validated = $request->validated();
 
         $registration = Registration::where('user_id', $student->id)->findOrFail($validated['registration_id']);
-        $registration->update(['status' => $validated['status']]);
 
-        $student->update(['is_active' => $validated['status'] === 'active']);
+        $studentStatusService->transition($registration, $validated['status'], $validated['status_reason'] ?? null);
 
         return back()->with('success', 'Statut de l\'élève mis à jour.');
     }

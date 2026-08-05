@@ -27,6 +27,8 @@ class FeeService
         $classroomFees = $this->getClassroomFees($registration);
         $months = $this->getMonthsForSchoolYear($registration->schoolYear);
 
+        $discounts = $this->getActiveDiscounts($registration);
+
         foreach ($classroomFees as $classroomFee) {
             $feeType = $classroomFee['fee_type'];
             $code = $feeType['code'] ?? $this->normalizeCode($feeType['name'] ?? '');
@@ -39,7 +41,9 @@ class FeeService
 
             if ($feeType['is_recurring'] ?? false) {
                 foreach ($months as $monthKey => $monthLabel) {
-                    $fees[] = $this->buildFeeItem($registration, $code, $feeType, $amount, $monthLabel, $monthKey);
+                    $dueDate = $this->getDueDate($registration->schoolYear, $monthLabel, $monthKey);
+                    $discountedAmount = $this->applyDiscounts($amount, $discounts, $dueDate);
+                    $fees[] = $this->buildFeeItem($registration, $code, $feeType, $discountedAmount, $monthLabel, $monthKey);
                 }
             } else {
                 $fees[] = $this->buildFeeItem($registration, $code, $feeType, $amount, null, null);
@@ -50,14 +54,47 @@ class FeeService
     }
 
     /**
+     * Récupère les dérogations tarifaires (Discount) actives pour l'inscription.
+     */
+    private function getActiveDiscounts(Registration $registration)
+    {
+        return $registration->discounts()->get();
+    }
+
+    /**
+     * Applique les dérogations actives à un montant donné pour une date d'échéance.
+     */
+    private function applyDiscounts(float $amount, $discounts, string $dueDate): float
+    {
+        foreach ($discounts as $discount) {
+            if ($discount->valid_from && $dueDate < $discount->valid_from->toDateString()) {
+                continue;
+            }
+            if ($discount->valid_until && $dueDate > $discount->valid_until->toDateString()) {
+                continue;
+            }
+
+            if ($discount->type === 'percentage') {
+                $amount -= $amount * ((float) $discount->value / 100);
+            } else {
+                $amount -= (float) $discount->value;
+            }
+        }
+
+        return max(0, round($amount, 2));
+    }
+
+    /**
      * Calcule la situation financière complète d'une inscription.
      */
     public function getFinancialSituation(Registration $registration): array
     {
         $fees = $this->getPendingFees($registration);
         $expected = collect($fees)->sum('amount');
+        // Les paiements annulés ne comptent plus dans le solde (traçabilité conservée dans audit_logs).
         $paid = $registration->payments()
             ->whereIn('status', ['complet', 'partiel'])
+            ->notCancelled()
             ->sum('amount');
         $remaining = max(0, $expected - (float) $paid);
         $overdue = collect($fees)
@@ -90,6 +127,7 @@ class FeeService
     private function getClassroomFees(Registration $registration): array
     {
         $configured = ClassroomFee::with('feeType')
+            ->current()
             ->where('classroom_id', $registration->classroom_id)
             ->where('school_year_id', $registration->school_year_id)
             ->get()
@@ -185,7 +223,7 @@ class FeeService
     {
         $paid = 0.0;
 
-        foreach ($registration->payments()->whereIn('status', ['complet', 'partiel'])->get() as $payment) {
+        foreach ($registration->payments()->whereIn('status', ['complet', 'partiel'])->notCancelled()->get() as $payment) {
             if ($payment->fee_breakdown) {
                 foreach ($payment->fee_breakdown as $item) {
                     $itemCode = $item['code'] ?? $this->normalizeCode($item['type'] ?? '');

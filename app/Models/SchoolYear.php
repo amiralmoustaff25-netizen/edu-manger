@@ -115,6 +115,15 @@ class SchoolYear extends Model
     }
 
     /**
+     * Une année scolaire clôturée ('completed') est verrouillée : ses inscriptions,
+     * paiements et grilles tarifaires ne doivent plus être modifiés (voir SchoolYearGuardService).
+     */
+    public function isLocked(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
      * Boot du modèle pour garantir une seule année active
      */
     protected static function booted()

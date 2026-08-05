@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateParentRequest;
 use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\User;
+use App\Services\FeeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -109,7 +110,7 @@ class ParentController extends Controller
     /**
      * Afficher les détails d'un parent
      */
-    public function show(ParentModel $parent): View
+    public function show(ParentModel $parent, FeeService $feeService): View
     {
         $this->authorize('voir-detail-parent', $parent);
 
@@ -128,10 +129,18 @@ class ParentController extends Controller
             ]);
         }
 
-        $studentsData = $parent->students->map(function ($student) {
+        $studentsData = $parent->students->map(function ($student) use ($feeService) {
             $currentRegistration = $student->registrations->first();
-            $totalPaid = $student->registrations->flatMap->payments->sum('amount');
-            $remainingBalance = $student->registrations->flatMap->payments->sum('remaining_balance');
+            // Les paiements annulés sont exclus des totaux (traçabilité conservée dans audit_logs).
+            $activePayments = $student->registrations->flatMap->payments->whereNull('cancelled_at');
+            $totalPaid = $activePayments->sum('amount');
+            // Le solde restant ne doit JAMAIS être obtenu en sommant la colonne
+            // `remaining_balance` de plusieurs paiements : cette colonne n'est qu'un instantané
+            // au moment de CE paiement, pas un solde cumulable. Seul FeeService::getFinancialSituation()
+            // (basé sur les frais réellement dus pour l'inscription courante) donne le solde exact.
+            $remainingBalance = $currentRegistration
+                ? $feeService->getFinancialSituation($currentRegistration)['remaining']
+                : 0;
             $recentAbsences = [];
             $recentNotes = Note::where('user_id', $student->id)->latest()->take(5)->get();
 
