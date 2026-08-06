@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FeeType;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;

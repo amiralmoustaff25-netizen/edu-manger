@@ -14,6 +14,9 @@
                     <a href="{{ route('registrations.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                         Nouvelle inscription
                     </a>
+                    <a href="{{ route('registrations.reinscription') }}" class="inline-flex items-center justify-center rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500">
+                        Réinscription
+                    </a>
                 </div>
             @endrole
         </div>

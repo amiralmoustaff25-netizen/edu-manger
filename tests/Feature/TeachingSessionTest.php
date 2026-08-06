@@ -3,6 +3,7 @@
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -39,4 +40,38 @@ test('teacher can point a course and see remaining weekly hours', function () {
         ->assertOk()
         ->assertSee('2.5 h restantes')
         ->assertSee('1.5 h réalisées');
+});
+
+test('recording a teaching session can also record attendance for the classroom in the same request', function () {
+    $student = User::factory()->create(['role' => 'eleve']);
+    $student->assignRole('eleve');
+    Registration::create([
+        'user_id' => $student->id,
+        'classroom_id' => $this->assignment->classroom_id,
+        'registration_fee_paid' => 0,
+        'monthly_fee' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => $this->schoolYear->year_string,
+        'school_year_id' => $this->schoolYear->id,
+        'matricule' => 'EDU-TEST-0001',
+        'status' => 'active',
+    ]);
+
+    $taughtOn = now()->startOfWeek()->addDay()->toDateString();
+
+    $this->post(route('professeur.teaching-sessions.store'), [
+        'pedagogical_assignment_id' => $this->assignment->id,
+        'taught_on' => $taughtOn,
+        'duration_hours' => 1,
+        'attendances' => [
+            $student->id => ['status' => 'absent'],
+        ],
+    ])->assertRedirect(route('professeur.teaching-sessions.index'));
+
+    $this->assertDatabaseHas('attendances', [
+        'user_id' => $student->id,
+        'classroom_id' => $this->assignment->classroom_id,
+        'date' => $taughtOn.' 00:00:00',
+        'status' => 'absent',
+    ]);
 });

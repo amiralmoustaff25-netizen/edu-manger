@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClassroomFee;
 use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
@@ -22,11 +23,11 @@ class StudentEnrollmentService
         return $this->parentCredentials;
     }
 
-    public function enroll(array $data, ?UploadedFile $photo = null, ?int $createdBy = null): User
+    public function enroll(array $data, ?UploadedFile $photo = null, ?int $createdBy = null, bool $canEditFees = false): User
     {
         $this->parentCredentials = null;
 
-        return DB::transaction(function () use ($data, $photo, $createdBy) {
+        return DB::transaction(function () use ($data, $photo, $createdBy, $canEditFees) {
             $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
             $student = User::create([
                 'name' => trim($data['nom'].' '.$data['prenom']),
@@ -54,11 +55,13 @@ class StudentEnrollmentService
                 $student->update(['profile_photo_path' => $path]);
             }
 
+            [$registrationFee, $monthlyFee] = $this->resolveFeeAmounts($data, $activeYear, $canEditFees);
+
             Registration::create([
                 'user_id' => $student->id,
                 'classroom_id' => $data['classroom_id'],
-                'registration_fee_paid' => $data['registration_fee_paid'] ?? 0,
-                'monthly_fee' => $data['monthly_fee'] ?? 0,
+                'registration_fee_paid' => $registrationFee,
+                'monthly_fee' => $monthlyFee,
                 'options' => $this->normalizeOptions($data['options'] ?? []),
                 'registration_date' => now()->toDateString(),
                 'academic_year' => $activeYear->year_string,
@@ -87,6 +90,42 @@ class StudentEnrollmentService
             }
 
             return $student;
+        });
+    }
+
+    /**
+     * Réinscrit un élève déjà existant pour l'année scolaire active, en réutilisant
+     * automatiquement son identité, son matricule et son historique (aucune recréation
+     * de compte utilisateur). Seuls la classe, les frais et les options sont à confirmer
+     * pour la nouvelle année.
+     */
+    public function reenroll(User $student, array $data, bool $canEditFees): Registration
+    {
+        return DB::transaction(function () use ($student, $data, $canEditFees) {
+            $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
+
+            if (Registration::where('user_id', $student->id)->where('school_year_id', $activeYear->id)->exists()) {
+                throw new \RuntimeException('Cet élève est déjà inscrit pour l\'année scolaire active.');
+            }
+
+            [$registrationFee, $monthlyFee] = $this->resolveFeeAmounts($data, $activeYear, $canEditFees);
+
+            $registration = Registration::create([
+                'user_id' => $student->id,
+                'classroom_id' => $data['classroom_id'],
+                'registration_fee_paid' => $registrationFee,
+                'monthly_fee' => $monthlyFee,
+                'options' => $this->normalizeOptions($data['options'] ?? []),
+                'registration_date' => now()->toDateString(),
+                'academic_year' => $activeYear->year_string,
+                'school_year_id' => $activeYear->id,
+                'matricule' => $this->generateRegistrationMatricule(),
+                'status' => 'pending',
+            ]);
+
+            $student->update(['is_active' => (bool) ($data['is_active'] ?? false)]);
+
+            return $registration;
         });
     }
 
@@ -178,6 +217,39 @@ class StudentEnrollmentService
         } while (ParentModel::withTrashed()->where('matricule_parent', $matricule)->exists());
 
         return $matricule;
+    }
+
+    /**
+     * Détermine les montants d'inscription/mensualité à appliquer : toujours issus de
+     * la bibliothèque des frais (ClassroomFee) quand un tarif existe pour la classe et
+     * l'année active. Seul un Super Administrateur / Manager Comptable peut saisir un
+     * montant personnalisé (ex. dérogation), pour tous les autres utilisateurs la valeur
+     * saisie côté formulaire est ignorée et remplacée par le tarif officiel.
+     */
+    private function resolveFeeAmounts(array $data, SchoolYear $activeYear, bool $canEditFees): array
+    {
+        $libraryFees = ClassroomFee::with('feeType')
+            ->current()
+            ->where('classroom_id', $data['classroom_id'])
+            ->where('school_year_id', $activeYear->id)
+            ->get()
+            ->filter(fn (ClassroomFee $cf) => $cf->feeType)
+            ->mapWithKeys(fn (ClassroomFee $cf) => [$cf->feeType->code => (float) $cf->amount]);
+
+        $libraryRegistrationFee = $libraryFees->get('inscription');
+        $libraryMonthlyFee = $libraryFees->get('mensualite');
+
+        if (! $canEditFees) {
+            return [
+                $libraryRegistrationFee ?? (float) ($data['registration_fee_paid'] ?? 0),
+                $libraryMonthlyFee ?? (float) ($data['monthly_fee'] ?? 0),
+            ];
+        }
+
+        return [
+            (float) ($data['registration_fee_paid'] ?? $libraryRegistrationFee ?? 0),
+            (float) ($data['monthly_fee'] ?? $libraryMonthlyFee ?? 0),
+        ];
     }
 
     private function normalizeOptions(array $options): array

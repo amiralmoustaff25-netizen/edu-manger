@@ -35,6 +35,29 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $user = $this->route('user');
+            $newRole = $this->input('role');
+
+            if ($newRole === 'professeur' && $user->role !== 'professeur') {
+                $validator->errors()->add(
+                    'role',
+                    "Impossible d'attribuer le rôle professeur depuis ce formulaire : créez ou convertissez ce compte via le module Professeurs, qui collecte les informations obligatoires (statut, diplômes, filiation, etc.)."
+                );
+            }
+
+            if ($user->role === 'professeur' && $newRole !== 'professeur'
+                && $user->teacher?->pedagogicalAssignments()->where('is_active', true)->exists()) {
+                $validator->errors()->add(
+                    'role',
+                    'Ce compte a des affectations pédagogiques actives. Retirez-les depuis le module Professeurs avant de changer son rôle.'
+                );
+            }
+        });
+    }
+
     public function messages(): array
     {
         return [

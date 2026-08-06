@@ -122,6 +122,24 @@ class FeeService
     }
 
     /**
+     * Renvoie les montants actuels de la bibliothèque des frais pour une classe/année
+     * donnée, indexés par code de type de frais (inscription, mensualite, cantine, ...).
+     * Sert de source de vérité unique pour préremplir/verrouiller les champs de frais
+     * lors de l'inscription, au lieu de laisser ces montants saisis librement.
+     */
+    public function getCurrentFeeAmounts(int $classroomId, int $schoolYearId): array
+    {
+        return ClassroomFee::with('feeType')
+            ->current()
+            ->where('classroom_id', $classroomId)
+            ->where('school_year_id', $schoolYearId)
+            ->get()
+            ->filter(fn (ClassroomFee $cf) => $cf->feeType)
+            ->mapWithKeys(fn (ClassroomFee $cf) => [$cf->feeType->code => (float) $cf->amount])
+            ->all();
+    }
+
+    /**
      * Renvoie les frais configurés pour la classe/année, avec fallback sur l'inscription.
      */
     private function getClassroomFees(Registration $registration): array

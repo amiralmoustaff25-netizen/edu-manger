@@ -75,20 +75,32 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             ->take(5)
             ->get();
 
+        // Solde restant réel : recalculé via FeeService (frais réellement dus) pour les
+        // inscriptions actives de l'année en cours, jamais via le module Invoice (peu
+        // utilisé, déconnecté du suivi réel des paiements) ni en sommant remaining_balance.
+        $feeService = app(\App\Services\FeeService::class);
+        $activeRegistrationsForBalance = $activeYear
+            ? Registration::where('school_year_id', $activeYear->id)->where('status', 'active')->get()
+            : collect();
+        $remainingBalance = $activeRegistrationsForBalance->sum(
+            fn (Registration $registration) => $feeService->getFinancialSituation($registration)['remaining']
+        );
+
         $stats = [
             'students' => User::role('eleve')->count(),
             'classrooms' => Classroom::count(),
             'parents' => ParentModel::count(),
             'active_parents' => ParentModel::where('statut', 'actif')->count(),
-            'paid_this_month' => Payment::where('status', 'complet')
+            'paid_this_month' => Payment::where('status', 'complet')->notCancelled()
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count(),
-            'partial_payments' => Payment::where('status', 'partiel')->count(),
-            'monthly_revenue' => Payment::whereMonth('created_at', now()->month)
+            'partial_payments' => Payment::where('status', 'partiel')->notCancelled()->count(),
+            'monthly_revenue' => Payment::where('status', 'complet')->notCancelled()
+                ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
-            'remaining_balance' => Invoice::whereIn('status', ['sent', 'partial', 'overdue'])->sum('remaining_balance'),
+            'remaining_balance' => $remainingBalance,
         ];
 
         $monthlyRevenue = collect(range(5, 0))->map(function ($monthsAgo) {
@@ -96,18 +108,21 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
             return [
                 'label' => $date->translatedFormat('M Y'),
-                'amount' => Payment::where('status', 'complet')
+                'amount' => Payment::where('status', 'complet')->notCancelled()
                     ->whereMonth('payment_date', $date->month)
                     ->whereYear('payment_date', $date->year)
                     ->sum('amount'),
             ];
         })->values();
 
+        // Alertes synchronisées avec les données réelles (Payment/Registration/Classroom),
+        // plus de dépendance au module Invoice qui n'est pas utilisé en pratique.
         $alerts = [
-            'partial_payments' => Invoice::whereIn('status', ['sent', 'partial', 'overdue'])
+            'partial_payments' => Payment::where('status', 'partiel')
+                ->notCancelled()
                 ->where('remaining_balance', '>', 0)
                 ->count(),
-            'students_without_class' => Registration::whereNull('classroom_id')->count(),
+            'students_without_class' => Registration::where('status', 'active')->whereNull('classroom_id')->count(),
             'classrooms_without_teacher' => Classroom::whereNull('teacher_id')->count(),
             'missing_active_year' => $activeYear === null,
         ];
@@ -303,6 +318,8 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
         Route::get('/registrations/create', [RegistrationController::class, 'create'])->name('registrations.create');
         Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
+        Route::get('/registrations/reinscription', [RegistrationController::class, 'reenrollSearch'])->name('registrations.reinscription');
+        Route::post('/registrations/reinscription', [RegistrationController::class, 'storeReenrollment'])->name('registrations.reinscription.store');
 
         // Routes pour la gestion des parents
         Route::resource('parents', ParentController::class);

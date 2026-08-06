@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\TeachingSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TeachingSessionController extends Controller
 {
@@ -30,15 +32,65 @@ class TeachingSessionController extends Controller
             });
         $sessions = TeachingSession::with('assignment.classroom', 'assignment.matiere')->whereHas('assignment', fn ($query) => $query->where('teacher_id', $teacher->id))->latest('taught_on')->paginate(12);
 
-        return view('teachers.teaching-sessions.index', compact('assignments', 'sessions', 'weekStart', 'weekEnd'));
+        // Effectif de chaque classe affectée, pour permettre de pointer les présences
+        // directement depuis le formulaire de pointage de cours (cahier de texte).
+        $rosters = $assignments->pluck('classroom_id')->unique()->mapWithKeys(function ($classroomId) {
+            $students = \App\Models\Registration::where('classroom_id', $classroomId)
+                ->where('status', 'active')
+                ->with('user')
+                ->get()
+                ->pluck('user')
+                ->filter()
+                ->values();
+
+            return [$classroomId => $students];
+        });
+
+        return view('teachers.teaching-sessions.index', compact('assignments', 'sessions', 'weekStart', 'weekEnd', 'rosters'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate(['pedagogical_assignment_id' => ['required', 'exists:pedagogical_assignments,id'], 'taught_on' => ['required', 'date'], 'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:12'], 'summary' => ['nullable', 'string', 'max:1000']]);
+        $data = $request->validate([
+            'pedagogical_assignment_id' => ['required', 'exists:pedagogical_assignments,id'],
+            'taught_on' => ['required', 'date'],
+            'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:12'],
+            'summary' => ['nullable', 'string', 'max:1000'],
+            'attendances' => ['sometimes', 'array'],
+            'attendances.*.status' => ['nullable', 'in:present,absent,late,excused'],
+        ]);
+
         $teacher = Teacher::where('user_id', auth()->id())->firstOrFail();
         $assignment = PedagogicalAssignment::whereKey($data['pedagogical_assignment_id'])->where('teacher_id', $teacher->id)->where('is_active', true)->firstOrFail();
-        TeachingSession::create([...$data, 'recorded_by' => auth()->id()]);
+
+        DB::transaction(function () use ($data, $teacher, $assignment) {
+            TeachingSession::create([
+                'pedagogical_assignment_id' => $data['pedagogical_assignment_id'],
+                'taught_on' => $data['taught_on'],
+                'duration_hours' => $data['duration_hours'],
+                'summary' => $data['summary'] ?? null,
+                'recorded_by' => auth()->id(),
+            ]);
+
+            foreach ($data['attendances'] ?? [] as $userId => $attendance) {
+                if (empty($attendance['status'])) {
+                    continue;
+                }
+
+                Attendance::updateOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'classroom_id' => $assignment->classroom_id,
+                        'date' => $data['taught_on'],
+                    ],
+                    [
+                        'status' => $attendance['status'],
+                        'notes' => $attendance['notes'] ?? null,
+                        'recorded_by' => $teacher->id,
+                    ]
+                );
+            }
+        });
 
         return redirect()->route('professeur.teaching-sessions.index')->with('success', "Séance pointée pour {$assignment->classroom->name}.");
     }

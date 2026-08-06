@@ -19,9 +19,7 @@ return [
             'children' => [
                 ['label' => 'Élèves', 'route' => 'students.index', 'permission' => 'voir-eleves'],
                 ['label' => 'Inscriptions', 'route' => 'registrations.create', 'permission' => 'creer-inscription'],
-                ['label' => 'Parents & Tuteurs', 'route' => 'parents.index', 'permission' => 'voir-parents'],
                 ['label' => 'Classes & Niveaux', 'route' => 'classrooms.index', 'permission' => 'voir-classes'],
-                ['label' => 'Professeurs', 'route' => 'teachers.index', 'permission' => 'voir-professeurs'],
             ],
         ],
         [
@@ -32,7 +30,6 @@ return [
             'children' => [
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
                 ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
-                ['label' => 'Bulletins', 'route' => 'bulletins.index', 'permission' => 'voir-programmes'],
                 ['label' => 'Présences', 'route' => 'attendances.overview', 'permission' => 'voir-programmes'],
                 [
                     'label' => 'Configuration pédagogique',
@@ -62,10 +59,12 @@ return [
             'label' => 'Administration',
             'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
             'roles' => ['super-admin', 'admin'],
-            'active_routes' => ['admin.dashboard', 'users.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
+            'active_routes' => ['admin.dashboard', 'users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
             'children' => [
                 ['label' => 'Vue d\'ensemble', 'route' => 'admin.dashboard'],
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
+                ['label' => 'Professeurs', 'route' => 'teachers.index', 'permission' => 'voir-professeurs'],
+                ['label' => 'Parents & Tuteurs', 'route' => 'parents.index', 'permission' => 'voir-parents'],
                 ['label' => 'Attribution des rôles', 'route' => 'users.roles.index', 'permission' => 'modifier-utilisateur'],
                 ['label' => 'Logs de connexion', 'route' => 'login-logs.index', 'permission' => 'voir-logs-connexion'],
                 ['label' => 'Nouvelle notification', 'route' => 'announcements.create', 'permission' => 'creer-notification'],
@@ -117,8 +116,7 @@ return [
                 ['label' => 'Tableau de bord', 'route' => 'professeur.dashboard'],
                 ['label' => 'Mes Classes', 'route' => 'professeur.classes.index'],
                 ['label' => 'Saisie Notes', 'route' => 'professeur.notes.index'],
-                ['label' => 'Pointage des cours', 'route' => 'professeur.teaching-sessions.index'],
-                ['label' => 'Présences', 'route' => 'professeur.attendances.index'],
+                ['label' => 'Pointage des cours & présences', 'route' => 'professeur.teaching-sessions.index', 'active_routes' => ['professeur.attendances.index']],
                 ['label' => 'Historique présences', 'route' => 'professeur.attendances.history'],
             ],
         ],

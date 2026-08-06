@@ -11,7 +11,7 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6">
                         <div class="flex gap-2">
-                            <a href="{{ route('payments.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                            <a href="{{ route('payments.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">
                                 ← Retour
                             </a>
                         </div>

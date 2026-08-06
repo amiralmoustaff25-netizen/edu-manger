@@ -22,7 +22,10 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $rules = [
+        // Le rôle professeur n'est pas créable ici : la fiche professeur exige des
+        // informations obligatoires (statut, diplômes, filiation...) collectées
+        // exclusivement via le module Professeurs (voir TeacherController::store).
+        return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
@@ -30,19 +33,6 @@ class StoreUserRequest extends FormRequest
             'role' => ['required', Rule::in(self::ROLES)],
             'is_active' => ['boolean'],
         ];
-
-        // Validation conditionnelle pour le rôle professeur
-        if ($this->input('role') === 'professeur') {
-            $rules['date_naissance'] = ['nullable', 'date'];
-            $rules['lieu_naissance'] = ['nullable', 'string', 'max:255'];
-            $rules['sexe'] = ['nullable', 'in:masculin,feminin'];
-            $rules['nationalite'] = ['nullable', 'string', 'max:100'];
-            $rules['statut'] = ['nullable', 'in:fonctionnaire,contractuel,vacataire'];
-            $rules['diplomes'] = ['nullable', 'string'];
-            $rules['specialites'] = ['nullable', 'string'];
-        }
-
-        return $rules;
     }
 
     public function messages(): array

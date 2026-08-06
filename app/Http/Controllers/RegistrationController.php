@@ -4,15 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\ParentModel;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
 use App\Services\StudentEnrollmentService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class RegistrationController extends Controller
 {
-    public function create()
+    public function create(FeeService $feeService)
     {
         $classrooms = Classroom::all();
         $activeYear = SchoolYear::where('is_active', true)->first();
@@ -21,11 +23,18 @@ class RegistrationController extends Controller
             return back()->withErrors(['error' => 'Aucune année scolaire active.']);
         }
 
+        // Bibliothèque des frais : source de vérité unique pour les montants
+        // d'inscription/mensualité/cantine/transport, par classe, pour l'année active.
+        $feeLibrary = $classrooms->mapWithKeys(
+            fn (Classroom $classroom) => [$classroom->id => $feeService->getCurrentFeeAmounts($classroom->id, $activeYear->id)]
+        );
+
         return view('registrations.create', [
             'classrooms' => $classrooms,
             'activeYear' => $activeYear,
             'parents' => ParentModel::actifs()->get(),
             'student' => new User(['is_active' => true]),
+            'feeLibrary' => $feeLibrary,
         ]);
     }
 
@@ -69,7 +78,8 @@ class RegistrationController extends Controller
         $student = $enrollmentService->enroll(
             $validated,
             $request->file('photo'),
-            auth()->id()
+            auth()->id(),
+            $request->user()->hasAnyRole(['super-admin', 'manager-comptable'])
         );
 
         $message = 'Inscription élève réussie. Matricule : '.$student->matricule.' | Mot de passe temporaire : password';
@@ -78,6 +88,85 @@ class RegistrationController extends Controller
         if ($parentCredentials) {
             $message .= ' | Compte parent — Matricule : '.$parentCredentials['matricule'].' | Email : '.$parentCredentials['email'].' | Mot de passe temporaire : '.$parentCredentials['password'];
         }
+
+        return redirect()->route('dashboard')->with('success', $message);
+    }
+
+    /**
+     * Formulaire de réinscription : recherche un élève existant par matricule et
+     * réutilise automatiquement son identité/historique pour la nouvelle année.
+     */
+    public function reenrollSearch(Request $request, FeeService $feeService)
+    {
+        $classrooms = Classroom::all();
+        $activeYear = SchoolYear::where('is_active', true)->first();
+
+        if (! $activeYear) {
+            return back()->withErrors(['error' => 'Aucune année scolaire active.']);
+        }
+
+        $feeLibrary = $classrooms->mapWithKeys(
+            fn (Classroom $classroom) => [$classroom->id => $feeService->getCurrentFeeAmounts($classroom->id, $activeYear->id)]
+        );
+
+        $student = null;
+        $lastRegistration = null;
+        $alreadyRegistered = false;
+        $searchedMatricule = $request->input('matricule');
+
+        if ($request->filled('matricule')) {
+            $student = User::where(function ($query) {
+                $query->where('role', 'eleve')->orWhereHas('roles', fn ($q) => $q->where('name', 'eleve'));
+            })->where('matricule', $searchedMatricule)->first();
+
+            if ($student) {
+                $lastRegistration = Registration::with(['classroom', 'schoolYear'])
+                    ->where('user_id', $student->id)
+                    ->latest('registration_date')
+                    ->first();
+
+                $alreadyRegistered = Registration::where('user_id', $student->id)
+                    ->where('school_year_id', $activeYear->id)
+                    ->exists();
+            }
+        }
+
+        return view('registrations.reinscription', [
+            'activeYear' => $activeYear,
+            'classrooms' => $classrooms,
+            'feeLibrary' => $feeLibrary,
+            'student' => $student,
+            'lastRegistration' => $lastRegistration,
+            'alreadyRegistered' => $alreadyRegistered,
+            'searchedMatricule' => $searchedMatricule,
+        ]);
+    }
+
+    public function storeReenrollment(Request $request, StudentEnrollmentService $enrollmentService)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'registration_fee_paid' => ['required', 'numeric', 'min:0'],
+            'monthly_fee' => ['required', 'numeric', 'min:0'],
+            'options' => ['sometimes', 'array'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $student = User::findOrFail($validated['user_id']);
+        $validated['is_active'] = $request->boolean('is_active', false);
+
+        try {
+            $registration = $enrollmentService->reenroll(
+                $student,
+                $validated,
+                $request->user()->hasAnyRole(['super-admin', 'manager-comptable'])
+            );
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+        }
+
+        $message = "Réinscription réussie pour {$student->name}. Matricule d'inscription : {$registration->matricule}";
 
         return redirect()->route('dashboard')->with('success', $message);
     }

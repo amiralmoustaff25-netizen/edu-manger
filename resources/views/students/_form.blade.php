@@ -6,10 +6,24 @@
     $studentPrenom = $student->name ? (implode(' ', array_slice(explode(' ', $student->name), 1)) ?? '') : '';
 @endphp
 
-<div x-data='@json([
-    "photoPreview" => $student->profile_photo_url,
-    "showDelete" => (bool) $student->profile_photo_path,
-])' class="grid gap-6 lg:grid-cols-2">
+@php
+    $formOptions = old('options', $student->latestRegistration?->options ?? []);
+    $enrollmentFormData = [
+        'photoPreview' => $student->profile_photo_url,
+        'showDelete' => (bool) $student->profile_photo_path,
+        'feeLibrary' => $feeLibrary ?? [],
+        'canEditFees' => auth()->user()?->hasAnyRole(['super-admin', 'manager-comptable']) ?? false,
+        'classroomId' => (string) old('classroom_id', $student->latestRegistration?->classroom_id ?? ''),
+        'registrationFee' => (float) old('registration_fee_paid', $student->latestRegistration?->registration_fee_paid ?? 0),
+        'monthlyFee' => (float) old('monthly_fee', $student->latestRegistration?->monthly_fee ?? 0),
+        'optionCantine' => (bool) ($formOptions['cantine'] ?? false),
+        'optionTransport' => (bool) ($formOptions['transport'] ?? false),
+    ];
+@endphp
+<div x-data='@json($enrollmentFormData)' x-init="if (classroomId && feeLibrary[classroomId] && !canEditFees) {
+    registrationFee = feeLibrary[classroomId].inscription ?? registrationFee;
+    monthlyFee = feeLibrary[classroomId].mensualite ?? monthlyFee;
+}" class="grid gap-6 lg:grid-cols-2">
     @can('upload-photo-eleve')
     <!-- Photo Upload Section -->
     <div class="lg:col-span-2 flex flex-col items-center">
@@ -109,7 +123,13 @@
 
     <div>
         <label for="classroom_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classe</label>
-        <select id="classroom_id" name="classroom_id" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <select id="classroom_id" name="classroom_id" required x-model="classroomId" @change="if (!canEditFees) {
+            registrationFee = feeLibrary[classroomId]?.inscription ?? 0;
+            monthlyFee = feeLibrary[classroomId]?.mensualite ?? 0;
+        } else if (feeLibrary[classroomId]) {
+            registrationFee = feeLibrary[classroomId].inscription ?? registrationFee;
+            monthlyFee = feeLibrary[classroomId].mensualite ?? monthlyFee;
+        }" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">Sélectionner</option>
             @foreach($classrooms as $classroom)
                 <option value="{{ $classroom->id }}" @selected(old('classroom_id', $student->latestRegistration?->classroom_id) === $classroom->id)>{{ $classroom->name }}</option>
@@ -131,31 +151,46 @@
             <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
                     <label for="registration_fee_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frais d'inscription payés</label>
-                    <input id="registration_fee_paid" name="registration_fee_paid" type="number" min="0" step="0.01" value="{{ old('registration_fee_paid', 0) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input id="registration_fee_paid" name="registration_fee_paid" type="number" min="0" step="0.01" x-model.number="registrationFee" :readonly="!canEditFees" :class="!canEditFees ? 'bg-gray-100 dark:bg-slate-700 cursor-not-allowed' : ''" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <p x-show="!canEditFees" x-cloak class="mt-1 text-xs text-gray-500 dark:text-gray-400">Montant fixé par la bibliothèque des frais. Seul un Super Administrateur ou Manager Comptable peut le modifier.</p>
                     <x-input-error :messages="$errors->get('registration_fee_paid')" class="mt-2" />
                 </div>
                 <div>
                     <label for="monthly_fee" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Scolarité mensuelle</label>
-                    <input id="monthly_fee" name="monthly_fee" type="number" min="0" step="0.01" value="{{ old('monthly_fee', $student->latestRegistration?->monthly_fee ?? 0) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input id="monthly_fee" name="monthly_fee" type="number" min="0" step="0.01" x-model.number="monthlyFee" :readonly="!canEditFees" :class="!canEditFees ? 'bg-gray-100 dark:bg-slate-700 cursor-not-allowed' : ''" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <p x-show="!canEditFees" x-cloak class="mt-1 text-xs text-gray-500 dark:text-gray-400">Montant fixé par la bibliothèque des frais. Seul un Super Administrateur ou Manager Comptable peut le modifier.</p>
                     <x-input-error :messages="$errors->get('monthly_fee')" class="mt-2" />
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Options/services</label>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-md bg-white p-4 dark:bg-slate-800">
-                        @php $options = old('options', $student->latestRegistration?->options ?? []); @endphp
                         <label class="inline-flex items-center">
-                            <input type="checkbox" name="options[cantine]" value="1" @checked($options['cantine'] ?? false) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Cantine</span>
+                            <input type="checkbox" name="options[cantine]" value="1" x-model="optionCantine" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">
+                                Cantine
+                                <template x-if="feeLibrary[classroomId]?.cantine">
+                                    <span class="text-gray-400">(+<span x-text="feeLibrary[classroomId].cantine.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
+                                </template>
+                            </span>
                         </label>
                         <label class="inline-flex items-center">
-                            <input type="checkbox" name="options[transport]" value="1" @checked($options['transport'] ?? false) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Transport</span>
+                            <input type="checkbox" name="options[transport]" value="1" x-model="optionTransport" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">
+                                Transport
+                                <template x-if="feeLibrary[classroomId]?.transport">
+                                    <span class="text-gray-400">(+<span x-text="feeLibrary[classroomId].transport.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
+                                </template>
+                            </span>
                         </label>
                         <label class="inline-flex items-center">
-                            <input type="checkbox" name="options[internat]" value="1" @checked($options['internat'] ?? false) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <input type="checkbox" name="options[internat]" value="1" @checked($formOptions['internat'] ?? false) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                             <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Internat</span>
                         </label>
                     </div>
+                    <p class="mt-3 text-sm font-medium text-gray-700 dark:text-gray-200">
+                        Total mensuel estimé (mensualité + options sélectionnées) :
+                        <span class="text-indigo-700 dark:text-indigo-400" x-text="(monthlyFee + (optionCantine ? (feeLibrary[classroomId]?.cantine ?? 0) : 0) + (optionTransport ? (feeLibrary[classroomId]?.transport ?? 0) : 0)).toLocaleString('fr-FR') + ' FCFA'"></span>
+                    </p>
                 </div>
                 <div class="md:col-span-2 flex items-center justify-between gap-4 rounded-md bg-white p-4 dark:bg-slate-800">
                     <div>

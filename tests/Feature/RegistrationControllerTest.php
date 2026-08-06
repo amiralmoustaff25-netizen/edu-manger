@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\ClassroomFee;
+use App\Models\FeeType;
 use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
@@ -202,6 +204,85 @@ class RegistrationControllerTest extends TestCase
         ]);
 
         $response->assertSessionHas('success');
+    }
+
+    /** @test */
+    public function fee_library_amounts_override_manual_input_for_non_privileged_users(): void
+    {
+        $inscriptionType = FeeType::firstOrCreate(['code' => 'inscription'], ['name' => "Frais d'inscription", 'is_recurring' => false, 'is_optional' => false]);
+        $mensualiteType = FeeType::firstOrCreate(['code' => 'mensualite'], ['name' => 'Scolarité mensuelle', 'is_recurring' => true, 'is_optional' => false]);
+
+        ClassroomFee::create([
+            'classroom_id' => $this->classroom->id,
+            'fee_type_id' => $inscriptionType->id,
+            'school_year_id' => $this->schoolYear->id,
+            'amount' => 7000,
+            'version' => 1,
+            'is_current' => true,
+        ]);
+        ClassroomFee::create([
+            'classroom_id' => $this->classroom->id,
+            'fee_type_id' => $mensualiteType->id,
+            'school_year_id' => $this->schoolYear->id,
+            'amount' => 25000,
+            'version' => 1,
+            'is_current' => true,
+        ]);
+
+        // L'admin (non privilégié pour les frais) tente de saisir des montants différents.
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'registration_fee_paid' => 1,
+            'monthly_fee' => 1,
+        ]));
+
+        $response->assertRedirect(route('dashboard'));
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $registration = Registration::where('user_id', $student->id)->firstOrFail();
+
+        $this->assertEquals(7000, $registration->registration_fee_paid);
+        $this->assertEquals(25000, $registration->monthly_fee);
+    }
+
+    /** @test */
+    public function super_admin_can_override_fee_library_amounts(): void
+    {
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('super-admin');
+        $this->actingAs($superAdmin);
+
+        $inscriptionType = FeeType::firstOrCreate(['code' => 'inscription'], ['name' => "Frais d'inscription", 'is_recurring' => false, 'is_optional' => false]);
+        $mensualiteType = FeeType::firstOrCreate(['code' => 'mensualite'], ['name' => 'Scolarité mensuelle', 'is_recurring' => true, 'is_optional' => false]);
+
+        ClassroomFee::create([
+            'classroom_id' => $this->classroom->id,
+            'fee_type_id' => $inscriptionType->id,
+            'school_year_id' => $this->schoolYear->id,
+            'amount' => 7000,
+            'version' => 1,
+            'is_current' => true,
+        ]);
+        ClassroomFee::create([
+            'classroom_id' => $this->classroom->id,
+            'fee_type_id' => $mensualiteType->id,
+            'school_year_id' => $this->schoolYear->id,
+            'amount' => 25000,
+            'version' => 1,
+            'is_current' => true,
+        ]);
+
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'registration_fee_paid' => 9999,
+            'monthly_fee' => 30000,
+        ]));
+
+        $response->assertRedirect(route('dashboard'));
+
+        $student = User::where('email', 'student@example.com')->firstOrFail();
+        $registration = Registration::where('user_id', $student->id)->firstOrFail();
+
+        $this->assertEquals(9999, $registration->registration_fee_paid);
+        $this->assertEquals(30000, $registration->monthly_fee);
     }
 
     private function registrationPayload(array $overrides = []): array

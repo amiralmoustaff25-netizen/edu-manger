@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classroom;
 use App\Models\ProgramAnnual;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,9 +17,15 @@ class CahierTexteDashboardController extends Controller
             $query->forTeacher($request->user()->id);
         }
 
-        $programs = $query->latest()->get();
+        if ($request->filled('classroom_id')) {
+            $query->where('classroom_id', $request->input('classroom_id'));
+        }
 
-        return view('cahier-textes.dashboard', compact('programs'));
+        $programs = $query->latest()->get();
+        $classrooms = Classroom::orderBy('name')->get();
+        $selectedClassroomId = $request->input('classroom_id');
+
+        return view('cahier-textes.dashboard', compact('programs', 'classrooms', 'selectedClassroomId'));
     }
 
     public function progress(ProgramAnnual $program): \Illuminate\Http\JsonResponse

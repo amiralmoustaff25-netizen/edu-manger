@@ -56,18 +56,26 @@
                                         <td class="py-3 px-4 text-center">
                                             {{ $classroom->max_students }}
                                         </td>
-                                        <td class="py-3 px-4 flex space-x-3">
-                                            <a href="{{ route('classrooms.edit', $classroom->id) }}" class="text-yellow-500 hover:text-yellow-600 font-medium transition">
-                                                Modifier
-                                            </a>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center space-x-3">
+                                                <a href="{{ route('classrooms.edit', $classroom->id) }}" class="text-yellow-500 hover:text-yellow-600 font-medium transition">
+                                                    Modifier
+                                                </a>
 
-                                            <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la classe', message: 'La classe {{ addslashes($classroom->name) }} et ses associations seront supprimées. Vérifiez les inscriptions avant de confirmer.', confirmLabel: 'Supprimer' })">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-500 hover:text-red-600 font-medium transition">
-                                                    Supprimer
-                                                </button>
-                                            </form>
+                                                <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la classe', message: 'La classe {{ addslashes($classroom->name) }} et ses associations seront supprimées. Vérifiez les inscriptions avant de confirmer.', confirmLabel: 'Supprimer' })">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-500 hover:text-red-600 font-medium transition">
+                                                        Supprimer
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <div class="mt-1 flex items-center gap-1 text-xs">
+                                                <span class="text-gray-500">Bulletins :</span>
+                                                @foreach(['trimestre_1' => 'T1', 'trimestre_2' => 'T2', 'trimestre_3' => 'T3'] as $period => $label)
+                                                    <a href="{{ route('bulletins.class-pdf', [$classroom->id, $period]) }}" target="_blank" class="px-2 py-0.5 rounded bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30">{{ $label }}</a>
+                                                @endforeach
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
