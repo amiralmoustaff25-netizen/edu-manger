@@ -179,6 +179,88 @@ test('revoked_permission_can_be_granted_back_directly', function () {
     expect($user->can('valider-paiement-partiel'))->toBeTrue();
 });
 
+test('an admin cannot assign the super-admin role to another user', function () {
+    $admin = User::factory()->create(['is_active' => true]);
+    $admin->assignRole('admin');
+    $target = User::factory()->create(['is_active' => true]);
+    $target->assignRole('professeur');
+
+    actingAs($admin)
+        ->patch(route('users.roles.update', $target), [
+            'roles' => ['professeur', 'super-admin'],
+            'confirm_super_admin' => '1',
+        ])
+        ->assertForbidden();
+
+    expect($target->refresh()->hasRole('super-admin'))->toBeFalse();
+});
+
+test('an admin cannot modify the roles or permissions of an existing super-admin account', function () {
+    $admin = User::factory()->create(['is_active' => true]);
+    $admin->assignRole('admin');
+
+    actingAs($admin)
+        ->patch(route('users.roles.update', $this->superAdmin), [
+            'roles' => ['admin'],
+        ])
+        ->assertForbidden();
+
+    expect($this->superAdmin->refresh()->hasRole('super-admin'))->toBeTrue();
+});
+
+test('an admin cannot set a user role to super-admin via the user edit form', function () {
+    $admin = User::factory()->create(['is_active' => true]);
+    $admin->assignRole('admin');
+    $target = User::factory()->create(['is_active' => true, 'role' => 'comptable']);
+    $target->assignRole('comptable');
+
+    actingAs($admin)
+        ->from(route('users.edit', $target))
+        ->patch(route('users.update', $target), [
+            'nom' => 'Test',
+            'prenom' => 'User',
+            'email' => $target->email,
+            'role' => 'super-admin',
+            'is_active' => '1',
+        ])
+        ->assertSessionHasErrors('role');
+
+    expect($target->refresh()->role)->toBe('comptable');
+});
+
+test('an admin cannot edit an existing super-admin account via the user edit form', function () {
+    $admin = User::factory()->create(['is_active' => true]);
+    $admin->assignRole('admin');
+
+    actingAs($admin)->get(route('users.edit', $this->superAdmin))->assertForbidden();
+
+    actingAs($admin)
+        ->patch(route('users.update', $this->superAdmin), [
+            'nom' => 'Hack',
+            'prenom' => 'Attempt',
+            'email' => $this->superAdmin->email,
+            'role' => 'super-admin',
+            'is_active' => '0',
+        ])
+        ->assertForbidden();
+
+    expect($this->superAdmin->refresh()->is_active)->toBeTrue();
+});
+
+test('a super-admin can assign the super-admin role with confirmation', function () {
+    $target = User::factory()->create(['is_active' => true]);
+    $target->assignRole('professeur');
+
+    actingAs($this->superAdmin)
+        ->patch(route('users.roles.update', $target), [
+            'roles' => ['professeur', 'super-admin'],
+            'confirm_super_admin' => '1',
+        ])
+        ->assertRedirect();
+
+    expect($target->refresh()->hasRole('super-admin'))->toBeTrue();
+});
+
 test('payment_validation_route_respects_permission_revocation', function () {
     $user = User::factory()->create(['is_active' => true]);
     $user->assignRole('manager-comptable');

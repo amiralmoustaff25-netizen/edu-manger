@@ -167,6 +167,33 @@ class RegistrationControllerTest extends TestCase
     }
 
     /** @test */
+    public function it_can_associate_an_existing_parent_during_registration(): void
+    {
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'email' => 'enfant.existant@example.com',
+            'parents' => [
+                [
+                    'parent_id' => $this->parent->id,
+                    'lien_parente' => 'Tuteur',
+                    'est_responsable_financier' => 1,
+                    'est_contact_urgence' => 0,
+                ],
+            ],
+        ]));
+
+        $response->assertRedirect(route('dashboard'));
+
+        $student = User::where('email', 'enfant.existant@example.com')->firstOrFail();
+
+        $this->assertDatabaseHas('parent_user', [
+            'parent_id' => $this->parent->id,
+            'user_id' => $student->id,
+            'lien_parente' => 'Tuteur',
+            'est_responsable_financier' => 1,
+        ]);
+    }
+
+    /** @test */
     public function it_creates_a_parent_account_during_registration(): void
     {
         $response = $this->post(route('registrations.store'), $this->registrationPayload([

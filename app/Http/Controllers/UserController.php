@@ -99,6 +99,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $validated = $request->validated();
+        $validated['name'] = trim($validated['nom'].' '.$validated['prenom']);
         $validated['is_active'] = $request->boolean('is_active');
 
         $user->update($validated);

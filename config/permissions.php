@@ -40,6 +40,7 @@ return [
         'transferer-eleve' => 'Transférer un élève',
         'modifier-statut-eleve' => 'Modifier le statut d’un élève',
         'upload-photo-eleve' => 'Ajouter une photo d’élève',
+        'gerer-documents-eleve' => 'Gérer les documents d’un élève',
 
         'voir-inscriptions' => 'Voir les inscriptions',
         'creer-inscription' => 'Créer une inscription',
@@ -153,7 +154,7 @@ return [
     'modules_map' => [
         'dashboard' => ['voir-dashboard', 'voir-profil', 'modifier-profil', 'supprimer-compte'],
         'users' => ['voir-utilisateurs', 'creer-utilisateur', 'modifier-utilisateur', 'supprimer-utilisateur', 'activer-desactiver-utilisateur', 'reinitialiser-mot-de-passe-utilisateur'],
-        'students' => ['voir-eleves', 'voir-detail-eleve', 'transferer-eleve', 'modifier-statut-eleve', 'upload-photo-eleve'],
+        'students' => ['voir-eleves', 'voir-detail-eleve', 'transferer-eleve', 'modifier-statut-eleve', 'upload-photo-eleve', 'gerer-documents-eleve'],
         'registrations' => ['voir-inscriptions', 'creer-inscription'],
         'parents' => ['voir-parents', 'creer-parent', 'modifier-parent', 'voir-detail-parent', 'archiver-parent', 'restaurer-parent', 'supprimer-parent', 'associer-eleve-parent', 'dissocier-eleve-parent', 'reinitialiser-mot-de-passe-parent'],
         'family' => ['voir-ses-enfants', 'voir-ses-paiements-enfants', 'voir-ses-notes-enfants', 'voir-ses-bulletins-enfants', 'voir-ses-discipline-enfants', 'voir-emploi-du-temps', 'voir-messagerie', 'voir-calendrier-scolaire'],

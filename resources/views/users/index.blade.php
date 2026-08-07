@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestion des utilisateurs</h2>
-                <p class="mt-1 text-sm text-gray-500">Comptes, rôles, accès et cycle de vie.</p>
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">Gestion des utilisateurs</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comptes, rôles, accès et cycle de vie.</p>
             </div>
             <a href="{{ route('users.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                 Ajouter un utilisateur

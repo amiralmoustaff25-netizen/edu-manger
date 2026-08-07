@@ -47,6 +47,19 @@ test('teacher can only read attendance history for assigned classes', function (
         ->assertSee($this->student->name);
 });
 
+test('teacher cannot record an attendance for a student not enrolled in the classroom', function () {
+    $outsider = User::factory()->create(['role' => 'eleve']);
+    $outsider->assignRole('eleve');
+
+    $this->post(route('professeur.attendances.store'), [
+        'classroom_id' => $this->classroom->id,
+        'date' => today()->toDateString(),
+        'attendances' => [$outsider->id => ['user_id' => $outsider->id, 'status' => 'present', 'notes' => null]],
+    ])->assertForbidden();
+
+    $this->assertDatabaseMissing('attendances', ['user_id' => $outsider->id, 'classroom_id' => $this->classroom->id]);
+});
+
 test('admin can read the school attendance overview', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $admin->assignRole('admin');

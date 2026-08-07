@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,11 +51,6 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        // Réinitialiser password_must_change si le mot de passe a été changé
-        if ($user->isDirty('password')) {
-            $user->password_must_change = false;
-        }
-
         // Gérer l'upload de la photo de profil
         if ($request->hasFile('profile_photo')) {
             // Supprimer l'ancienne photo si elle existe
@@ -74,11 +70,25 @@ class ProfileController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        // Même restriction que edit()/update() : un élève ne gère pas son propre
+        // compte, seul un administrateur peut le faire.
+        abort_if($request->user()->hasRole('eleve'), 403);
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+
+        // Même garde-fou que RoleAssignmentController::ensureLastSuperAdminNotRemoved :
+        // un super-admin ne peut pas se supprimer lui-même s'il est le dernier actif,
+        // ce qui laisserait l'établissement sans compte capable de tout administrer.
+        if ($user->hasRole('super-admin')) {
+            $remainingSuperAdmins = User::role('super-admin')->where('id', '!=', $user->id)->where('is_active', true)->count();
+
+            abort_if($remainingSuperAdmins === 0, 422, 'Impossible de supprimer le dernier compte Super-Admin actif.');
+        }
+
         Auth::logout();
         $user->delete();
 

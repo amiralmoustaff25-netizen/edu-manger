@@ -63,7 +63,14 @@ class TeachingSessionController extends Controller
         $teacher = Teacher::where('user_id', auth()->id())->firstOrFail();
         $assignment = PedagogicalAssignment::whereKey($data['pedagogical_assignment_id'])->where('teacher_id', $teacher->id)->where('is_active', true)->firstOrFail();
 
-        DB::transaction(function () use ($data, $teacher, $assignment) {
+        // Empêche de marquer présent/absent un utilisateur qui n'est pas réellement
+        // inscrit dans cette classe (les clés du tableau attendances viennent du
+        // formulaire, donc falsifiables).
+        $enrolledStudentIds = \App\Models\Registration::where('classroom_id', $assignment->classroom_id)
+            ->where('status', 'active')
+            ->pluck('user_id');
+
+        DB::transaction(function () use ($data, $teacher, $assignment, $enrolledStudentIds) {
             TeachingSession::create([
                 'pedagogical_assignment_id' => $data['pedagogical_assignment_id'],
                 'taught_on' => $data['taught_on'],
@@ -76,6 +83,8 @@ class TeachingSessionController extends Controller
                 if (empty($attendance['status'])) {
                     continue;
                 }
+
+                abort_unless($enrolledStudentIds->contains((int) $userId), 403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
 
                 Attendance::updateOrCreate(
                     [

@@ -25,6 +25,7 @@ use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
@@ -74,6 +75,16 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
             return view('parents.dashboard', compact('parent'));
         }
+
+        // Ce tableau de bord (chiffres financiers, paiements récents, inscriptions)
+        // est réservé au personnel de direction/comptabilité. Sans ce contrôle,
+        // n'importe quel compte authentifié n'ayant aucun des rôles ci-dessus
+        // (eleve/professeur/parent traités plus haut) tombait dans cette branche
+        // et voyait les données financières de l'établissement.
+        abort_unless(
+            auth()->user()->hasAnyRole(['super-admin', 'admin', 'manager-comptable', 'comptable', 'surveillant']),
+            403
+        );
 
         $activeYear = SchoolYear::where('is_active', true)->first();
 
@@ -303,6 +314,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
         Route::post('/registrations/{registration}/discounts', [DiscountController::class, 'store'])->name('discounts.store');
         Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy'])->name('discounts.destroy');
+        Route::get('/students/{student}/documents/{document}/download', [StudentDocumentController::class, 'download'])->name('students.documents.download');
+    });
+
+    Route::middleware(['permission:gerer-documents-eleve'])->group(function () {
+        Route::post('/students/{student}/documents', [StudentDocumentController::class, 'store'])->name('students.documents.store');
+        Route::delete('/students/{student}/documents/{document}', [StudentDocumentController::class, 'destroy'])->name('students.documents.destroy');
     });
 
     // Routes spécifiques pour les parents (portail famille)
@@ -347,8 +364,6 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/users/roles/assign', [RoleAssignmentController::class, 'index'])->name('users.roles.index');
         Route::patch('/users/{user}/roles', [RoleAssignmentController::class, 'update'])->name('users.roles.update');
 
-        Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
-        Route::post('/students', [StudentController::class, 'store'])->name('students.store');
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
