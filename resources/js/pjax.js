@@ -70,13 +70,31 @@ document.addEventListener('alpine:init', () => {
                 main.innerHTML = newMain.innerHTML;
                 document.title = newTitle.textContent || document.title;
 
+                // La surbrillance du lien actif est calculée côté serveur (request()->routeIs()
+                // dans components/sidebar/link.blade.php et menu.blade.php). La sidebar est en
+                // dehors de <main>, donc on la resynchronise aussi pour refléter la nouvelle page.
+                const newNav = doc.getElementById('sidebar-nav');
+                const nav = this.$root.querySelector('#sidebar-nav');
+                if (newNav && nav) {
+                    nav.innerHTML = newNav.innerHTML;
+                    this.initializeNewContent(nav);
+                }
+
+                // fetch() suit les redirections silencieusement : si le serveur a redirigé
+                // ailleurs que l'URL cliquée (ex. EnsurePasswordChanged qui renvoie tout vers
+                // /profile), response.url contient la destination réelle. Sans ça, la barre
+                // d'adresse afficherait l'URL cliquée alors que le contenu affiché est celui
+                // d'une tout autre page — trompeur et source de confusion.
+                const finalUrl = response.url || url;
                 if (push) {
-                    history.pushState({}, '', url);
+                    history.pushState({}, '', finalUrl);
+                } else if (finalUrl !== url) {
+                    history.replaceState({}, '', finalUrl);
                 }
 
                 this.executePageScripts(doc);
                 this.initializeNewContent(main);
-                window.dispatchEvent(new CustomEvent('pjax:loaded', { detail: { url } }));
+                window.dispatchEvent(new CustomEvent('pjax:loaded', { detail: { url: finalUrl } }));
             } catch (error) {
                 console.error('PJAX error:', error);
                 window.location.href = url;

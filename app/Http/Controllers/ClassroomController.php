@@ -25,9 +25,10 @@ class ClassroomController extends Controller
     public function index()
     {
         Gate::authorize('viewAny', Classroom::class);
-        $classrooms = Classroom::withCount([
-            'registrations as students_count' => fn ($query) => $query->where('status', 'active'),
-        ])->get();
+        $classrooms = Classroom::with('teacher')
+            ->withCount([
+                'registrations as students_count' => fn ($query) => $query->where('status', 'active'),
+            ])->get();
 
         return view('classrooms.index', compact('classrooms'));
     }

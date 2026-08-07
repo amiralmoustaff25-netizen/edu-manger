@@ -27,6 +27,7 @@ class ParentController extends Controller
 
         $parents = ParentModel::query()
             ->with('user')
+            ->withCount('students')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
                 $query->search($search);

@@ -202,7 +202,7 @@
                     <!-- Modal de confirmation -->
                     <div id="confirm-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                         <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
-                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeConfirmModal()"></div>
+                            <div class="fixed inset-0 bg-gray-500 dark:bg-slate-900 bg-opacity-75 transition-opacity" onclick="closeConfirmModal()"></div>
                             <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
                                 <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">Récapitulatif du paiement</h3>
@@ -223,7 +223,7 @@
                                     <button type="button" onclick="submitPaymentForm()" class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 sm:ml-3 sm:w-auto">
                                         Confirmer et enregistrer
                                     </button>
-                                    <button type="button" onclick="closeConfirmModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-600 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                                    <button type="button" onclick="closeConfirmModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-600 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 sm:mt-0 sm:w-auto">
                                         Annuler
                                     </button>
                                 </div>
@@ -241,7 +241,15 @@
         let studentData = null;
         let allFees = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // Fonctionne au premier chargement et après une navigation PJAX (voir le
+        // commentaire équivalent dans resources/views/dashboard.blade.php).
+        (function (fn) {
+            if (document.readyState !== 'loading') {
+                fn();
+            } else {
+                document.addEventListener('DOMContentLoaded', fn);
+            }
+        })(() => {
             const matricule = document.getElementById('matricule');
             if (matricule && matricule.value.trim()) {
                 searchStudent();

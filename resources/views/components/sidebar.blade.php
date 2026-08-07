@@ -26,7 +26,7 @@
         </div>
 
         <!-- Scrollable navigation -->
-        <nav class="mt-2 px-2 pb-4 space-y-1 flex-1 overflow-y-auto overflow-x-hidden">
+        <nav id="sidebar-nav" class="mt-2 px-2 pb-4 space-y-1 flex-1 overflow-y-auto overflow-x-hidden">
             @auth
                 <x-sidebar.menu :items="config('sidebar.items')" />
             @endauth

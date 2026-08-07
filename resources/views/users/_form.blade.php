@@ -10,7 +10,7 @@
             Informations de base
         </h3>
         
-        <div class="grid gap-5 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
                 <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
                 <input id="nom" name="nom" value="{{ old('nom', $user->prenom ? explode(' ', $user->name)[0] : $user->name) }}" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

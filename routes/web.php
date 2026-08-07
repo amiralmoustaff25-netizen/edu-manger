@@ -119,7 +119,10 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
                 ->whereYear('created_at', now()->year)
                 ->count(),
             'partial_payments' => Payment::where('status', 'partiel')->notCancelled()->count(),
-            'monthly_revenue' => Payment::where('status', 'complet')->notCancelled()
+            // Inclut les paiements partiels : leur montant "amount" est de l'argent
+            // réellement encaissé, pas une projection — l'exclure sous-évaluait le
+            // revenu mensuel réel dès qu'un paiement partiel avait eu lieu.
+            'monthly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
@@ -131,7 +134,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
             return [
                 'label' => $date->translatedFormat('M Y'),
-                'amount' => Payment::where('status', 'complet')->notCancelled()
+                'amount' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                     ->whereMonth('payment_date', $date->month)
                     ->whereYear('payment_date', $date->year)
                     ->sum('amount'),
@@ -281,12 +284,31 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
 
             $registration = $user->latestRegistration;
             $notes = $user->notes()->with('matiere')->latest()->take(5)->get();
-            $moyenne = $user->notes()->avg('valeur') ?? 0;
+
+            // Moyenne pondérée par coefficient, scopée aux matières de la classe, pour la
+            // période la plus récente où l'élève a des notes — même calcul que le bulletin
+            // (GradeCalculationService), au lieu d'une simple moyenne arithmétique de toutes
+            // les notes de toutes les périodes/matières confondues sans pondération.
+            $moyenne = 0.0;
+            if ($registration?->classroom) {
+                $latestPeriod = $user->notes()->latest()->value('periode');
+                if ($latestPeriod) {
+                    $moyenne = app(\App\Services\GradeCalculationService::class)
+                        ->getBulletinData($user, $latestPeriod)['general_average'];
+                }
+            }
+
             $payments = $registration ? $registration->payments()->latest()->take(5)->get() : collect();
-            $totalPaid = $registration ? $registration->payments()->sum('amount') : 0;
-            $schoolMonthsCount = count(config('edu.school_months'));
-            $totalDue = $registration ? ($registration->monthly_fee * $schoolMonthsCount) : 0;
-            $remaining = $totalDue - $totalPaid;
+
+            // Solde réel recalculé via FeeService (frais d'inscription/mensualité/options/
+            // dérogations réellement dus), jamais via monthly_fee * nombre_de_mois — ce
+            // calcul forfaitaire, déjà identifié et évité ailleurs dans le module comptable
+            // (cf. AccountingController), ignorait les frais d'inscription, les options
+            // (cantine/transport/internat) et les dérogations tarifaires. Le total payé
+            // excluait aussi les paiements annulés/rejetés du calcul réel.
+            $situation = $registration ? app(\App\Services\FeeService::class)->getFinancialSituation($registration) : null;
+            $totalPaid = $situation['paid'] ?? 0;
+            $remaining = $situation['remaining'] ?? 0;
 
             return view('students.dashboard', compact(
                 'user', 'registration', 'notes', 'moyenne',

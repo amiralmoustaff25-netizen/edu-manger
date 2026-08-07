@@ -21,7 +21,7 @@ class ProgramAnnualController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher']);
+        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher', 'chapters']);
 
         if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
             $query->forTeacher($request->user()->id);

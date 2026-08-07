@@ -101,12 +101,17 @@ class ProgramAnnual extends Model
         $cacheKey = "program.{$this->id}.progress";
 
         return Cache::remember($cacheKey, 3600, function () {
-            $totalVolume = (float) $this->chapters()->sum('volume_horaire_prevu');
+            if ($this->relationLoaded('chapters')) {
+                $totalVolume = (float) $this->chapters->sum('volume_horaire_prevu');
+                $realised = (float) $this->chapters->sum('volume_horaire_realise');
+            } else {
+                $totalVolume = (float) $this->chapters()->sum('volume_horaire_prevu');
+                $realised = (float) $this->chapters()->sum('volume_horaire_realise');
+            }
+
             if ($totalVolume <= 0) {
                 return 0.0;
             }
-
-            $realised = (float) $this->chapters()->sum('volume_horaire_realise');
 
             return round(($realised / $totalVolume) * 100, 2);
         });

@@ -28,14 +28,17 @@ class AccountingController extends Controller
             fn (Registration $registration) => $feeService->getFinancialSituation($registration)['remaining']
         );
 
-        // Statistiques générales (les paiements annulés sont exclus de tous les totaux financiers)
+        // Statistiques générales (les paiements annulés et rejetés sont exclus de tous les
+        // totaux financiers). "Revenu" doit inclure l'argent réellement encaissé via les
+        // paiements partiels, pas seulement les paiements complets : le champ amount d'un
+        // paiement partiel est un montant réellement reçu, pas une projection.
         $stats = [
-            'total_revenue' => Payment::where('status', 'complet')->notCancelled()->sum('amount'),
-            'monthly_revenue' => Payment::where('status', 'complet')->notCancelled()
+            'total_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()->sum('amount'),
+            'monthly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
-            'yearly_revenue' => Payment::where('status', 'complet')->notCancelled()
+            'yearly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
             'total_payments' => Payment::notCancelled()->count(),
@@ -109,24 +112,30 @@ class AccountingController extends Controller
 
         $activeYear = SchoolYear::where('is_active', true)->first();
 
+        // Les paiements partiels comptent dans ces rapports : leur montant est de
+        // l'argent réellement encaissé, pas une projection (cohérent avec le tableau de
+        // bord comptable et la trésorerie — auparavant ces rapports ne comptaient que les
+        // paiements complets, sous-évaluant les montants dès qu'un paiement partiel existait).
+        $revenueStatuses = ['complet', 'partiel'];
+
         // Rapport journalier du mois courant
         $dailyReport = [];
         for ($i = 1; $i <= now()->daysInMonth; $i++) {
             $date = now()->setDay($i);
             $dailyReport[] = [
                 'date' => $date->format('d/m/Y'),
-                'amount' => Payment::where('status', 'complet')->notCancelled()
+                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
                     ->whereDate('created_at', $date)
                     ->sum('amount'),
-                'count' => Payment::where('status', 'complet')->notCancelled()
+                'count' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
                     ->whereDate('created_at', $date)
                     ->count(),
             ];
         }
 
-        // Rapport par classe (paiements complets et non annulés uniquement)
+        // Rapport par classe
         $classReport = Payment::with(['registration.classroom'])
-            ->where('status', 'complet')
+            ->whereIn('status', $revenueStatuses)
             ->notCancelled()
             ->whereYear('created_at', now()->year)
             ->get()
@@ -140,9 +149,9 @@ class AccountingController extends Controller
                 ];
             });
 
-        // Rapport par type de paiement (paiements complets et non annulés uniquement)
+        // Rapport par type de paiement
         $paymentTypeReport = Payment::select('payment_type', \DB::raw('COUNT(*) as count'), \DB::raw('SUM(amount) as total'))
-            ->where('status', 'complet')
+            ->whereIn('status', $revenueStatuses)
             ->notCancelled()
             ->whereYear('created_at', now()->year)
             ->groupBy('payment_type')
@@ -177,9 +186,14 @@ class AccountingController extends Controller
 
         $payments = $query->latest()->get();
 
-        // Calculs pour le rapport (les paiements annulés sont déjà exclus par la requête ci-dessus)
-        $totalRevenue = $payments->where('status', 'complet')->sum('amount');
+        // Calculs pour le rapport (les paiements annulés sont déjà exclus par la requête ci-dessus).
+        // Le "revenu total" doit inclure l'argent réellement encaissé via les paiements
+        // partiels (le champ amount est bien un montant reçu, pas une projection) : avant
+        // ce correctif, $totalRevenue ne comptait que les paiements complets et sous-évaluait
+        // donc l'encaissement réel sur la période.
+        $completeRevenue = $payments->where('status', 'complet')->sum('amount');
         $partialRevenue = $payments->where('status', 'partiel')->sum('amount');
+        $totalRevenue = $completeRevenue + $partialRevenue;
         $totalPayments = $payments->count();
         $averagePayment = $totalPayments > 0 ? $payments->avg('amount') : 0;
 
@@ -344,14 +358,19 @@ class AccountingController extends Controller
     {
         $this->authorize('voir-tresorerie');
 
+        // La trésorerie mesure l'argent réellement encaissé : les paiements partiels
+        // comptent (leur montant "amount" est bien reçu), contrairement aux paiements
+        // rejetés/annulés qui restent exclus.
+        $revenueStatuses = ['complet', 'partiel'];
+
         // Entrées du mois courant
-        $monthlyInflow = Payment::where('status', 'complet')->notCancelled()
+        $monthlyInflow = Payment::whereIn('status', $revenueStatuses)->notCancelled()
             ->whereMonth('payment_date', now()->month)
             ->whereYear('payment_date', now()->year)
             ->sum('amount');
 
         // Entrées du mois précédent
-        $previousMonthInflow = Payment::where('status', 'complet')->notCancelled()
+        $previousMonthInflow = Payment::whereIn('status', $revenueStatuses)->notCancelled()
             ->whereMonth('payment_date', now()->subMonth()->month)
             ->whereYear('payment_date', now()->subMonth()->year)
             ->sum('amount');
@@ -362,7 +381,7 @@ class AccountingController extends Controller
             $date = now()->subMonths($i);
             $monthlyEvolution[] = [
                 'month' => $date->format('M Y'),
-                'amount' => Payment::where('status', 'complet')->notCancelled()
+                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
                     ->whereMonth('payment_date', $date->month)
                     ->whereYear('payment_date', $date->year)
                     ->sum('amount'),
@@ -375,7 +394,7 @@ class AccountingController extends Controller
             $date = now()->setDay($i);
             $dailyCashFlow[] = [
                 'date' => $date->format('d/m'),
-                'amount' => Payment::where('status', 'complet')->notCancelled()
+                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
                     ->whereDate('payment_date', $date)
                     ->sum('amount'),
             ];

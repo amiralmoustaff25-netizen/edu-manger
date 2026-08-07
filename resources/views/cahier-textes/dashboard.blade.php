@@ -26,7 +26,7 @@
         </form>
     </div>
 
-    <div class="grid md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded shadow p-4 text-gray-900 dark:text-white">Programmes total : {{ $programs->count() }}</div>
         <div class="bg-white dark:bg-gray-800 rounded shadow p-4 text-gray-900 dark:text-white">Avancement moyen : {{ round($programs->avg('progressPercentage'), 2) }}%</div>
         <div class="bg-white dark:bg-gray-800 rounded shadow p-4 text-gray-900 dark:text-white">Programmes en retard : {{ $programs->filter(fn ($program) => $program->isDelayed())->count() }}</div>

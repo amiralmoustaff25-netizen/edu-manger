@@ -68,6 +68,63 @@ test('cancelled payments are excluded from the accounting dashboard totals', fun
     expect($stats['complete_payments'])->toBe(1);
 });
 
+test('partial payments count as real revenue on the dashboard and reports, not just complete payments', function () {
+    // Un paiement partiel encaisse déjà de l'argent réel (le champ amount est bien
+    // reçu, seul le solde n'est pas soldé) : il doit compter dans "Revenu total" au
+    // même titre qu'un paiement complet, sous peine de sous-évaluer l'encaissement réel.
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    [, , , $registration] = createAccountingFixture();
+
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 20000,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 7000,
+        'status' => 'partiel',
+        'remaining_balance' => 8000,
+        'month' => 'Novembre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+    // Un paiement rejeté ne doit jamais compter comme revenu.
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 99999,
+        'status' => 'rejected',
+        'remaining_balance' => 0,
+        'month' => 'Decembre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $dashboard = $this->actingAs($manager)->get(route('accounting.dashboard'));
+    $stats = $dashboard->viewData('stats');
+    expect((float) $stats['total_revenue'])->toBe(27000.0);
+    expect((float) $stats['monthly_revenue'])->toBe(27000.0);
+
+    $cashFlow = $this->actingAs($manager)->get(route('accounting.cash-flow'));
+    expect((float) $cashFlow->viewData('monthlyInflow'))->toBe(27000.0);
+
+    $reports = $this->actingAs($manager)->get(route('accounting.reports'));
+    $classReport = $reports->viewData('classReport');
+    expect((float) $classReport->first()['total'])->toBe(27000.0);
+});
+
 test('remaining balance on the dashboard matches FeeService, not a naive sum of remaining_balance across payments', function () {
     $manager = User::factory()->create();
     $manager->assignRole('manager-comptable');

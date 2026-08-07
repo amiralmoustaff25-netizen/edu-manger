@@ -183,7 +183,10 @@
                     @foreach($payment->fee_breakdown as $fee)
                         <tr>
                             <td>{{ $fee['description'] ?? '-' }}</td>
-                            <td>{{ number_format(($fee['amount'] ?? 0) + ($fee['amount_paid'] ?? 0), 0, ',', ' ') }} FCFA</td>
+                            {{-- "Montant dû" = ce qui restait à payer juste avant cette transaction
+                                 (reste après + montant versé maintenant). Auparavant : montant total
+                                 de la ligne + montant versé, qui comptait deux fois ce paiement. --}}
+                            <td>{{ number_format(($fee['remaining_balance'] ?? 0) + ($fee['amount_paid'] ?? 0), 0, ',', ' ') }} FCFA</td>
                             <td>{{ number_format($fee['amount_paid'] ?? 0, 0, ',', ' ') }} FCFA</td>
                             <td>{{ number_format($fee['remaining_balance'] ?? 0, 0, ',', ' ') }} FCFA</td>
                         </tr>

@@ -26,7 +26,7 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto space-y-6 sm:px-6 lg:px-8">
             <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
-                <form method="GET" action="{{ route('teachers.index') }}" class="grid gap-4 lg:grid-cols-3">
+                <form method="GET" action="{{ route('teachers.index') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div class="lg:col-span-2">
                         <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recherche</label>
                         <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" type="text" placeholder="Matricule, nom ou email" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
