@@ -95,8 +95,7 @@
                                             <option value="devoir">{{ __('Devoir') }}</option>
                                             <option value="composition">{{ __('Composition') }}</option>
                                         @else
-                                            <option value="devoir">{{ __('Devoir') }}</option>
-                                            <option value="interrogation">{{ __('Interrogation') }}</option>
+                                            <option value="composition">{{ __('Composition') }}</option>
                                         @endif
                                     </select>
                                 </div>

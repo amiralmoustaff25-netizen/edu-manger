@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
+use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\Teacher;
+use App\Models\User;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 
@@ -104,6 +106,142 @@ class GradeController extends Controller
 
         return redirect()
             ->route('professeur.notes.index', ['classroom_id' => $classroom->id, 'matiere_id' => $matiere->id])
+            ->with('success', "{$savedCount} note(s) enregistrée(s) avec succès.");
+    }
+
+    /**
+     * Rechercher un élève par matricule et afficher directement toutes les matières
+     * (avec coefficients) qu'il doit à ce professeur pour la période choisie.
+     */
+    public function searchStudent(Request $request)
+    {
+        $teacher = Teacher::where('user_id', auth()->id())->first();
+
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
+
+        $periode = $request->input('periode', 'trimestre_1');
+        $student = null;
+        $classroom = null;
+        $assignments = collect();
+        $existingNotes = collect();
+
+        if ($request->filled('matricule')) {
+            // Allow searching by matricule regardless of role column, some fixtures set role via 'role' attribute
+            $student = User::where('matricule', $request->input('matricule'))
+                ->where('role', 'eleve')
+                ->orWhere(function ($q) use ($request) {
+                    $q->where('matricule', $request->input('matricule'))
+                        ->whereHas('roles', function ($r) {
+                            $r->where('name', 'eleve');
+                        });
+                })
+                ->first();
+
+            if (!$student) {
+                return back()->withInput()->with('error', 'Aucun élève ne correspond à ce matricule.');
+            }
+
+            $registration = $student->latestRegistration;
+            $classroom = $registration?->classroom;
+
+            if (!$classroom) {
+                return back()->withInput()->with('error', "Cet élève n'a pas de classe active.");
+            }
+
+            $assignments = PedagogicalAssignment::with('matiere')
+                ->where('teacher_id', $teacher->id)
+                ->where('classroom_id', $classroom->id)
+                ->where('is_active', true)
+                ->get();
+
+            if ($assignments->isEmpty()) {
+                return back()->withInput()->with('error', "Cet élève n'est pas dans une de vos classes affectées.");
+            }
+
+            $existingNotes = Note::where('user_id', $student->id)
+                ->where('periode', $periode)
+                ->whereIn('matiere_id', $assignments->pluck('matiere_id'))
+                ->get()
+                ->keyBy(fn ($note) => $note->matiere_id.'_'.$note->type_evaluation);
+        }
+
+        return view('teachers.grades.student', compact('student', 'classroom', 'assignments', 'periode', 'existingNotes'));
+    }
+
+    /**
+     * Enregistrer les notes d'un seul élève, toutes matières confondues, pour une période donnée.
+     */
+    public function storeForStudent(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'periode' => ['required', 'string'],
+            'grades' => ['required', 'array'],
+            'grades.*.matiere_id' => ['required', 'exists:matieres,id'],
+            'grades.*.type_evaluation' => ['required', 'string'],
+            'grades.*.valeur' => ['nullable', 'numeric', 'min:0', 'max:20'],
+            'grades.*.appreciation' => ['nullable', 'string'],
+        ]);
+
+        $teacher = Teacher::where('user_id', auth()->id())->first();
+
+        if (!$teacher) {
+            abort(403, 'Profil enseignant non trouvé.');
+        }
+
+        $classroom = Classroom::findOrFail($validated['classroom_id']);
+        $assignedMatiereIds = PedagogicalAssignment::where('teacher_id', $teacher->id)
+            ->where('classroom_id', $classroom->id)
+            ->where('is_active', true)
+            ->pluck('matiere_id');
+
+        $savedCount = 0;
+
+        foreach ($validated['grades'] as $gradeData) {
+            if (!isset($gradeData['valeur']) || $gradeData['valeur'] === '') {
+                continue;
+            }
+
+            if (!$assignedMatiereIds->contains((int) $gradeData['matiere_id'])) {
+                abort(403, "Vous n'êtes pas autorisé à saisir des notes pour une de ces matières dans cette classe.");
+            }
+
+            $hasValidatedNote = Note::where('user_id', $validated['user_id'])
+                ->where('classroom_id', $classroom->id)
+                ->where('matiere_id', $gradeData['matiere_id'])
+                ->where('type_evaluation', $gradeData['type_evaluation'])
+                ->where('periode', $validated['periode'])
+                ->validated()
+                ->exists();
+
+            if ($hasValidatedNote) {
+                continue;
+            }
+
+            Note::updateOrCreate(
+                [
+                    'user_id' => $validated['user_id'],
+                    'classroom_id' => $classroom->id,
+                    'matiere_id' => $gradeData['matiere_id'],
+                    'type_evaluation' => $gradeData['type_evaluation'],
+                    'periode' => $validated['periode'],
+                ],
+                [
+                    'valeur' => $gradeData['valeur'],
+                    'appreciation' => $gradeData['appreciation'] ?? null,
+                ]
+            );
+
+            $savedCount++;
+        }
+
+        $student = User::find($validated['user_id']);
+
+        return redirect()
+            ->route('professeur.notes.eleve', ['matricule' => $student?->matricule, 'periode' => $validated['periode']])
             ->with('success', "{$savedCount} note(s) enregistrée(s) avec succès.");
     }
 

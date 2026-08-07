@@ -8,7 +8,7 @@ return [
             'route' => 'dashboard',
             'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
             'permission' => 'voir-dashboard',
-            'exclude_roles' => ['eleve'],
+            'roles' => ['super-admin', 'admin'],
         ],
         // --- Regroupement simplifié (5 macro-groupes) pour Super-Admin / Admin ---
         [
@@ -41,6 +41,7 @@ return [
         [
             'label' => 'Finance',
             'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+            'roles' => ['super-admin', 'admin'],
             'permissions' => ['voir-comptabilite', 'voir-paiements', 'voir-factures', 'voir-recouvrement', 'voir-types-frais', 'voir-frais-classe', 'voir-rapports-financiers', 'voir-rapports-avances', 'voir-tresorerie'],
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
@@ -92,7 +93,27 @@ return [
         [
             'label' => 'Espace Comptabilité',
             'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-            'roles' => ['manager-comptable', 'comptable'],
+            'roles' => ['comptable'],
+            'heading' => true,
+            'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'fee-types.*', 'classroom-fees.*'],
+            'children' => [
+                ['label' => 'Dashboard', 'route' => 'accounting.dashboard', 'permission' => 'voir-comptabilite'],
+                ['label' => 'Paiements', 'route' => 'payments.index', 'permission' => 'voir-paiements'],
+                ['label' => 'Factures', 'route' => 'invoices.index', 'permission' => 'voir-factures'],
+                ['label' => 'Types de Frais', 'route' => 'fee-types.index', 'permission' => 'voir-types-frais'],
+                ['label' => 'Frais par Classe', 'route' => 'classroom-fees.index', 'permission' => 'voir-frais-classe'],
+                ['label' => 'Rapports Financiers', 'route' => 'accounting.reports', 'permission' => 'voir-rapports-financiers'],
+                ['label' => 'Rapports Avancés', 'route' => 'accounting.advanced-reports', 'permission' => 'voir-rapports-avances'],
+                ['label' => 'Alertes Impayés', 'route' => 'accounting.alerts', 'permission' => 'voir-recouvrement'],
+                ['label' => 'Trésorerie', 'route' => 'accounting.cash-flow', 'permission' => 'voir-tresorerie'],
+            ],
+        ],
+        [
+            'label' => 'Espace Comptabilité',
+            'route' => 'accounting.dashboard',
+            'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+            'roles' => ['manager-comptable'],
+            'permission' => 'voir-comptabilite',
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
                 ['label' => 'Dashboard', 'route' => 'accounting.dashboard'],
@@ -116,6 +137,7 @@ return [
                 ['label' => 'Tableau de bord', 'route' => 'professeur.dashboard'],
                 ['label' => 'Mes Classes', 'route' => 'professeur.classes.index'],
                 ['label' => 'Saisie Notes', 'route' => 'professeur.notes.index'],
+                ['label' => 'Saisie Notes par Matricule', 'route' => 'professeur.notes.eleve'],
                 ['label' => 'Pointage des cours & présences', 'route' => 'professeur.teaching-sessions.index', 'active_routes' => ['professeur.attendances.index']],
                 ['label' => 'Historique présences', 'route' => 'professeur.attendances.history'],
             ],
@@ -129,6 +151,54 @@ return [
                 ['label' => 'Emploi du temps', 'route' => 'student.timetable'],
                 ['label' => 'Cahier de texte', 'route' => 'cahier-textes.select', 'permission' => 'voir-cahier-textes'],
             ],
+        ],
+        // Parent Portal
+        [
+            'label' => 'Tableau de bord',
+            'route' => 'parents.dashboard',
+            'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+            'roles' => ['parent'],
+            'permission' => 'voir-dashboard',
+            'active_routes' => ['parents.dashboard'],
+        ],
+        [
+            'label' => 'Mes enfants',
+            'route' => 'parents.children.index',
+            'icon' => 'M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5z M15 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H15z M5 13a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5z M15 13a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H15z',
+            'roles' => ['parent'],
+            'permission' => 'voir-ses-enfants',
+            'active_routes' => ['parents.children.*'],
+        ],
+        [
+            'label' => 'Messagerie',
+            'route' => 'parents.messaging',
+            'icon' => 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 3.866-3.134 7-7 7H7l-4 4V5c0-1.105.895-2 2-2h12c3.866 0 7 3.134 7 7z',
+            'roles' => ['parent'],
+            'permission' => 'voir-messagerie',
+            'active_routes' => ['parents.messaging'],
+        ],
+        [
+            'label' => 'Calendrier scolaire',
+            'route' => 'parents.calendar',
+            'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+            'roles' => ['parent'],
+            'permission' => 'voir-calendrier-scolaire',
+            'active_routes' => ['parents.calendar'],
+        ],
+        [
+            'label' => 'Notifications',
+            'route' => 'notifications.index',
+            'icon' => 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+            'roles' => ['parent'],
+            'permission' => 'voir-notifications',
+            'active_routes' => ['notifications.*'],
+        ],
+        [
+            'label' => 'Mon Profil',
+            'route' => 'profile.show',
+            'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+            'roles' => ['parent'],
+            'active_routes' => ['profile.*'],
         ],
         [
             'label' => 'Suivi Pédagogique',
@@ -147,6 +217,7 @@ return [
             'route' => 'profile.show',
             'icon' => 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
             'active_routes' => ['profile.*'],
+            'exclude_roles' => ['parent'],
         ],
     ],
 ];

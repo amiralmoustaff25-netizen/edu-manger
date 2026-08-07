@@ -19,6 +19,10 @@ class UserPolicy
             return true;
         }
 
+        if ($user->hasRole('parent') && optional($user->parentProfile)->students()->where('users.id', $student->id)->exists()) {
+            return true;
+        }
+
         return $user->hasPermissionTo('voir-detail-eleve');
     }
 

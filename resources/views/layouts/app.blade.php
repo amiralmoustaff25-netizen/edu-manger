@@ -14,7 +14,8 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
+    <body x-data="pjax()" class="font-sans antialiased bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
+        <div x-show="loading" x-cloak class="fixed inset-x-0 top-0 h-1 bg-indigo-600 z-50 animate-pulse"></div>
         <x-sidebar>
             @isset($header)
                 <header class="bg-white dark:bg-slate-800 shadow">

@@ -64,7 +64,16 @@ class ProgramAnnualController extends Controller
             ->get();
         $periods = AcademicPeriod::query()->orderBy('starts_at')->get();
 
-        return view('programs.create', compact('assignments', 'periods'));
+        $assignmentsMeta = $assignments->mapWithKeys(fn ($assignment) => [
+            $assignment->id => [
+                'teacher' => $assignment->teacher?->user?->name,
+                'matricule' => $assignment->teacher?->matricule,
+                'classroom' => $assignment->classroom?->name,
+                'matiere' => $assignment->matiere?->nom,
+            ],
+        ]);
+
+        return view('programs.create', compact('assignments', 'periods', 'assignmentsMeta'));
     }
 
     public function store(StoreProgramAnnualRequest $request): \Illuminate\Http\RedirectResponse
@@ -138,19 +147,9 @@ class ProgramAnnualController extends Controller
         }
 
         $program->update(['status' => 'soumis', 'submitted_at' => now()]);
-        $this->recordHistory($program, auth()->user(), 'soumis', 'Programme soumis au surveillant');
+        $this->recordHistory($program, auth()->user(), 'soumis', 'Programme soumis à l’administrateur pour validation');
 
         return redirect()->back()->with('success', 'Programme soumis avec succès.');
-    }
-
-    public function validateSurveillant(ProgramAnnual $program): \Illuminate\Http\RedirectResponse
-    {
-        $this->authorize('validateSurveillant', $program);
-
-        $program->update(['status' => 'valide_surveillant', 'validated_by_surveillant_id' => auth()->id()]);
-        $this->recordHistory($program, auth()->user(), 'valide_surveillant', 'Validé par le surveillant');
-
-        return redirect()->back()->with('success', 'Programme validé par le surveillant.');
     }
 
     public function validateDirecteur(ProgramAnnual $program): \Illuminate\Http\RedirectResponse
@@ -158,9 +157,9 @@ class ProgramAnnualController extends Controller
         $this->authorize('validateDirecteur', $program);
 
         $program->update(['status' => 'valide_directeur', 'validated_by_directeur_id' => auth()->id()]);
-        $this->recordHistory($program, auth()->user(), 'valide_directeur', 'Validé par le directeur');
+        $this->recordHistory($program, auth()->user(), 'valide_directeur', 'Validé par l’administrateur');
 
-        return redirect()->back()->with('success', 'Programme validé par le directeur.');
+        return redirect()->back()->with('success', 'Programme validé par l’administrateur.');
     }
 
     public function reject(Request $request, ProgramAnnual $program): \Illuminate\Http\RedirectResponse

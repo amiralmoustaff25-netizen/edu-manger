@@ -72,7 +72,7 @@ test('it_validates_chapter_max_depth_3_levels', function () {
     $response->assertSessionHasErrors('chapters');
 });
 
-test('it_submits_program_to_surveillant', function () {
+test('it_submits_program_for_admin_validation', function () {
     $context = createProgramContext();
     $program = ProgramAnnual::factory()->create([
         'teacher_id' => $context['teacherUser']->id,
@@ -89,12 +89,10 @@ test('it_submits_program_to_surveillant', function () {
     expect($program->status)->toBe('soumis');
 });
 
-test('it_validates_transitions_surveillant_then_directeur', function () {
+test('it_validates_a_submitted_program_directly_by_an_admin', function () {
     $context = createProgramContext();
-    $surveillant = User::factory()->create();
-    $surveillant->assignRole('surveillant');
-    $directeur = User::factory()->create();
-    $directeur->assignRole('admin');
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
 
     $program = ProgramAnnual::factory()->create([
         'teacher_id' => $context['teacherUser']->id,
@@ -104,19 +102,15 @@ test('it_validates_transitions_surveillant_then_directeur', function () {
         'status' => 'soumis',
     ]);
 
-    actingAs($surveillant)->post(route('programs.validate-surveillant', $program));
-    $program->refresh();
-    expect($program->status)->toBe('valide_surveillant');
-
-    actingAs($directeur)->post(route('programs.validate-directeur', $program));
+    actingAs($admin)->post(route('programs.validate-directeur', $program));
     $program->refresh();
     expect($program->status)->toBe('valide_directeur');
 });
 
 test('it_blocks_invalid_transitions', function () {
     $context = createProgramContext();
-    $surveillant = User::factory()->create();
-    $surveillant->assignRole('surveillant');
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
 
     $program = ProgramAnnual::factory()->create([
         'teacher_id' => $context['teacherUser']->id,
@@ -126,7 +120,7 @@ test('it_blocks_invalid_transitions', function () {
         'status' => 'brouillon',
     ]);
 
-    $response = actingAs($surveillant)->post(route('programs.validate-surveillant', $program));
+    $response = actingAs($admin)->post(route('programs.validate-directeur', $program));
 
     $response->assertStatus(403);
 });

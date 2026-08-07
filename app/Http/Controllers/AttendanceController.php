@@ -6,7 +6,9 @@ use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Registration;
 use App\Models\Teacher;
+use App\Notifications\StudentAbsent;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -92,18 +94,27 @@ class AttendanceController extends Controller
         }
 
         foreach ($validated['attendances'] as $attendanceData) {
-            Attendance::updateOrCreate(
-                [
-                    'user_id' => $attendanceData['user_id'],
-                    'classroom_id' => $classroom->id,
-                    'date' => $validated['date'],
-                ],
-                [
-                    'status' => $attendanceData['status'],
-                    'notes' => $attendanceData['notes'] ?? null,
-                    'recorded_by' => $teacher->id,
-                ]
-            );
+            $attendance = Attendance::firstOrNew([
+                'user_id' => $attendanceData['user_id'],
+                'classroom_id' => $classroom->id,
+                'date' => $validated['date'],
+            ]);
+
+            $previousStatus = $attendance->exists ? $attendance->status : null;
+
+            $attendance->status = $attendanceData['status'];
+            $attendance->notes = $attendanceData['notes'] ?? null;
+            $attendance->recorded_by = $teacher->id;
+            $attendance->save();
+
+            if ($attendance->status === 'absent' && $previousStatus !== 'absent') {
+                $student = $attendance->student;
+                $parentUsers = $student->parents()->with('user')->get()->pluck('user')->filter();
+
+                if ($parentUsers->isNotEmpty()) {
+                    Notification::send($parentUsers, new StudentAbsent($attendance));
+                }
+            }
         }
 
         return redirect()

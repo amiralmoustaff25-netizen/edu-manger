@@ -2,6 +2,7 @@
 
 use App\Models\Classroom;
 use App\Models\Matiere;
+use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -47,6 +48,26 @@ test('super admin can create multi-subject pedagogical assignments', function ()
         ->assertSee($teacher->user->name)
         ->assertSee($classroom->name)
         ->assertSee('Arabe');
+});
+
+test('the assignments table only shows the 5 most recent pedagogical assignments', function () {
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
+    $matiere = Matiere::factory()->create();
+    for ($i = 0; $i < 7; $i++) {
+        PedagogicalAssignment::create([
+            'teacher_id' => Teacher::factory()->create()->id,
+            'classroom_id' => $classroom->id,
+            'matiere_id' => $matiere->id,
+            'school_year_id' => $this->schoolYear->id,
+            'volume_horaire_hebdo' => 2,
+            'is_active' => true,
+        ]);
+    }
+
+    $response = $this->get(route('pedagogical-configuration.assignments', ['school_year_id' => $this->schoolYear->id]));
+
+    $response->assertOk();
+    expect($response->viewData('assignments'))->toHaveCount(5);
 });
 
 test('super admin can configure periods and grade rules', function () {

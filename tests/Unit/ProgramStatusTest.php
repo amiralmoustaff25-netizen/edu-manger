@@ -4,7 +4,9 @@ use App\Support\ProgramStatus;
 
 it('it_allows_valid_transitions', function () {
     expect(ProgramStatus::canTransition('brouillon', 'soumis'))->toBeTrue();
-    expect(ProgramStatus::canTransition('soumis', 'valide_surveillant'))->toBeTrue();
+    // Validation en une seule étape par un administrateur.
+    expect(ProgramStatus::canTransition('soumis', 'valide_directeur'))->toBeTrue();
+    // L'ancien état intermédiaire reste transitionnable pour les programmes existants.
     expect(ProgramStatus::canTransition('valide_surveillant', 'valide_directeur'))->toBeTrue();
 });
 

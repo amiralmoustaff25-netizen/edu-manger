@@ -36,14 +36,10 @@ class ProgramAnnualPolicy
         return $user->hasRole('super-admin') || ($user->hasRole('admin') && ! in_array($program->status, ['valide_surveillant', 'valide_directeur', 'verrouille'], true));
     }
 
-    public function validateSurveillant(User $user, ProgramAnnual $program): bool
-    {
-        return $user->can('valider-programme-surveillant') && $program->status === 'soumis';
-    }
-
+    // Validation en une seule étape par un administrateur (super-admin/admin).
     public function validateDirecteur(User $user, ProgramAnnual $program): bool
     {
-        return $user->can('valider-programme-directeur') && $program->status === 'valide_surveillant';
+        return $user->can('valider-programme-directeur') && in_array($program->status, ['soumis', 'valide_surveillant'], true);
     }
 
     public function reject(User $user, ProgramAnnual $program): bool

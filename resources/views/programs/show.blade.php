@@ -36,17 +36,16 @@
 
     @php
         $canSubmit = auth()->user()->can('update', $program) && \App\Support\ProgramStatus::canTransition($program->status, 'soumis');
-        $canValidateSurveillant = auth()->user()->can('validateSurveillant', $program);
         $canValidateDirecteur = auth()->user()->can('validateDirecteur', $program);
         $canReject = auth()->user()->can('reject', $program);
     @endphp
 
-    @if($canSubmit || $canValidateSurveillant || $canValidateDirecteur || $canReject)
+    @if($canSubmit || $canValidateDirecteur || $canReject)
         <div class="bg-white dark:bg-slate-800 shadow rounded-lg p-6 mb-6">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Workflow</h2>
             <div class="flex flex-wrap items-end gap-3">
                 @if($canSubmit)
-                    <form action="{{ route('programs.submit', $program) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Soumettre le programme', message: 'Le programme sera soumis au surveillant pour validation.', confirmLabel: 'Soumettre' })">
+                    <form action="{{ route('programs.submit', $program) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Soumettre le programme', message: 'Le programme sera soumis à l’administrateur pour validation.', confirmLabel: 'Soumettre' })">
                         @csrf
                         <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
                             Soumettre
@@ -54,20 +53,11 @@
                     </form>
                 @endif
 
-                @if($canValidateSurveillant)
-                    <form action="{{ route('programs.validate-surveillant', $program) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider (Surveillant)', message: 'Le programme sera validé par le surveillant.', confirmLabel: 'Valider' })">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">
-                            Valider (Surveillant)
-                        </button>
-                    </form>
-                @endif
-
                 @if($canValidateDirecteur)
-                    <form action="{{ route('programs.validate-directeur', $program) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider (Directeur)', message: 'Le programme sera validé définitivement par le directeur.', confirmLabel: 'Valider' })">
+                    <form action="{{ route('programs.validate-directeur', $program) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider le programme', message: 'Le programme sera validé définitivement par l’administrateur.', confirmLabel: 'Valider' })">
                         @csrf
                         <button type="submit" class="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800">
-                            Valider (Directeur)
+                            Valider (Administrateur)
                         </button>
                     </form>
                 @endif

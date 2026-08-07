@@ -23,9 +23,27 @@ class BulletinController extends Controller
     /**
      * Afficher le bulletin d'un élève pour une période
      */
-    public function show(User $student, string $period = 'trimestre_1'): View|RedirectResponse
+    public function show(Request $request, User $student, string $period = 'trimestre_1'): View|RedirectResponse
     {
-        $this->authorize('view', $student);
+        // Allow students to view their own bulletin even without the generer-bulletins permission.
+        $user = $request->user();
+
+        $isStudentOwner = $user->id === $student->id && $user->hasRole('eleve');
+
+        // Allow a parent who is linked to this student to view the bulletin.
+        $isParentOfStudent = false;
+        if ($user->hasRole('parent') && method_exists($user, 'parentProfile')) {
+            $parentProfile = $user->parentProfile();
+            if ($parentProfile) {
+                $isParentOfStudent = $parentProfile->whereHas('students', function ($q) use ($student) {
+                    $q->where('users.id', $student->id);
+                })->exists();
+            }
+        }
+
+        if (! ($isStudentOwner || $isParentOfStudent)) {
+            abort_unless($request->user()->can('generer-bulletins'), 403);
+        }
 
         try {
             $bulletin = $this->gradeService->getBulletinData($student, $period);
@@ -41,9 +59,9 @@ class BulletinController extends Controller
     /**
      * Générer le PDF du bulletin d'un élève
      */
-    public function generatePdf(User $student, string $period = 'trimestre_1')
+    public function generatePdf(Request $request, User $student, string $period = 'trimestre_1')
     {
-        $this->authorize('view', $student);
+        abort_unless($request->user()->can('generer-bulletins'), 403);
 
         try {
             $bulletin = $this->gradeService->getBulletinData($student, $period);
@@ -61,9 +79,9 @@ class BulletinController extends Controller
     /**
      * Générer les bulletins PDF pour toute une classe
      */
-    public function generateClassPdf(Classroom $classroom, string $period = 'trimestre_1')
+    public function generateClassPdf(Request $request, Classroom $classroom, string $period = 'trimestre_1')
     {
-        $this->authorize('viewAny', Classroom::class);
+        abort_unless($request->user()->can('generer-bulletins'), 403);
 
         try {
             $bulletins = $this->gradeService->getClassBulletins($classroom, $period);
@@ -81,9 +99,9 @@ class BulletinController extends Controller
     /**
      * Afficher la sélection pour générer des bulletins
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $this->authorize('viewAny', Classroom::class);
+        abort_unless($request->user()->can('generer-bulletins'), 403);
 
         $classrooms = Classroom::with('schoolYear')->get();
 

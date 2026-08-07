@@ -1,4 +1,5 @@
 import './bootstrap';
+import './pjax';
 
 import Alpine from 'alpinejs';
 

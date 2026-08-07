@@ -8,7 +8,6 @@ use Illuminate\Validation\Rule;
 class StoreUserRequest extends FormRequest
 {
     private const ROLES = [
-        'super-admin',
         'admin',
         'manager-comptable',
         'comptable',

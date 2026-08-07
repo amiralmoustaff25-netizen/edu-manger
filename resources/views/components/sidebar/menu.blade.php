@@ -57,47 +57,84 @@ $visibleItems = $filterVisible($items);
         @php
             $isOpen = $hasActiveChild($item['children']);
             $showIcon = $level === 0 || !empty($item['icon']);
+            $isHeading = !empty($item['heading']);
         @endphp
 
-        <div x-data="{ open: {{ $isOpen ? 'true' : 'false' }} }">
-            <button
-                @click="open = !open"
-                class="w-full flex items-center justify-between gap-2 px-2 py-2 text-sm font-semibold text-left rounded-md group
-                    {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}"
-            >
-                <span class="flex items-center min-w-0 flex-1">
+        @if ($isHeading)
+            <div class="px-2 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <span class="flex items-center gap-2">
                     @if ($showIcon && !empty($item['icon']))
-                        <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-5 w-5 flex-shrink-0 text-gray-400 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
                         </svg>
                     @endif
                     <span class="truncate">{{ __($item['label']) }}</span>
                 </span>
-                <span class="flex-shrink-0">
-                    <svg x-show="!open" class="h-4 w-4 {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                    <svg x-show="open" x-cloak class="h-4 w-4 {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </span>
-            </button>
+            </div>
 
-            <div
-                x-show="open"
-                x-transition:enter="transition-[grid-template-rows] ease-out duration-200"
-                x-transition:enter-start="grid-rows-[0fr]"
-                x-transition:enter-end="grid-rows-[1fr]"
-                x-transition:leave="transition-[grid-template-rows] ease-in duration-150"
-                x-transition:leave-start="grid-rows-[1fr]"
-                x-transition:leave-end="grid-rows-[0fr]"
-                class="grid"
-            >
+            <div class="grid">
                 <div class="overflow-hidden {{ $level === 0 ? 'ml-4' : 'ml-3' }} space-y-1">
                     <x-sidebar.menu :items="$item['children']" :level="$level + 1" />
                 </div>
             </div>
-        </div>
+        @else
+            <div x-data="{ open: {{ $isOpen ? 'true' : 'false' }} }">
+                <div class="w-full flex items-center justify-between gap-2">
+                    @if (!empty($item['route']))
+                        <a href="{{ route($item['route']) }}" class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
+                            @if ($showIcon && !empty($item['icon']))
+                                <svg class="mr-4 flex-shrink-0 h-7 w-7 overflow-visible {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
+                                </svg>
+                            @endif
+                            <span class="truncate">{{ __($item['label']) }}</span>
+                        </a>
+                    @else
+                        <button
+                            type="button"
+                            @click="open = !open"
+                            class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-left rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}"
+                        >
+                            @if ($showIcon && !empty($item['icon']))
+                                <svg class="mr-4 flex-shrink-0 h-7 w-7 overflow-visible {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 group-hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
+                                </svg>
+                            @endif
+                            <span class="truncate">{{ __($item['label']) }}</span>
+                        </button>
+                    @endif
+
+                    <button
+                        type="button"
+                        @click="open = !open"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+                        aria-label="{{ $isOpen ? __('Réduire le menu') : __('Ouvrir le menu') }}"
+                    >
+                        <svg x-show="!open" class="h-4 w-4 overflow-visible" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="overflow:visible">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                        <svg x-show="open" x-cloak class="h-4 w-4 overflow-visible" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="overflow:visible">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div
+                    x-show="open"
+                    x-transition:enter="transition-[grid-template-rows] ease-out duration-200"
+                    x-transition:enter-start="grid-rows-[0fr]"
+                    x-transition:enter-end="grid-rows-[1fr]"
+                    x-transition:leave="transition-[grid-template-rows] ease-in duration-150"
+                    x-transition:leave-start="grid-rows-[1fr]"
+                    x-transition:leave-end="grid-rows-[0fr]"
+                    class="grid"
+                >
+                    <div class="overflow-hidden {{ $level === 0 ? 'ml-4' : 'ml-3' }} space-y-1">
+                        <x-sidebar.menu :items="$item['children']" :level="$level + 1" />
+                    </div>
+                </div>
+            </div>
+        @endif
     @else
         <x-sidebar.link
             :route="$item['route']"

@@ -63,6 +63,18 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             return redirect()->route('professeur.dashboard');
         }
 
+        // Parent dashboard personnalisé
+        if (auth()->user()->hasRole('parent')) {
+            $parent = auth()->user()->parentProfile()
+                ->with(['students' => function ($query) {
+                    $query->with(['latestRegistration.classroom.schoolYear'])
+                        ->withCount(['notes', 'attendances']);
+                }])
+                ->firstOrFail();
+
+            return view('parents.dashboard', compact('parent'));
+        }
+
         $activeYear = SchoolYear::where('is_active', true)->first();
 
         $registrations = Registration::with(['user', 'classroom', 'schoolYear'])
@@ -196,7 +208,6 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::resource('programs', ProgramAnnualController::class);
         Route::post('programs/{program}/submit', [ProgramAnnualController::class, 'submit'])->name('programs.submit');
-        Route::post('programs/{program}/validate-surveillant', [ProgramAnnualController::class, 'validateSurveillant'])->name('programs.validate-surveillant');
         Route::post('programs/{program}/validate-directeur', [ProgramAnnualController::class, 'validateDirecteur'])->name('programs.validate-directeur');
         Route::post('programs/{program}/reject', [ProgramAnnualController::class, 'reject'])->name('programs.reject');
         Route::post('programs/import', [ProgramAnnualController::class, 'importExcel'])->name('programs.import');
@@ -271,6 +282,8 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             ->parameters(['classes' => 'classroom'])
             ->only(['index', 'show']);
         Route::resource('notes', GradeController::class)->only(['index', 'store']);
+        Route::get('notes/eleve', [GradeController::class, 'searchStudent'])->name('notes.eleve');
+        Route::post('notes/eleve', [GradeController::class, 'storeForStudent'])->name('notes.eleve.store');
         Route::get('/pointage-cours', [TeachingSessionController::class, 'index'])->name('teaching-sessions.index');
         Route::post('/pointage-cours', [TeachingSessionController::class, 'store'])->name('teaching-sessions.store');
         Route::get('/attendances/history', [AttendanceController::class, 'history'])->name('attendances.history');
@@ -355,6 +368,21 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::post('/mark-all-read', [UserNotificationController::class, 'markAllAsRead'])->name('mark-all-read');
         Route::post('/{notification}/mark-as-read', [UserNotificationController::class, 'markAsRead'])->name('mark-as-read');
         Route::get('/{notification}', [UserNotificationController::class, 'show'])->name('show');
+    });
+
+    // Routes spécifiques pour les parents (portail famille)
+    Route::middleware(['role:parent'])->prefix('parents')->name('parents.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\ParentPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/children', [\App\Http\Controllers\ParentPortalController::class, 'childrenIndex'])->name('children.index');
+        Route::get('/children/profile', [\App\Http\Controllers\ParentPortalController::class, 'childProfile'])->name('children.profile');
+        Route::get('/children/notes', [\App\Http\Controllers\ParentPortalController::class, 'childNotes'])->name('children.notes');
+        Route::get('/children/bulletins', [\App\Http\Controllers\ParentPortalController::class, 'childBulletins'])->name('children.bulletins');
+        Route::get('/children/attendances', [\App\Http\Controllers\ParentPortalController::class, 'childAttendances'])->name('children.attendances');
+        Route::get('/children/discipline', [\App\Http\Controllers\ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
+        Route::get('/children/timetable', [\App\Http\Controllers\ParentPortalController::class, 'childTimetable'])->name('children.timetable');
+        Route::get('/children/payments', [\App\Http\Controllers\ParentPortalController::class, 'childPayments'])->name('children.payments');
+        Route::get('/messaging', [\App\Http\Controllers\ParentPortalController::class, 'messaging'])->name('messaging');
+        Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
     });
 
 });

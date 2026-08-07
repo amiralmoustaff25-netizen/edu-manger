@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\ParentModel;
 use App\Models\Teacher;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -159,6 +161,11 @@ class User extends Authenticatable
         return $this->belongsToMany(ParentModel::class, 'parent_user', 'user_id', 'parent_id')
             ->withPivot('lien_parente', 'est_responsable_financier', 'est_contact_urgence')
             ->withTimestamps();
+    }
+
+    public function parentProfile(): HasOne
+    {
+        return $this->hasOne(ParentModel::class, 'user_id');
     }
 
     public function teacher()

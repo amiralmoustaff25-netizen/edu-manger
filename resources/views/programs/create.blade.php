@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mx-auto max-w-6xl p-6" x-data="programEditor()">
+<div class="mx-auto max-w-6xl p-6" x-data="programEditor()" x-init="assignmentsMeta = @json($assignmentsMeta)">
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div><h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Créer un programme annuel</h1><p class="mt-1 text-sm text-gray-500">Construisez vos chapitres et leçons pour une affectation pédagogique.</p></div>
         <a href="{{ route('programs.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Retour</a>
@@ -13,8 +13,12 @@
         <section class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-slate-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Informations générales</h2>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Affectation pédagogique<select name="pedagogical_assignment_id" class="mt-1 w-full rounded-md border-gray-300" required><option value="">Sélectionner une classe et une matière</option>@foreach($assignments as $assignment)<option value="{{ $assignment->id }}" @selected(old('pedagogical_assignment_id') == $assignment->id)>{{ $assignment->classroom->name }} — {{ $assignment->matiere->nom }} · {{ $assignment->schoolYear->year_string }}</option>@endforeach</select><span class="mt-1 block text-xs font-normal text-gray-500">Seules les affectations actives vous sont proposées.</span></label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Classe et matière<select name="pedagogical_assignment_id" x-model="selectedAssignmentId" class="mt-1 w-full rounded-md border-gray-300" required><option value="">Sélectionner une classe et une matière</option>@foreach($assignments as $assignment)<option value="{{ $assignment->id }}" @selected(old('pedagogical_assignment_id') == $assignment->id)>{{ $assignment->classroom->name }} — {{ $assignment->matiere->nom }} ({{ $assignment->teacher->user->name }})</option>@endforeach</select><span class="mt-1 block text-xs font-normal text-gray-500">Seules les affectations actives vous sont proposées.</span></label>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Période principale<select name="academic_period_id" class="mt-1 w-full rounded-md border-gray-300"><option value="">Toute l'année scolaire</option>@foreach($periods as $period)<option value="{{ $period->id }}" @selected(old('academic_period_id') == $period->id)>{{ $period->name }}</option>@endforeach</select></label>
+            </div>
+            <div x-show="selectedAssignmentId && assignmentsMeta[selectedAssignmentId]" x-cloak class="mt-4 grid gap-3 rounded-md bg-gray-50 p-4 text-sm dark:bg-slate-900 sm:grid-cols-2">
+                <p><span class="font-medium text-gray-700 dark:text-gray-300">Professeur : </span><span class="text-gray-900 dark:text-white" x-text="(assignmentsMeta[selectedAssignmentId]?.teacher || '') + (assignmentsMeta[selectedAssignmentId]?.matricule ? ' (' + assignmentsMeta[selectedAssignmentId].matricule + ')' : '')"></span></p>
+                <p><span class="font-medium text-gray-700 dark:text-gray-300">Classe : </span><span class="text-gray-900 dark:text-white" x-text="assignmentsMeta[selectedAssignmentId]?.classroom"></span></p>
             </div>
         </section>
 
@@ -22,5 +26,5 @@
         <div class="flex justify-end"><button type="submit" class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white">Enregistrer le programme</button></div>
     </form>
 </div>
-<script>function programEditor(){return{chapters:[{key:1,title:'',description:'',period:'',plannedAt:'',lessons:[{key:2,title:'',description:'',volume:1,period:'',plannedAt:''}]}],nextKey:3,addChapter(){this.chapters.push({key:this.nextKey++,title:'',description:'',period:'',plannedAt:'',lessons:[{key:this.nextKey++,title:'',description:'',volume:1,period:'',plannedAt:''}]})},removeChapter(index){this.chapters.splice(index,1)},addLesson(chapter){chapter.lessons.push({key:this.nextKey++,title:'',description:'',volume:1,period:'',plannedAt:''})},removeLesson(chapter,index){chapter.lessons.splice(index,1)},chapterVolume(chapter){return chapter.lessons.reduce((total,lesson)=>total+(Number(lesson.volume)||0),0)}}}</script>
+<script>function programEditor(){return{selectedAssignmentId:'{{ old('pedagogical_assignment_id') }}',assignmentsMeta:{},chapters:[{key:1,title:'',description:'',period:'',plannedAt:'',lessons:[{key:2,title:'',description:'',volume:1,period:'',plannedAt:''}]}],nextKey:3,addChapter(){this.chapters.push({key:this.nextKey++,title:'',description:'',period:'',plannedAt:'',lessons:[{key:this.nextKey++,title:'',description:'',volume:1,period:'',plannedAt:''}]})},removeChapter(index){this.chapters.splice(index,1)},addLesson(chapter){chapter.lessons.push({key:this.nextKey++,title:'',description:'',volume:1,period:'',plannedAt:''})},removeLesson(chapter,index){chapter.lessons.splice(index,1)},chapterVolume(chapter){return chapter.lessons.reduce((total,lesson)=>total+(Number(lesson.volume)||0),0)}}}</script>
 @endsection

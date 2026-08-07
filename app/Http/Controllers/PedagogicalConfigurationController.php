@@ -49,8 +49,9 @@ class PedagogicalConfigurationController extends Controller
         if ($schoolYear) { $query->where('school_year_id', $schoolYear->id); }
         foreach (['teacher_id', 'classroom_id', 'matiere_id'] as $filter) { if ($request->filled($filter)) { $query->where($filter, $request->integer($filter)); } }
 
+        // N'afficher que les 5 dernières affectations réalisées pour améliorer la lisibilité.
         return view('pedagogical-configuration.assignments', [
-            'assignments' => $query->paginate(30)->withQueryString(), 'schoolYear' => $schoolYear, 'schoolYears' => $schoolYears,
+            'assignments' => $query->take(5)->get(), 'schoolYear' => $schoolYear, 'schoolYears' => $schoolYears,
             'teachers' => Teacher::with('user')->orderBy('matricule')->get(), 'classrooms' => $schoolYear ? Classroom::where('school_year_id', $schoolYear->id)->orderBy('name')->get() : collect(), 'matieres' => Matiere::orderBy('nom')->get(),
         ]);
     }

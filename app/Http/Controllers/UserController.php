@@ -25,7 +25,6 @@ class UserController extends Controller
     ];
 
     private const CREATABLE_ROLES = [
-        'super-admin',
         'admin',
         'manager-comptable',
         'comptable',

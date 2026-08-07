@@ -127,11 +127,17 @@ class RoleAndPermissionSeeder extends Seeder
             'valider-notes',
             'rouvrir-notes-validees',
             'marquer-absences',
+            'generer-bulletins',
 
             // --- Parent (espace famille) ---
             'voir-ses-enfants',
             'voir-ses-paiements-enfants',
             'voir-ses-notes-enfants',
+            'voir-ses-bulletins-enfants',
+            'voir-ses-discipline-enfants',
+            'voir-emploi-du-temps',
+            'voir-messagerie',
+            'voir-calendrier-scolaire',
 
             // --- Logs & Audit ---
             'voir-logs-connexion',
@@ -344,6 +350,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-sa-classe',
             'saisir-notes',
             'marquer-absences',
+            'generer-bulletins',
             'voir-eleves',
             'voir-detail-eleve',
             'voir-programmes',
@@ -365,6 +372,11 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-ses-enfants',
             'voir-ses-paiements-enfants',
             'voir-ses-notes-enfants',
+            'voir-ses-bulletins-enfants',
+            'voir-ses-discipline-enfants',
+            'voir-emploi-du-temps',
+            'voir-messagerie',
+            'voir-calendrier-scolaire',
         ]);
 
         // --- Élève : espace personnel ---
