@@ -82,10 +82,20 @@ class CahierTexteController extends Controller
 
     public function bulkToggle(BulkToggleRequest $request): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('create', ChapterCompletion::class);
+
         $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
         $program = ProgramChapter::findOrFail($request->chapter_ids[0])->program;
+
+        if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+            abort(403);
+        }
+
         foreach ($request->chapter_ids as $chapterId) {
             $chapter = ProgramChapter::findOrFail($chapterId);
+            // Toutes les cases cochées doivent appartenir au même programme que la
+            // première (celle utilisée pour l'autorisation ci-dessus).
+            abort_unless($chapter->program_annual_id === $program->id, 422, 'Chapitres appartenant à des programmes différents.');
             $existing = ChapterCompletion::where('program_chapter_id', $chapter->id)->whereDate('date_traitement', $date)->first();
             if ($existing) {
                 $existing->delete();
@@ -106,7 +116,15 @@ class CahierTexteController extends Controller
             'lesson_id' => ['required', 'exists:program_chapters,id']
         ]);
 
+        $this->authorize('create', ChapterCompletion::class);
+
         $lesson = ProgramChapter::findOrFail($request->lesson_id);
+        $program = $lesson->program;
+
+        if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+            abort(403);
+        }
+
         $chapterIds = collect([$lesson->id])
             ->merge($lesson->children()->pluck('id'));
         $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
@@ -123,6 +141,8 @@ class CahierTexteController extends Controller
 
     public function updateRemark(Request $request, ChapterCompletion $completion): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('update', $completion);
+
         $request->validate(['remarque' => ['nullable', 'string', 'max:1000']]);
         $completion->update(['remarque' => $request->remarque]);
 

@@ -8,6 +8,10 @@ use App\Services\ReminderService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+// Autorisation déléguée au middleware de route (role:super-admin|manager-comptable,
+// routes/web.php) : les anciens appels $this->authorize('manager-comptable') utilisaient
+// un nom de RÔLE comme ability, ce qui n'est pas une permission valide et bloquait
+// systématiquement le rôle manager-comptable (le seul rôle métier visé) avec un 403.
 class ReminderController extends Controller
 {
     protected $reminderService;
@@ -22,8 +26,6 @@ class ReminderController extends Controller
      */
     public function index(): View
     {
-        $this->authorize('manager-comptable');
-
         $reminders = Reminder::with(['registration.user', 'registration.classroom'])
             ->latest()
             ->paginate(15);
@@ -36,8 +38,6 @@ class ReminderController extends Controller
      */
     public function create(): View
     {
-        $this->authorize('manager-comptable');
-
         $registrations = Registration::where('status', 'active')
             ->with(['user', 'classroom'])
             ->get();
@@ -50,8 +50,6 @@ class ReminderController extends Controller
      */
     public function store(Request $Request): \Illuminate\Http\RedirectResponse
     {
-        $this->authorize('manager-comptable');
-
         $validated = $Request->validate([
             'registration_id' => 'required|exists:registrations,id',
             'message' => 'required|string|max:500',
@@ -75,8 +73,6 @@ class ReminderController extends Controller
      */
     public function destroy(Reminder $reminder): \Illuminate\Http\RedirectResponse
     {
-        $this->authorize('manager-comptable');
-
         if ($reminder->status === 'sent') {
             return back()->with('error', 'Impossible de supprimer un rappel déjà envoyé.');
         }
@@ -91,8 +87,6 @@ class ReminderController extends Controller
      */
     public function generateOverdue(): \Illuminate\Http\RedirectResponse
     {
-        $this->authorize('manager-comptable');
-
         $this->reminderService->generateOverdueReminders();
 
         return back()->with('success', 'Rappels de retard générés.');
@@ -103,8 +97,6 @@ class ReminderController extends Controller
      */
     public function generateUpcoming(): \Illuminate\Http\RedirectResponse
     {
-        $this->authorize('manager-comptable');
-
         $this->reminderService->generateUpcomingReminders();
 
         return back()->with('success', 'Rappels d\'échéances générés.');

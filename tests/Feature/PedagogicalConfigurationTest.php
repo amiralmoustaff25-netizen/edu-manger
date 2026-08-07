@@ -50,7 +50,7 @@ test('super admin can create multi-subject pedagogical assignments', function ()
         ->assertSee('Arabe');
 });
 
-test('the assignments table only shows the 5 most recent pedagogical assignments', function () {
+test('the assignments table paginates and lists every pedagogical assignment', function () {
     $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
     $matiere = Matiere::factory()->create();
     for ($i = 0; $i < 7; $i++) {
@@ -67,7 +67,10 @@ test('the assignments table only shows the 5 most recent pedagogical assignments
     $response = $this->get(route('pedagogical-configuration.assignments', ['school_year_id' => $this->schoolYear->id]));
 
     $response->assertOk();
-    expect($response->viewData('assignments'))->toHaveCount(5);
+    // Toutes les affectations doivent être accessibles (paginées, pas tronquées
+    // silencieusement à 5 comme avant correction du bug de régression M5).
+    expect($response->viewData('assignments'))->toHaveCount(7);
+    expect($response->viewData('assignments')->total())->toBe(7);
 });
 
 test('super admin can configure periods and grade rules', function () {

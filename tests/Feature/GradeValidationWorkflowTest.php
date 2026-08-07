@@ -3,6 +3,7 @@
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -23,6 +24,12 @@ function createGradeFixture(): array
     ]);
 
     $student = User::factory()->create(['role' => 'eleve']);
+    Registration::factory()->create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $schoolYear->id,
+        'status' => 'active',
+    ]);
 
     $note = Note::create([
         'user_id' => $student->id,

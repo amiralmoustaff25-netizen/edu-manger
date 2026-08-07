@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,24 +14,6 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    private const ROLES = [
-        'super-admin',
-        'admin',
-        'manager-comptable',
-        'comptable',
-        'surveillant',
-        'professeur',
-        'parent',
-        'eleve',
-    ];
-
-    private const CREATABLE_ROLES = [
-        'admin',
-        'manager-comptable',
-        'comptable',
-        'surveillant',
-    ];
-
     public function index(Request $request): View
     {
         $this->authorize('voir-utilisateurs');
@@ -62,7 +45,7 @@ class UserController extends Controller
 
         return view('users.index', [
             'users' => $users,
-            'roles' => self::ROLES,
+            'roles' => UserRoles::ALL,
             'filters' => $request->only(['search', 'role', 'status']),
         ]);
     }
@@ -73,7 +56,7 @@ class UserController extends Controller
 
         return view('users.create', [
             'user' => new User(['is_active' => true]),
-            'roles' => self::CREATABLE_ROLES,
+            'roles' => UserRoles::CREATABLE_VIA_USER_FORM,
         ]);
     }
 
@@ -105,10 +88,11 @@ class UserController extends Controller
     public function edit(User $user): View
     {
         $this->authorize('modifier-utilisateur', $user);
+        $this->ensureActorCanTargetSuperAdmin($user);
 
         return view('users.edit', [
             'user' => $user,
-            'roles' => self::ROLES,
+            'roles' => UserRoles::assignableBy(auth()->user()),
         ]);
     }
 
@@ -126,6 +110,7 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         $this->authorize('supprimer-utilisateur', $user);
+        $this->ensureActorCanTargetSuperAdmin($user);
 
         if ($user->is(auth()->user())) {
             return back()->withErrors(['user' => 'Vous ne pouvez pas supprimer votre propre compte.']);
@@ -140,6 +125,7 @@ class UserController extends Controller
     public function toggle(User $user): RedirectResponse
     {
         $this->authorize('activer-desactiver-utilisateur', $user);
+        $this->ensureActorCanTargetSuperAdmin($user);
 
         if ($user->is(auth()->user())) {
             return back()->withErrors(['user' => 'Vous ne pouvez pas désactiver votre propre compte.']);
@@ -153,6 +139,7 @@ class UserController extends Controller
     public function resetPassword(User $user): RedirectResponse
     {
         $this->authorize('reinitialiser-mot-de-passe-utilisateur', $user);
+        $this->ensureActorCanTargetSuperAdmin($user);
 
         $user->update([
             'password' => Hash::make('password'),
@@ -160,5 +147,21 @@ class UserController extends Controller
         ]);
 
         return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : password');
+    }
+
+    /**
+     * Seul un super-admin peut agir (modifier, désactiver, supprimer, réinitialiser
+     * le mot de passe) sur un compte super-admin. La permission 'modifier-utilisateur'
+     * etc. est accordée au rôle admin sans restriction par cible (Spatie court-circuite
+     * les Policies via Gate::before dès que l'acteur possède la permission), donc ce
+     * contrôle doit être explicite ici plutôt que délégué à une Policy.
+     */
+    private function ensureActorCanTargetSuperAdmin(User $target): void
+    {
+        abort_if(
+            $target->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin'),
+            403,
+            "Seul un super-administrateur peut agir sur un compte super-administrateur."
+        );
     }
 }

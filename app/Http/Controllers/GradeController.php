@@ -65,6 +65,18 @@ class GradeController extends Controller
             abort(403, 'Vous n\'êtes pas autorisé à saisir des notes pour cette matière dans cette classe.');
         }
 
+        // Empêche un professeur d'enregistrer une note pour un élève qui n'est pas
+        // réellement inscrit dans cette classe (le user_id vient du formulaire).
+        $enrolledStudentIds = Registration::where('classroom_id', $classroom->id)
+            ->where('status', 'active')
+            ->pluck('user_id');
+
+        foreach ($validated['grades'] as $gradeData) {
+            if (!$enrolledStudentIds->contains((int) $gradeData['user_id'])) {
+                abort(403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
+            }
+        }
+
         // Les notes déjà validées sont verrouillées : toute la saisie est rejetée pour éviter
         // une modification partielle silencieuse. Un privilégié doit d'abord les rouvrir (reopen()).
         $hasValidatedNotes = Note::where('classroom_id', $classroom->id)
@@ -198,6 +210,18 @@ class GradeController extends Controller
             ->where('is_active', true)
             ->pluck('matiere_id');
 
+        // Empêche un professeur d'enregistrer une note pour un élève qui n'est pas
+        // réellement inscrit dans cette classe (classroom_id/user_id viennent de
+        // champs cachés du formulaire, donc falsifiables côté client).
+        $isEnrolled = Registration::where('user_id', $validated['user_id'])
+            ->where('classroom_id', $classroom->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if (!$isEnrolled) {
+            abort(403, "Cet élève n'est pas inscrit dans cette classe.");
+        }
+
         $savedCount = 0;
 
         foreach ($validated['grades'] as $gradeData) {
@@ -276,6 +300,8 @@ class GradeController extends Controller
      */
     public function reopenNotes(Request $request)
     {
+        $this->authorize('reopen', Note::class);
+
         $validated = $request->validate([
             'classroom_id' => 'required|exists:classrooms,id',
             'matiere_id' => 'required|exists:matieres,id',
@@ -286,7 +312,6 @@ class GradeController extends Controller
         $notes = Note::where($validated)->validated()->get();
 
         foreach ($notes as $note) {
-            $this->authorize('reopen', $note);
             $note->reopen();
         }
 

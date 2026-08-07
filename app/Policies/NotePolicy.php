@@ -67,8 +67,10 @@ class NotePolicy
         return $user->can('valider-notes');
     }
 
-    // Réouverture d'une note validée : action privilégiée (super-admin uniquement, via Gate::before global)
-    public function reopen(User $user, Note $note): bool
+    // Réouverture d'un lot de notes validées : action privilégiée (super-admin uniquement,
+    // via Gate::before global). Vérifiée une seule fois avant la boucle de réouverture
+    // (GradeController::reopenNotes), pas par note : sinon un lot vide contournait le contrôle.
+    public function reopen(User $user): bool
     {
         return $user->can('rouvrir-notes-validees');
     }

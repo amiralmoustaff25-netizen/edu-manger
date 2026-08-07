@@ -129,6 +129,8 @@ class StudentController extends Controller
 
         abort_unless($student->isStudent(), 404);
 
+        $this->ensureTeacherIsAssignedToStudent($student);
+
         $student->load([
             'parents',
             'notes.matiere',
@@ -290,6 +292,30 @@ class StudentController extends Controller
         }
 
         return back()->with('success', 'Photo de l\'élève supprimée avec succès.');
+    }
+
+    /**
+     * Un professeur ne doit consulter que les élèves d'une classe qui lui est
+     * assignée. La permission 'voir-detail-eleve' est nécessaire pour franchir
+     * le middleware de route mais reste globale : ce contrôle par instance
+     * complète la policy pour ce rôle précis.
+     */
+    private function ensureTeacherIsAssignedToStudent(User $student): void
+    {
+        $user = auth()->user();
+
+        if (! $user->hasRole('professeur') || $user->hasAnyRole(['super-admin', 'admin'])) {
+            return;
+        }
+
+        $teacher = $user->teacher;
+        $classroomId = optional($student->latestRegistration)->classroom_id;
+
+        abort_unless(
+            $teacher && $classroomId && $teacher->classrooms()->where('classrooms.id', $classroomId)->exists(),
+            403,
+            "Vous n'êtes pas autorisé à consulter le dossier de cet élève."
+        );
     }
 
     private function normalizeOptions(?array $options): array

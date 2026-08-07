@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ParentModel;
+use App\Models\Matiere;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ParentPortalController extends Controller
@@ -10,7 +11,11 @@ class ParentPortalController extends Controller
     public function dashboard(Request $request)
     {
         $user = $request->user();
-        $parent = $user->parentProfile()->with(['students.latestRegistration.classroom.schoolYear'])->firstOrFail();
+        $parent = $user->parentProfile()
+            ->with(['students.latestRegistration.classroom.schoolYear'])
+            ->firstOrFail();
+
+        $parent->setRelation('students', $parent->students->loadCount('notes', 'attendances'));
 
         return view('parents.dashboard', compact('parent'));
     }
@@ -22,14 +27,23 @@ class ParentPortalController extends Controller
         return view('parents.children.index', compact('parent'));
     }
 
-    protected function resolveStudentFromRequest(Request $request)
+    /**
+     * Résout l'élève ciblé par la requête en le limitant strictement aux enfants
+     * du parent connecté (protection IDOR : ne jamais faire confiance à l'ID brut).
+     */
+    protected function resolveStudentFromRequest(Request $request): ?User
     {
         $studentId = $request->input('student') ?? $request->query('student');
         if (! $studentId) {
             return null;
         }
 
-        return \App\Models\User::find($studentId);
+        $parent = $request->user()->parentProfile;
+        if (! $parent) {
+            return null;
+        }
+
+        return $parent->students()->where('users.id', $studentId)->first();
     }
 
     public function childProfile(Request $request)
@@ -85,11 +99,15 @@ class ParentPortalController extends Controller
     public function childTimetable(Request $request)
     {
         $student = $this->resolveStudentFromRequest($request);
-        if ($student) {
-            return redirect()->route('student.timetable');
+        if (! $student) {
+            return redirect()->route('parents.dashboard');
         }
 
-        return redirect()->route('parents.dashboard');
+        $registration = $student->latestRegistration;
+        $registration?->load(['classroom.teachers.user', 'classroom.schoolYear', 'schoolYear']);
+        $matieres = Matiere::all()->keyBy('id');
+
+        return view('students.timetable', ['user' => $student, 'registration' => $registration, 'matieres' => $matieres]);
     }
 
     public function childPayments(Request $request)
@@ -102,10 +120,9 @@ class ParentPortalController extends Controller
         return redirect()->route('parents.dashboard');
     }
 
-    // Messaging and calendar stubs (could point to existing controllers)
     public function messaging(Request $request)
     {
-        return redirect()->route('notifications.index');
+        return view('parents.messaging');
     }
 
     public function calendar(Request $request)
