@@ -32,6 +32,16 @@
                     </svg>
                     {{ __('Changer le mot de passe') }}
                 </button>
+
+                @unless(auth()->user()->hasRole('eleve'))
+                    <button onclick="document.getElementById('modal-delete-account').classList.remove('hidden')"
+                            class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        {{ __('Supprimer mon compte') }}
+                    </button>
+                @endunless
             </div>
 
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
@@ -277,4 +287,57 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal suppression de compte -->
+    @unless(auth()->user()->hasRole('eleve'))
+    <div id="modal-delete-account" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    {{ __('Supprimer mon compte') }}
+                </h3>
+                <button onclick="document.getElementById('modal-delete-account').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('profile.destroy') }}" class="p-6 space-y-4">
+                @csrf
+                @method('delete')
+
+                <div class="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-200">
+                    {{ __('Cette action est définitive. Votre compte sera immédiatement désactivé et vous serez déconnecté.') }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ __('Mot de passe actuel') }} <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="password" required
+                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-red-500 focus:ring-red-500">
+                    @error('password', 'userDeletion')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('modal-delete-account').classList.add('hidden')"
+                            class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+                        {{ __('Annuler') }}
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                        {{ __('Supprimer définitivement') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endunless
 </x-app-layout>

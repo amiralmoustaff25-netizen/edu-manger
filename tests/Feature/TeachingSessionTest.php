@@ -75,3 +75,19 @@ test('recording a teaching session can also record attendance for the classroom 
         'status' => 'absent',
     ]);
 });
+
+test('recording a teaching session cannot record attendance for a student outside the classroom', function () {
+    $outsider = User::factory()->create(['role' => 'eleve']);
+    $outsider->assignRole('eleve');
+
+    $this->post(route('professeur.teaching-sessions.store'), [
+        'pedagogical_assignment_id' => $this->assignment->id,
+        'taught_on' => now()->startOfWeek()->addDay()->toDateString(),
+        'duration_hours' => 1,
+        'attendances' => [
+            $outsider->id => ['status' => 'absent'],
+        ],
+    ])->assertForbidden();
+
+    $this->assertDatabaseMissing('attendances', ['user_id' => $outsider->id, 'classroom_id' => $this->assignment->classroom_id]);
+});

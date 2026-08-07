@@ -30,6 +30,8 @@ class CahierTexteDashboardController extends Controller
 
     public function progress(ProgramAnnual $program): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('view', $program);
+
         $progress = $program->progressPercentage;
 
         return response()->json([

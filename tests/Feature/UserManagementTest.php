@@ -5,6 +5,35 @@ use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+test('the edit form actually saves changes as submitted by the real page (regression: name vs nom/prenom mismatch)', function () {
+    // Ce test soumet exactement les champs que resources/views/users/_form.blade.php
+    // envoie réellement (nom/prenom), pas des champs choisis pour faire passer le test.
+    // Avant correctif, UpdateUserRequest exigeait un champ "name" que le formulaire
+    // n'envoie jamais : la modification d'un utilisateur échouait systématiquement
+    // en 422 depuis l'interface, alors que les tests qui postaient "name" directement
+    // passaient sans jamais exercer ce bug.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $admin->assignRole('admin');
+    $user = User::factory()->create(['role' => 'comptable', 'name' => 'Ancien Nom']);
+    $user->assignRole('comptable');
+
+    $editPage = $this->actingAs($admin)->get(route('users.edit', $user));
+    $editPage->assertOk()->assertSee('name="nom"', false)->assertSee('name="prenom"', false)->assertDontSee('name="name"', false);
+
+    $this->actingAs($admin)
+        ->patch(route('users.update', $user), [
+            'nom' => 'Nouveau',
+            'prenom' => 'Nom',
+            'email' => $user->email,
+            'role' => 'comptable',
+            'is_active' => '1',
+        ])
+        ->assertSessionDoesntHaveErrors()
+        ->assertRedirect(route('users.index'));
+
+    expect($user->refresh()->name)->toBe('Nouveau Nom');
+});
+
 test('admin can view the user listing', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $admin->assignRole('admin');
@@ -112,7 +141,8 @@ test('admin cannot switch a non teacher account to the professeur role via user 
     $this->actingAs($admin)
         ->from(route('users.edit', $user))
         ->patch(route('users.update', $user), [
-            'name' => $user->name,
+            'nom' => $user->name,
+            'prenom' => 'X',
             'email' => $user->email,
             'role' => 'professeur',
             'is_active' => '1',
@@ -133,7 +163,8 @@ test('admin can edit an existing professeur account without changing its role', 
 
     $this->actingAs($admin)
         ->patch(route('users.update', $teacher->user), [
-            'name' => 'Nom Modifié',
+            'nom' => 'Nom',
+            'prenom' => 'Modifié',
             'email' => $teacher->user->email,
             'role' => 'professeur',
             'is_active' => '1',
@@ -163,7 +194,8 @@ test('admin cannot change the role of a professeur with active pedagogical assig
     $this->actingAs($admin)
         ->from(route('users.edit', $teacher->user))
         ->patch(route('users.update', $teacher->user), [
-            'name' => $teacher->user->name,
+            'nom' => $teacher->user->name,
+            'prenom' => 'X',
             'email' => $teacher->user->email,
             'role' => 'comptable',
             'is_active' => '1',

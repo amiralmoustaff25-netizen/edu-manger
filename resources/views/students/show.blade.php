@@ -33,7 +33,7 @@
                         💳 Paiement
                     </a>
                 @endcan
-                <a href="#pedagogie" class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                <a href="#documents" class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                     📄 Documents
                 </a>
                 <a href="#pedagogie" class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
@@ -372,6 +372,77 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Documents -->
+            <div id="documents" class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Documents</h3>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Type</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Fichier</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Ajouté par</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Date</th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                            @forelse($student->documents as $document)
+                                <tr>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $document->type_label }}</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $document->original_filename }}</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $document->uploadedBy?->name ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $document->created_at->format('d/m/Y') }}</td>
+                                    <td class="px-4 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="{{ route('students.documents.download', [$student, $document]) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50">
+                                                Télécharger
+                                            </a>
+                                            @can('gerer-documents-eleve')
+                                                <form action="{{ route('students.documents.destroy', [$student, $document]) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer le document', message: 'Supprimer définitivement « {{ addslashes($document->original_filename) }} » ?', confirmLabel: 'Supprimer' })">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50">
+                                                        Supprimer
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun document enregistré.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @can('gerer-documents-eleve')
+                    <form action="{{ route('students.documents.store', $student) }}" method="POST" enctype="multipart/form-data" class="mt-6 grid gap-4 md:grid-cols-3 items-end">
+                        @csrf
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de document</label>
+                            <select name="type" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                @foreach(\App\Support\StudentDocumentType::LABELS as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('type')" class="mt-2" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fichier (PDF, JPG ou PNG, 5 Mo max)</label>
+                            <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300">
+                            <x-input-error :messages="$errors->get('file')" class="mt-2" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Ajouter le document</button>
+                        </div>
+                    </form>
+                @endcan
             </div>
 
             <div class="grid gap-6 lg:grid-cols-2">

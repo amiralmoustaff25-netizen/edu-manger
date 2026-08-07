@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
+use App\Models\PedagogicalAssignment;
 use App\Models\User;
+use Illuminate\Support\Collection;
 
 class GradeCalculationService
 {
@@ -23,48 +25,82 @@ class GradeCalculationService
             return 0.0;
         }
 
-        $total = $notes->sum('valeur');
-        $count = $notes->count();
-
-        return round($total / $count, 2);
+        return round($notes->avg('valeur'), 2);
     }
 
     /**
-     * Calculer la moyenne pondérée d'un élève pour une période
+     * Matières réellement affectées à une classe (via PedagogicalAssignment), pour une
+     * année scolaire donnée. Source de vérité unique du périmètre d'un bulletin : ne
+     * jamais utiliser Matiere::all() qui inclurait des matières d'autres cycles/classes.
      */
-    public function calculateWeightedAverage(User $student, string $period): float
+    private function classroomSubjects(Classroom $classroom, ?int $schoolYearId): Collection
     {
-        $notes = Note::where('user_id', $student->id)
-            ->where('periode', $period)
-            ->with('matiere')
-            ->get();
+        $matiereIds = PedagogicalAssignment::where('classroom_id', $classroom->id)
+            ->where('is_active', true)
+            ->when($schoolYearId, fn ($query) => $query->where('school_year_id', $schoolYearId))
+            ->pluck('matiere_id')
+            ->unique();
 
-        if ($notes->isEmpty()) {
-            return 0.0;
-        }
-
-        $totalWeighted = 0;
-        $totalCoefficients = 0;
-
-        foreach ($notes as $note) {
-            $coefficient = $note->matiere->coefficient ?? 1.0;
-            $totalWeighted += $note->valeur * $coefficient;
-            $totalCoefficients += $coefficient;
-        }
-
-        if ($totalCoefficients === 0) {
-            return 0.0;
-        }
-
-        return round($totalWeighted / $totalCoefficients, 2);
+        return Matiere::whereIn('id', $matiereIds)->orderBy('nom')->get();
     }
 
     /**
-     * Calculer le classement d'un élève dans sa classe pour une période
+     * Détail par matière + moyenne générale pondérée d'un élève pour une classe/période.
+     * Une matière sans aucune note sur la période n'entre pas dans le calcul de la
+     * moyenne générale (son coefficient ne doit pas artificiellement la faire baisser),
+     * mais reste listée pour affichage.
+     *
+     * @return array{subjects: array, general_average: float, total_coefficients: float}
      */
-    public function calculateClassRank(User $student, Classroom $classroom, string $period): int
+    private function computeAverageData(User $student, Classroom $classroom, string $period, ?int $schoolYearId): array
     {
-        $studentAverage = $this->calculateWeightedAverage($student, $period);
+        $subjectsData = [];
+        $totalCoefficients = 0.0;
+        $totalWeighted = 0.0;
+
+        foreach ($this->classroomSubjects($classroom, $schoolYearId) as $matiere) {
+            $notes = Note::where('user_id', $student->id)
+                ->where('matiere_id', $matiere->id)
+                ->where('periode', $period)
+                ->get();
+
+            $coefficient = (float) ($matiere->coefficient ?? 1.0);
+            $hasNotes = $notes->isNotEmpty();
+            $average = $hasNotes ? round($notes->avg('valeur'), 2) : 0.0;
+            $weightedAverage = $hasNotes ? round($average * $coefficient, 2) : 0.0;
+
+            $subjectsData[] = [
+                'matiere' => $matiere->nom,
+                'coefficient' => $coefficient,
+                'notes' => $notes->pluck('valeur')->toArray(),
+                'average' => $average,
+                'weighted_average' => $weightedAverage,
+                'appreciation' => $notes->last()?->appreciation ?? '',
+            ];
+
+            if ($hasNotes) {
+                $totalCoefficients += $coefficient;
+                $totalWeighted += $average * $coefficient;
+            }
+        }
+
+        $generalAverage = $totalCoefficients > 0 ? round($totalWeighted / $totalCoefficients, 2) : 0.0;
+
+        return [
+            'subjects' => $subjectsData,
+            'general_average' => $generalAverage,
+            'total_coefficients' => $totalCoefficients,
+        ];
+    }
+
+    /**
+     * Calculer le classement d'un élève dans sa classe pour une période. Utilise le
+     * même calcul de moyenne générale que le bulletin (computeAverageData) : le
+     * classement doit toujours être cohérent avec la moyenne affichée à l'élève.
+     */
+    public function calculateClassRank(User $student, Classroom $classroom, string $period, ?int $schoolYearId = null): int
+    {
+        $studentAverage = $this->computeAverageData($student, $classroom, $period, $schoolYearId)['general_average'];
 
         $students = User::role('eleve')
             ->whereHas('registrations', function ($query) use ($classroom) {
@@ -73,14 +109,11 @@ class GradeCalculationService
             })
             ->get();
 
-        $averages = $students->map(function ($s) use ($period) {
-            return $this->calculateWeightedAverage($s, $period);
-        });
-
-        // Compteur des élèves avec une moyenne strictement supérieure
-        $betterCount = $averages->filter(function ($average) use ($studentAverage) {
-            return $average > $studentAverage;
-        })->count();
+        $betterCount = $students
+            ->filter(fn (User $s) => ! $s->is($student))
+            ->map(fn (User $s) => $this->computeAverageData($s, $classroom, $period, $schoolYearId)['general_average'])
+            ->filter(fn (float $average) => $average > $studentAverage)
+            ->count();
 
         return $betterCount + 1;
     }
@@ -112,49 +145,19 @@ class GradeCalculationService
             throw new \Exception('L\'élève n\'est pas inscrit dans une classe.');
         }
 
-        // Récupérer toutes les matières de la classe
-        $matieres = Matiere::all();
-
-        $subjectsData = [];
-        $totalCoefficients = 0;
-        $totalWeighted = 0;
-
-        foreach ($matieres as $matiere) {
-            $notes = Note::where('user_id', $student->id)
-                ->where('matiere_id', $matiere->id)
-                ->where('periode', $period)
-                ->get();
-
-            $average = $notes->isEmpty() ? 0 : round($notes->avg('valeur'), 2);
-            $coefficient = $matiere->coefficient ?? 1.0;
-            $weightedAverage = $average * $coefficient;
-
-            $subjectsData[] = [
-                'matiere' => $matiere->nom,
-                'coefficient' => $coefficient,
-                'notes' => $notes->pluck('valeur')->toArray(),
-                'average' => $average,
-                'weighted_average' => $weightedAverage,
-                'appreciation' => $notes->last()?->appreciation ?? '',
-            ];
-
-            $totalCoefficients += $coefficient;
-            $totalWeighted += $weightedAverage;
-        }
-
-        $generalAverage = $totalCoefficients > 0 ? round($totalWeighted / $totalCoefficients, 2) : 0;
-        $rank = $this->calculateClassRank($student, $classroom, $period);
-        $mention = $this->getMention($generalAverage);
+        $averageData = $this->computeAverageData($student, $classroom, $period, $registration->school_year_id);
+        $rank = $this->calculateClassRank($student, $classroom, $period, $registration->school_year_id);
+        $mention = $this->getMention($averageData['general_average']);
 
         return [
             'student' => $student,
             'classroom' => $classroom,
             'period' => $period,
-            'subjects' => $subjectsData,
-            'general_average' => $generalAverage,
+            'subjects' => $averageData['subjects'],
+            'general_average' => $averageData['general_average'],
             'rank' => $rank,
             'mention' => $mention,
-            'total_coefficients' => $totalCoefficients,
+            'total_coefficients' => $averageData['total_coefficients'],
         ];
     }
 

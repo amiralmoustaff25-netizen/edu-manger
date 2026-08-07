@@ -26,7 +26,10 @@ class UpdateUserRequest extends FormRequest
         $userId = $this->route('user')->id;
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            // Le formulaire (resources/views/users/_form.blade.php, partagé avec la
+            // création) soumet nom/prenom, pas un champ "name" unique.
+            'nom' => ['required', 'string', 'max:255'],
+            'prenom' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
             'role' => ['required', Rule::in(UserRoles::assignableBy($this->user()))],
             'contract_started_at' => ['nullable', 'date'],
@@ -60,7 +63,8 @@ class UpdateUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Le nom est obligatoire.',
+            'nom.required' => 'Le nom est obligatoire.',
+            'prenom.required' => 'Le prénom est obligatoire.',
             'email.unique' => 'Cet email est déjà utilisé.',
             'role.required' => 'Le rôle est obligatoire.',
             'role.in' => 'Le rôle sélectionné est invalide.',

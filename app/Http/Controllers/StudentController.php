@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\TransferStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Requests\UpdateStudentStatusRequest;
@@ -12,7 +11,6 @@ use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
-use App\Services\StudentEnrollmentService;
 use App\Services\StudentStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,13 +64,6 @@ class StudentController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
-    {
-        $this->authorize('voir-eleves');
-
-        return redirect()->route('registrations.create');
-    }
-
     /**
      * Process and store student photo.
      */
@@ -110,19 +101,6 @@ class StudentController extends Controller
         return $path;
     }
 
-    public function store(StoreStudentRequest $request, StudentEnrollmentService $enrollmentService): RedirectResponse
-    {
-        $this->authorize('voir-eleves');
-
-        $student = $enrollmentService->enroll(
-            $request->validated(),
-            $request->file('photo'),
-            auth()->id()
-        );
-
-        return redirect()->route('students.index')->with('success', 'Élève créé avec succès. Matricule : '.$student->matricule.' | Mot de passe temporaire : password');
-    }
-
     public function show(User $student, FeeService $feeService): View
     {
         $this->authorize('voir-detail-eleve', $student);
@@ -137,6 +115,8 @@ class StudentController extends Controller
             'attendances.classroom',
             'attendances.recordedBy',
             'sanctions.author',
+            'documents' => fn ($query) => $query->latest(),
+            'documents.uploadedBy',
             'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments', 'discounts.appliedBy'])->latest(),
         ]);
 

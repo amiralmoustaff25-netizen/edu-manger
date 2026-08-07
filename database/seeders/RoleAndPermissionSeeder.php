@@ -46,6 +46,7 @@ class RoleAndPermissionSeeder extends Seeder
             'transferer-eleve',
             'modifier-statut-eleve',
             'upload-photo-eleve',
+            'gerer-documents-eleve',
 
             // --- Inscriptions (registrations) ---
             'voir-inscriptions',

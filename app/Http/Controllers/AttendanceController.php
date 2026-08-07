@@ -93,6 +93,18 @@ class AttendanceController extends Controller
             abort(403, 'Vous ne pouvez pas modifier les absences de plus de 7 jours.');
         }
 
+        // Empêche de marquer présent/absent un utilisateur qui n'est pas réellement
+        // inscrit dans cette classe (user_id vient du formulaire, donc falsifiable).
+        $enrolledStudentIds = Registration::where('classroom_id', $classroom->id)
+            ->where('status', 'active')
+            ->pluck('user_id');
+
+        foreach ($validated['attendances'] as $attendanceData) {
+            if (!$enrolledStudentIds->contains((int) $attendanceData['user_id'])) {
+                abort(403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
+            }
+        }
+
         foreach ($validated['attendances'] as $attendanceData) {
             $attendance = Attendance::firstOrNew([
                 'user_id' => $attendanceData['user_id'],
