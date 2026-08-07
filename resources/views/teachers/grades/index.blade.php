@@ -91,12 +91,9 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Type d\'évaluation') }}</label>
                                     <select name="type_evaluation" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        @if(in_array($selectedClassroom->cycle, ['college', 'lycee']))
-                                            <option value="devoir">{{ __('Devoir') }}</option>
-                                            <option value="composition">{{ __('Composition') }}</option>
-                                        @else
-                                            <option value="composition">{{ __('Composition') }}</option>
-                                        @endif
+                                        @foreach(\App\Support\EvaluationTypeScope::allowedFor($selectedClassroom->cycle) as $type)
+                                            <option value="{{ $type }}">{{ __(\App\Support\EvaluationTypeScope::LABELS[$type]) }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div>

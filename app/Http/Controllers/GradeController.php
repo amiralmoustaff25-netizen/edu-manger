@@ -10,6 +10,7 @@ use App\Models\Registration;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Support\EvaluationTypeScope;
 use Illuminate\Http\Request;
 
 class GradeController extends Controller
@@ -47,13 +48,21 @@ class GradeController extends Controller
 
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
+
         if (!$teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
+
         $classroom = Classroom::findOrFail($validated['classroom_id']);
         $matiere = Matiere::findOrFail($validated['matiere_id']);
+
+        // Le type d'évaluation autorisé dépend du cycle (le primaire n'a que la
+        // composition) : le formulaire ne propose déjà que les bonnes options, mais
+        // cette règle métier doit aussi être imposée côté serveur, pas seulement dans
+        // le menu déroulant, sans quoi un envoi direct du formulaire la contournait.
+        if (!in_array($validated['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
+            abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
+        }
 
         // Vérifier que le professeur est assigné à cette classe ET cette matière
         $isAssigned = $teacher->classrooms()
@@ -231,6 +240,10 @@ class GradeController extends Controller
 
             if (!$assignedMatiereIds->contains((int) $gradeData['matiere_id'])) {
                 abort(403, "Vous n'êtes pas autorisé à saisir des notes pour une de ces matières dans cette classe.");
+            }
+
+            if (!in_array($gradeData['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
+                abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
             }
 
             $hasValidatedNote = Note::where('user_id', $validated['user_id'])

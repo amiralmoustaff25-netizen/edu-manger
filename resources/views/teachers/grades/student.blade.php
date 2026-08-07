@@ -84,12 +84,9 @@
                                             <td class="px-4 py-3">
                                                 <input type="hidden" name="grades[{{ $index }}][matiere_id]" value="{{ $assignment->matiere_id }}">
                                                 <select name="grades[{{ $index }}][type_evaluation]" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                    @if(in_array($classroom->cycle, ['college', 'lycee']))
-                                                        <option value="devoir">{{ __('Devoir') }}</option>
-                                                        <option value="composition">{{ __('Composition') }}</option>
-                                                    @else
-                                                        <option value="composition">{{ __('Composition') }}</option>
-                                                    @endif
+                                                    @foreach(\App\Support\EvaluationTypeScope::allowedFor($classroom->cycle) as $type)
+                                                        <option value="{{ $type }}">{{ __(\App\Support\EvaluationTypeScope::LABELS[$type]) }}</option>
+                                                    @endforeach
                                                 </select>
                                             </td>
                                             <td class="px-4 py-3">

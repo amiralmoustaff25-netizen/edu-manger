@@ -22,6 +22,39 @@ test('it_returns_timeline_data_for_year', function () {
     $response->assertJsonStructure(['labels', 'data']);
 });
 
+test('it_returns_real_completion_volume_in_the_timeline_not_a_flat_zero_stub', function () {
+    $teacher = User::factory()->create();
+    $teacher->assignRole('professeur');
+    $program = ProgramAnnual::factory()->create(['teacher_id' => $teacher->id, 'status' => 'valide_surveillant']);
+    $chapter = \App\Models\ProgramChapter::factory()->create([
+        'program_annual_id' => $program->id,
+        'volume_horaire_prevu' => 4,
+    ]);
+    \App\Models\ChapterCompletion::create([
+        'program_chapter_id' => $chapter->id,
+        'date_traitement' => now()->toDateString(),
+        'completed_by' => $teacher->id,
+    ]);
+
+    $response = actingAs($teacher)->getJson(route('cahier-textes.dashboard.timeline', $program));
+
+    $response->assertOk();
+    $data = $response->json('data');
+    expect(array_sum($data))->toEqual(4);
+    expect(end($data))->toEqual(4); // le mois courant est le dernier des 12 libellés
+});
+
+test('a teacher cannot see the progress or timeline of another teacher program', function () {
+    $teacher = User::factory()->create();
+    $teacher->assignRole('professeur');
+    $otherTeacher = User::factory()->create();
+    $otherTeacher->assignRole('professeur');
+    $program = ProgramAnnual::factory()->create(['teacher_id' => $otherTeacher->id, 'status' => 'valide_surveillant']);
+
+    actingAs($teacher)->getJson(route('cahier-textes.dashboard.progress', $program))->assertForbidden();
+    actingAs($teacher)->getJson(route('cahier-textes.dashboard.timeline', $program))->assertForbidden();
+});
+
 test('it_calculates_global_progress', function () {
     $teacher = User::factory()->create();
     $teacher->assignRole('professeur');

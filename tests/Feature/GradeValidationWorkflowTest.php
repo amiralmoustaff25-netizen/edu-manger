@@ -11,7 +11,9 @@ use App\Models\User;
 function createGradeFixture(): array
 {
     $schoolYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true, 'status' => 'active']);
-    $classroom = Classroom::create(['name' => 'CM2 A', 'school_year_id' => $schoolYear->id, 'cycle' => 'primaire']);
+    // Cycle "college" : seul cycle où le type d'évaluation "devoir" est autorisé
+    // (EvaluationTypeScope) — le primaire n'évalue qu'en "composition".
+    $classroom = Classroom::create(['name' => '6eme A', 'school_year_id' => $schoolYear->id, 'cycle' => 'college']);
     $matiere = Matiere::factory()->create();
 
     $teacherUser = User::factory()->create(['role' => 'professeur']);
@@ -36,7 +38,7 @@ function createGradeFixture(): array
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
         'valeur' => 14,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
     ]);
 
@@ -49,7 +51,7 @@ test('teacher can edit grades before validation', function () {
     $response = $this->actingAs($teacherUser)->post('/professeur/notes', [
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
         'grades' => [
             ['user_id' => $student->id, 'valeur' => 16, 'appreciation' => 'Bien'],
@@ -69,7 +71,7 @@ test('admin can validate grades which locks them for the teacher', function () {
     $response = $this->actingAs($admin)->post('/notes/validate', [
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
     ]);
 
@@ -79,7 +81,7 @@ test('admin can validate grades which locks them for the teacher', function () {
     $editAttempt = $this->actingAs($teacherUser)->post('/professeur/notes', [
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
         'grades' => [
             ['user_id' => $student->id, 'valeur' => 18, 'appreciation' => 'Excellent'],
@@ -102,7 +104,7 @@ test('admin cannot reopen validated grades, only super-admin can', function () {
     $adminAttempt = $this->actingAs($admin)->post('/notes/reopen', [
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
     ]);
     $adminAttempt->assertForbidden();
@@ -111,7 +113,7 @@ test('admin cannot reopen validated grades, only super-admin can', function () {
     $superAdminAttempt = $this->actingAs($superAdmin)->post('/notes/reopen', [
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
-        'type_evaluation' => 'Devoir',
+        'type_evaluation' => 'devoir',
         'periode' => 'trimestre_1',
     ]);
     $superAdminAttempt->assertRedirect();
