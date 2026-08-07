@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChapterCompletion;
 use App\Models\Classroom;
 use App\Models\ProgramAnnual;
 use Illuminate\Http\Request;
@@ -44,14 +45,28 @@ class CahierTexteDashboardController extends Controller
         ]);
     }
 
+    /**
+     * Volume horaire de chapitres cochés (ChapterCompletion) par mois sur les 12
+     * derniers mois, pour ce programme. Auparavant un stub qui renvoyait toujours des
+     * zéros (aucun graphique réel ne pouvait donc jamais s'afficher).
+     */
     public function timeline(ProgramAnnual $program): \Illuminate\Http\JsonResponse
     {
+        $this->authorize('view', $program);
+
+        $chapterIds = $program->chapters()->pluck('id');
+
         $labels = [];
         $data = [];
-        for ($i = 0; $i < 12; $i++) {
-            $month = now()->subMonths(11 - $i)->translatedFormat('M');
-            $labels[] = ucfirst($month);
-            $data[] = 0;
+        for ($i = 11; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $labels[] = ucfirst($month->translatedFormat('M Y'));
+
+            $data[] = (float) ChapterCompletion::whereIn('program_chapter_id', $chapterIds)
+                ->whereYear('date_traitement', $month->year)
+                ->whereMonth('date_traitement', $month->month)
+                ->join('program_chapters', 'chapter_completions.program_chapter_id', '=', 'program_chapters.id')
+                ->sum('program_chapters.volume_horaire_prevu');
         }
 
         return response()->json(['labels' => $labels, 'data' => $data]);

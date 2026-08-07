@@ -123,3 +123,22 @@ test('a primaire classroom only offers the composition evaluation type', functio
         ->assertSee('Composition')
         ->assertDontSee('Devoir');
 });
+
+test('a primaire classroom rejects the devoir evaluation type even via a direct request, not just the dropdown', function () {
+    // Le formulaire ne propose que "composition" pour le primaire (voir le test
+    // précédent), mais rien n'empêchait un envoi direct du formulaire avec "devoir"
+    // avant que cette règle métier soit aussi imposée côté serveur.
+    [$teacherUser, $classroom, $matiere, $student] = createMatriculeGradeFixture('primaire');
+
+    $response = $this->actingAs($teacherUser)->post(route('professeur.notes.eleve.store'), [
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'periode' => 'trimestre_1',
+        'grades' => [
+            ['matiere_id' => $matiere->id, 'type_evaluation' => 'devoir', 'valeur' => 15],
+        ],
+    ]);
+
+    $response->assertStatus(422);
+    $this->assertDatabaseMissing('notes', ['user_id' => $student->id, 'matiere_id' => $matiere->id]);
+});
