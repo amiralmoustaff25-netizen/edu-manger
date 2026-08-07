@@ -4,13 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Discount;
 use App\Models\Registration;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 
 class DiscountController extends Controller
 {
-    public function store(Request $request, Registration $registration)
+    public function store(Request $request, Registration $registration, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('gerer-derogations-tarifaires');
+
+        // Une dérogation modifie ce qui est dû sur l'inscription : elle doit être
+        // soumise au même verrou d'année scolaire clôturée que les paiements et la
+        // grille tarifaire (voir SchoolYearGuardService), sans quoi les obligations
+        // financières d'une année déjà close pourraient être modifiées après coup.
+        $schoolYearGuard->assertNotLocked($registration->schoolYear);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -33,9 +40,11 @@ class DiscountController extends Controller
         return back()->with('success', 'Dérogation tarifaire enregistrée avec succès.');
     }
 
-    public function destroy(Request $request, Discount $discount)
+    public function destroy(Request $request, Discount $discount, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('gerer-derogations-tarifaires');
+
+        $schoolYearGuard->assertNotLocked($discount->registration->schoolYear);
 
         $discount->delete();
 

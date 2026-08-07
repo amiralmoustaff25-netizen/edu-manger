@@ -20,7 +20,7 @@
             @endif
 
             <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
-                <form method="GET" action="{{ route('parents.index') }}" class="grid gap-4 md:grid-cols-3">
+                <form method="GET" action="{{ route('parents.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div class="md:col-span-2">
                         <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recherche</label>
                         <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" type="text" placeholder="Matricule, nom, prénom, email ou téléphone" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -66,7 +66,7 @@
                                         <p class="text-gray-700 dark:text-gray-300">{{ $parent->email }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $parent->telephone ?? 'Téléphone non renseigné' }}</p>
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $parent->students->count() }} enfant(s)</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $parent->students_count }} enfant(s)</td>
                                     <td class="px-4 py-3">
                                         <span class="rounded-full px-2.5 py-1 text-xs font-medium 
                                             {{ $parent->statut === 'actif' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' : 

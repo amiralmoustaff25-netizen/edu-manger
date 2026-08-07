@@ -20,7 +20,7 @@
 
     <div class="py-8">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid gap-6 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Identité</h3>
                     <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-300">

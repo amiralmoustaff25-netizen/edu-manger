@@ -35,14 +35,16 @@
             @endif
         </x-sidebar>
 
-        {{-- Notifications toast (remplace les pages/bandeaux de confirmation) --}}
+        {{-- Notifications toast (remplace les pages/bandeaux de confirmation).
+             Déclenché via un événement 'push-toast' plutôt qu'un x-init : ce conteneur est
+             en dehors de <main>, donc son x-init ne se rejouerait jamais après une navigation
+             PJAX. Le <script> juste en dessous, lui, est réexécuté à chaque navigation PJAX
+             (voir resources/js/pjax.js:executePageScripts, qui parcourt tout le document
+             récupéré, pas seulement <main>) — les messages flash restent donc visibles même
+             quand la navigation aboutit ailleurs que prévu (ex. redirection forcée). --}}
         <div
             x-data="{ toasts: [] }"
-            x-init="
-                @if(session('success')) toasts.push({ id: Date.now(), type: 'success', message: @js(session('success')) }); @endif
-                @if(session('error')) toasts.push({ id: Date.now() + 1, type: 'error', message: @js(session('error')) }); @endif
-                toasts.forEach(t => setTimeout(() => toasts = toasts.filter(x => x.id !== t.id), 4000));
-            "
+            x-on:push-toast.window="toasts.push($event.detail); setTimeout(() => toasts = toasts.filter(t => t.id !== $event.detail.id), 4000)"
             class="fixed top-4 right-4 z-[70] flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0"
         >
             <template x-for="toast in toasts" :key="toast.id">
@@ -55,13 +57,44 @@
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
                     class="rounded-lg shadow-lg px-4 py-3 text-sm font-medium flex items-start gap-3"
-                    :class="toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/80 dark:text-emerald-100 dark:ring-emerald-700' : 'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-900/80 dark:text-red-100 dark:ring-red-700'"
+                    :class="{
+                        'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/80 dark:text-emerald-100 dark:ring-emerald-700': toast.type === 'success',
+                        'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-900/80 dark:text-red-100 dark:ring-red-700': toast.type === 'error',
+                        'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/80 dark:text-amber-100 dark:ring-amber-700': toast.type === 'warning',
+                    }"
                 >
                     <span x-text="toast.message" class="flex-1"></span>
                     <button type="button" @click="toasts = toasts.filter(x => x.id !== toast.id)" class="opacity-60 hover:opacity-100">&times;</button>
                 </div>
             </template>
         </div>
+        <script>
+            // app.js démarre Alpine sur DOMContentLoaded (voir resources/js/app.js). Comme ce
+            // script est aussi enregistré en tant qu'écouteur DOMContentLoaded mais AVANT
+            // celui d'Alpine (il est parsé plus tôt dans le document), il s'exécuterait avant
+            // qu'Alpine n'ait attaché x-on:push-toast.window sur le conteneur de toasts, et
+            // l'événement partirait dans le vide. Le setTimeout(0) reporte l'exécution après
+            // la fin de tous les écouteurs DOMContentLoaded du tick courant, Alpine.start()
+            // inclus. Au rechargement PJAX (readyState déjà 'complete'), Alpine tourne déjà
+            // depuis longtemps — le setTimeout(0) est alors une simple précaution sans effet.
+            (function (fn) {
+                if (document.readyState !== 'loading') {
+                    setTimeout(fn, 0);
+                } else {
+                    document.addEventListener('DOMContentLoaded', () => setTimeout(fn, 0));
+                }
+            })(function () {
+                @if(session('success'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now(), type: 'success', message: @json(session('success')) } }));
+                @endif
+                @if(session('error'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 1, type: 'error', message: @json(session('error')) } }));
+                @endif
+                @if(session('warning'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 2, type: 'warning', message: @json(session('warning')) } }));
+                @endif
+            });
+        </script>
 
         <x-cancel-payment-modal />
 

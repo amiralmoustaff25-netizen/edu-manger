@@ -38,7 +38,7 @@
                 </span>
             </div>
 
-            <div class="mt-6 grid gap-6 md:grid-cols-2">
+            <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
                     <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Informations de contact</h4>
                     <dl class="mt-3 space-y-2 text-sm">
@@ -182,7 +182,7 @@
                     </div>
 
                     @if($data['currentRegistration'])
-                    <div class="mt-4 grid gap-4 md:grid-cols-3">
+                    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div class="bg-gray-50 dark:bg-slate-700 p-3 rounded">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Classe actuelle</p>
                             <p class="font-medium text-gray-900 dark:text-gray-100">{{ $data['currentRegistration']->classroom->name ?? 'Non assigné' }}</p>

@@ -77,7 +77,7 @@
 
                     <section class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rôles</h3>
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($roles as $role)
                                 @php
                                     $sensitive = in_array($role->name, config('permissions.sensitive_roles', []), true);
@@ -115,7 +115,7 @@
                             @foreach ($permissions as $module => $modulePermissions)
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white mb-2">{{ config('permissions.modules.'.$module, $module) }}</h4>
-                                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                         @foreach ($modulePermissions as $permission)
                                             @php
                                                 $isSensitive = in_array($permission['name'], config('permissions.sensitive_permissions', []), true);

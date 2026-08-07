@@ -3,7 +3,7 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <form method="GET" class="grid gap-4 rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-200 md:grid-cols-3 dark:bg-slate-800 dark:ring-slate-700">
+            <form method="GET" class="grid grid-cols-1 gap-4 rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-200 md:grid-cols-3 dark:bg-slate-800 dark:ring-slate-700">
                 <div><label for="classroom_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classe</label><select id="classroom_id" name="classroom_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">Toutes les classes</option>@foreach($classrooms as $classroom)<option value="{{ $classroom->id }}" @selected($selectedClassroom === $classroom->id)>{{ $classroom->name }} — {{ $classroom->schoolYear?->year_string }}</option>@endforeach</select></div>
                 <div><label for="date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label><input id="date" name="date" type="date" value="{{ request('date') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"></div>
                 <div class="flex items-end gap-3"><button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Filtrer</button><a href="{{ route('attendances.overview') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-700">Réinitialiser</a></div>

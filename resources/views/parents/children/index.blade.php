@@ -7,7 +7,7 @@
     @if($parent->students->isEmpty())
         <p>Aucun enfant associé à ce compte.</p>
     @else
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             @foreach($parent->students as $student)
                 <div class="p-4 border rounded">
                     <h2 class="font-bold">{{ $student->name }}</h2>

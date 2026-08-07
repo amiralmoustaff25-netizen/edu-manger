@@ -96,6 +96,37 @@ test('manager comptable cannot modify a tariff on a locked school year', functio
     $this->assertDatabaseCount('classroom_fees', 1);
 });
 
+test('manager comptable cannot grant or revoke a tariff derogation on a locked school year', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    [, , $registration] = createLockedYearFixture();
+
+    $response = $this->actingAs($manager)->post(route('discounts.store', $registration), [
+        'name' => 'Bourse tardive',
+        'type' => 'fixed',
+        'value' => 5000,
+        'reason' => 'Tentative sur année clôturée',
+    ]);
+
+    $response->assertSessionHasErrors('school_year');
+    $this->assertDatabaseCount('discounts', 0);
+
+    $discount = $registration->discounts()->create([
+        'name' => 'Existante',
+        'type' => 'fixed',
+        'value' => 5000,
+        'reason' => 'Créée avant clôture',
+        'applied_by' => $manager->id,
+    ]);
+
+    $this->actingAs($manager)
+        ->delete(route('discounts.destroy', $discount))
+        ->assertSessionHasErrors('school_year');
+
+    $this->assertDatabaseHas('discounts', ['id' => $discount->id]);
+});
+
 test('active school year is not locked', function () {
     $activeYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true, 'status' => 'active']);
 

@@ -40,7 +40,7 @@
                 </div>
             @endif
 
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Élèves inscrits</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $stats['students'] }}</p>
@@ -69,7 +69,7 @@
             </div>
 
             @role('super-admin|manager-comptable|comptable')
-            <div class="grid gap-6 xl:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 xl:col-span-2">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -208,7 +208,18 @@
     @push('scripts')
         @vite(['resources/js/charts/payments-chart.js'])
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            // Fonctionne au premier chargement (attend DOMContentLoaded, le document est
+            // encore en cours de lecture à cet instant) et après une navigation PJAX (le
+            // document est déjà "complete" quand ce script est réinjecté, donc on exécute
+            // immédiatement au lieu d'attendre un DOMContentLoaded qui ne se reproduira
+            // jamais — voir resources/js/pjax.js:executePageScripts).
+            (function (fn) {
+                if (document.readyState !== 'loading') {
+                    fn();
+                } else {
+                    document.addEventListener('DOMContentLoaded', fn);
+                }
+            })(function () {
                 if (typeof window.initPaymentsChart === 'function') {
                     var options = {
                         series: [{

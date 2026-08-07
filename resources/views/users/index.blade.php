@@ -28,7 +28,7 @@
             @endif
 
             <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
-                <form method="GET" action="{{ route('users.index') }}" class="grid gap-4 md:grid-cols-4">
+                <form method="GET" action="{{ route('users.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-4">
                     <div class="md:col-span-2">
                         <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recherche</label>
                         <input id="search" name="search" value="{{ $filters['search'] ?? '' }}" type="text" placeholder="Matricule, nom ou email" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

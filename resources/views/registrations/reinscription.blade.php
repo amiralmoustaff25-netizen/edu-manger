@@ -69,7 +69,7 @@
                 >
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Confirmer la réinscription</h3>
 
-                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Élève</p>
                             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ $student->name }}</p>
@@ -91,7 +91,7 @@
                         @csrf
                         <input type="hidden" name="user_id" value="{{ $student->id }}">
 
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <label for="classroom_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nouvelle classe</label>
                                 <select id="classroom_id" name="classroom_id" required x-model="classroomId" @change="if (!canEditFees) {

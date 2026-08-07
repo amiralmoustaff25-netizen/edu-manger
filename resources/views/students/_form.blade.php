@@ -23,7 +23,7 @@
 <div x-data='@json($enrollmentFormData)' x-init="if (classroomId && feeLibrary[classroomId] && !canEditFees) {
     registrationFee = feeLibrary[classroomId].inscription ?? registrationFee;
     monthlyFee = feeLibrary[classroomId].mensualite ?? monthlyFee;
-}" class="grid gap-6 lg:grid-cols-2">
+}" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     @can('upload-photo-eleve')
     <!-- Photo Upload Section -->
     <div class="lg:col-span-2 flex flex-col items-center">
@@ -148,7 +148,7 @@
         <input name="role" value="eleve" type="hidden">
         <div class="lg:col-span-2 rounded-lg border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-800 dark:bg-indigo-900/20">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informations de l'inscription</h3>
-            <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label for="registration_fee_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frais d'inscription payés</label>
                     <input id="registration_fee_paid" name="registration_fee_paid" type="number" min="0" step="0.01" x-model.number="registrationFee" :readonly="!canEditFees" :class="!canEditFees ? 'bg-gray-100 dark:bg-slate-700 cursor-not-allowed' : ''" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -204,7 +204,7 @@
 
         <div class="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informations du parent</h3>
-            <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label for="parent_nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
                     <input id="parent_nom" name="parent_nom" type="text" value="{{ old('parent_nom') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -269,7 +269,7 @@
                     @php
                         $parent = $student->parents->get($i);
                     @endphp
-                    <div class="grid gap-3 md:grid-cols-4 border border-gray-200 dark:border-slate-700 rounded-md p-4">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-4 border border-gray-200 dark:border-slate-700 rounded-md p-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Parent</label>
                             <select name="parents[{{ $i }}][parent_id]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

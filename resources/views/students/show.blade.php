@@ -59,7 +59,7 @@
             @endif
 
             {{-- Cartes de synthèse : statut, classe, solde en un coup d'œil --}}
-            <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
                 <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Classe actuelle</p>
                     <p class="mt-3 text-xl font-bold text-gray-900 dark:text-gray-100">{{ $currentRegistration->classroom->name ?? 'Non inscrit' }}</p>
@@ -95,7 +95,7 @@
             </div>
 
             @if($currentRegistration)
-                <div class="grid gap-6 lg:grid-cols-2">
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Changer de classe</h3>
                         <form method="POST" action="{{ route('students.transfer', $student) }}" class="mt-4 space-y-4">
@@ -233,7 +233,7 @@
                     </div>
 
                     @can('gerer-derogations-tarifaires')
-                        <form action="{{ route('discounts.store', $currentRegistration) }}" method="POST" class="mt-6 grid gap-4 md:grid-cols-2">
+                        <form action="{{ route('discounts.store', $currentRegistration) }}" method="POST" class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                             @csrf
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom de la dérogation</label>
@@ -422,7 +422,7 @@
                 </div>
 
                 @can('gerer-documents-eleve')
-                    <form action="{{ route('students.documents.store', $student) }}" method="POST" enctype="multipart/form-data" class="mt-6 grid gap-4 md:grid-cols-3 items-end">
+                    <form action="{{ route('students.documents.store', $student) }}" method="POST" enctype="multipart/form-data" class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 items-end">
                         @csrf
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de document</label>
@@ -445,7 +445,7 @@
                 @endcan
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-2">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <!-- Dernières notes -->
                 <div id="pedagogie" class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Dernières notes</h3>
@@ -497,7 +497,7 @@
                 </div>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-2">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <!-- Présences -->
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Dernières présences / absences</h3>

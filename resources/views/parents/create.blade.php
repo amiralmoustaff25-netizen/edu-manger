@@ -27,7 +27,7 @@
                         </div>
                     @endif
 
-                    <div class="grid gap-6 md:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
                             <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
                             <input id="nom" name="nom" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

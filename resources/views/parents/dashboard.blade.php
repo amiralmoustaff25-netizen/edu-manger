@@ -10,7 +10,7 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="grid gap-6 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Enfants associés</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $parent->students->count() }}</p>
