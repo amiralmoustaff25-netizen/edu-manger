@@ -7,9 +7,14 @@ use App\Models\User;
 class UserPolicy
 {
     /**
-     * Un élève peut voir ses propres informations, le personnel habilité peut voir tout élève.
+     * Un élève peut voir ses propres informations, le personnel habilité peut voir tout élève,
+     * un parent peut voir uniquement ses propres enfants.
+     *
+     * Nommée `voirDetailEleve` (et non `view`) car Laravel convertit l'ability
+     * 'voir-detail-eleve' en méthode via Str::camel() avant de résoudre la policy
+     * (voir Gate::formatAbilityToMethod) : le nom doit correspondre exactement.
      */
-    public function view(User $user, User $student): bool
+    public function voirDetailEleve(User $user, User $student): bool
     {
         if ($user->id === $student->id) {
             return true;

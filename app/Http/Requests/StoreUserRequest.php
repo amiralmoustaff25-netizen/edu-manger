@@ -2,18 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Support\UserRoles;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
-    private const ROLES = [
-        'admin',
-        'manager-comptable',
-        'comptable',
-        'surveillant',
-    ];
-
     public function authorize(): bool
     {
         return $this->user()->can('creer-utilisateur');
@@ -21,15 +15,14 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
-        // Le rôle professeur n'est pas créable ici : la fiche professeur exige des
-        // informations obligatoires (statut, diplômes, filiation...) collectées
-        // exclusivement via le module Professeurs (voir TeacherController::store).
+        // Ni le rôle professeur (fiche dédiée via le module Professeurs) ni le rôle
+        // super-admin (jamais attribuable à la création) ne sont proposés ici.
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'telephone' => ['nullable', 'string', 'max:20'],
-            'role' => ['required', Rule::in(self::ROLES)],
+            'role' => ['required', Rule::in(UserRoles::CREATABLE_VIA_USER_FORM)],
             'is_active' => ['boolean'],
         ];
     }

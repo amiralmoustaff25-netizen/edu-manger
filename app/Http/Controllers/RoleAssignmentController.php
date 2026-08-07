@@ -53,6 +53,16 @@ class RoleAssignmentController extends Controller
     {
         $this->authorize('modifier-utilisateur', $user);
 
+        // Seul un super-admin peut toucher aux accès d'un compte super-admin, ou
+        // attribuer le rôle super-admin. Ce contrôle doit être explicite : Spatie
+        // court-circuite les Policies via Gate::before dès que l'acteur possède la
+        // permission plate 'modifier-utilisateur' (accordée au rôle admin).
+        abort_if(
+            $user->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin'),
+            403,
+            "Seul un super-administrateur peut modifier les accès d'un compte super-administrateur."
+        );
+
         $validated = $request->validate([
             'roles' => ['nullable', 'array'],
             'roles.*' => [Rule::in($this->availableRoleNames())],
@@ -68,8 +78,12 @@ class RoleAssignmentController extends Controller
 
         $this->ensureLastSuperAdminNotRemoved($user, $requestedRoles);
 
-        if ($requestedRoles->contains('super-admin') && ! $user->hasRole('super-admin') && $request->input('confirm_super_admin') !== '1') {
-            return back()->withErrors(['confirm_super_admin' => 'L’attribution du rôle Super-Admin nécessite une confirmation renforcée.'])->withInput();
+        if ($requestedRoles->contains('super-admin') && ! $user->hasRole('super-admin')) {
+            abort_unless(auth()->user()->hasRole('super-admin'), 403, "Seul un super-administrateur peut attribuer le rôle Super-Admin.");
+
+            if ($request->input('confirm_super_admin') !== '1') {
+                return back()->withErrors(['confirm_super_admin' => 'L’attribution du rôle Super-Admin nécessite une confirmation renforcée.'])->withInput();
+            }
         }
 
         $service->apply($user, $requestedRoles->toArray(), $requestedPermissions->toArray(), auth()->id());

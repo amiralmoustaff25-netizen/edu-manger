@@ -152,26 +152,18 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/show', [ProfileController::class, 'show'])->name('profile.show');
 
-    // Routes API pour les paiements
-    Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
-    Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
-
     // Routes pour les bulletins scolaires
     Route::get('/bulletins', [BulletinController::class, 'index'])->name('bulletins.index');
     Route::get('/bulletins/{student}/{period}', [BulletinController::class, 'show'])->name('bulletins.show');
     Route::get('/bulletins/{student}/{period}/pdf', [BulletinController::class, 'generatePdf'])->name('bulletins.pdf');
     Route::get('/bulletins/class/{classroom}/{period}/pdf', [BulletinController::class, 'generateClassPdf'])->name('bulletins.class-pdf');
 
-    Route::middleware(['role:super-admin|manager-comptable|comptable'])->group(function () {
-        // Routes comptabilité
-        Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.dashboard');
-        Route::get('/accounting/reports', [AccountingController::class, 'reports'])->name('accounting.reports');
-        Route::get('/accounting/advanced-reports', [AccountingController::class, 'advancedReports'])->name('accounting.advanced-reports');
-        Route::get('/accounting/export-advanced-reports', [AccountingController::class, 'exportAdvancedReports'])->name('accounting.export-advanced-reports');
-        Route::get('/accounting/alerts', [AccountingController::class, 'alerts'])->name('accounting.alerts');
-        Route::get('/accounting/cash-flow', [AccountingController::class, 'cashFlow'])->name('accounting.cash-flow');
-        
-        // Paiements
+    // Paiements : accessibles en lecture/saisie à l'admin (voir-paiements, enregistrer-paiement,
+    // modifier-paiement ne sont pas exclus de son rôle — cf. RoleAndPermissionSeeder), mais pas
+    // le reste de la comptabilité (factures, rapports, trésorerie). D'où un groupe de rôle plus
+    // large que le reste du bloc finance ci-dessous ; la Policy (PaymentPolicy) reste le contrôle
+    // fin par action (un admin n'a par ex. pas la permission 'supprimer-paiement').
+    Route::middleware(['role:super-admin|manager-comptable|comptable|admin'])->group(function () {
         // Validation des paiements (permission explicite) — déclaré avant la ressource pour éviter le conflit avec /payments/{payment}
         Route::middleware(['permission:valider-paiement-partiel'])->group(function () {
             Route::get('/payments/validation', [PaymentController::class, 'validationIndex'])->name('payments.validation');
@@ -185,7 +177,24 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::middleware(['permission:annuler-paiement'])->group(function () {
             Route::patch('/payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
         });
-        
+    });
+
+    Route::middleware(['role:super-admin|manager-comptable|comptable'])->group(function () {
+        // Routes API pour les paiements (recherche élève par matricule / frais dus) —
+        // consommées uniquement par accounting/payments/create.blade.php. Restreintes
+        // au personnel comptable : sinon tout utilisateur authentifié pouvait énumérer
+        // les données personnelles et financières de n'importe quel élève.
+        Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
+        Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
+
+        // Routes comptabilité
+        Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.dashboard');
+        Route::get('/accounting/reports', [AccountingController::class, 'reports'])->name('accounting.reports');
+        Route::get('/accounting/advanced-reports', [AccountingController::class, 'advancedReports'])->name('accounting.advanced-reports');
+        Route::get('/accounting/export-advanced-reports', [AccountingController::class, 'exportAdvancedReports'])->name('accounting.export-advanced-reports');
+        Route::get('/accounting/alerts', [AccountingController::class, 'alerts'])->name('accounting.alerts');
+        Route::get('/accounting/cash-flow', [AccountingController::class, 'cashFlow'])->name('accounting.cash-flow');
+
         // Rappels (manager-comptable uniquement)
         Route::middleware(['role:super-admin|manager-comptable'])->group(function () {
             Route::resource('reminders', ReminderController::class)->only(['index', 'create', 'store', 'destroy']);
@@ -296,6 +305,25 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy'])->name('discounts.destroy');
     });
 
+    // Routes spécifiques pour les parents (portail famille)
+    // Déclarée AVANT Route::resource('parents', ParentController::class) plus bas :
+    // ce dernier définit /parents/{parent} (show), qui interceptrait sinon les URL
+    // à un seul segment de ce portail (/parents/dashboard, /parents/children, ...)
+    // puisque Laravel matche les routes dans leur ordre de déclaration.
+    Route::middleware(['role:parent'])->prefix('parents')->name('parents.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\ParentPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/children', [\App\Http\Controllers\ParentPortalController::class, 'childrenIndex'])->name('children.index');
+        Route::get('/children/profile', [\App\Http\Controllers\ParentPortalController::class, 'childProfile'])->name('children.profile');
+        Route::get('/children/notes', [\App\Http\Controllers\ParentPortalController::class, 'childNotes'])->name('children.notes');
+        Route::get('/children/bulletins', [\App\Http\Controllers\ParentPortalController::class, 'childBulletins'])->name('children.bulletins');
+        Route::get('/children/attendances', [\App\Http\Controllers\ParentPortalController::class, 'childAttendances'])->name('children.attendances');
+        Route::get('/children/discipline', [\App\Http\Controllers\ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
+        Route::get('/children/timetable', [\App\Http\Controllers\ParentPortalController::class, 'childTimetable'])->name('children.timetable');
+        Route::get('/children/payments', [\App\Http\Controllers\ParentPortalController::class, 'childPayments'])->name('children.payments');
+        Route::get('/messaging', [\App\Http\Controllers\ParentPortalController::class, 'messaging'])->name('messaging');
+        Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
+    });
+
     Route::middleware(['role:super-admin|admin'])->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
@@ -334,7 +362,10 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/registrations/reinscription', [RegistrationController::class, 'reenrollSearch'])->name('registrations.reinscription');
         Route::post('/registrations/reinscription', [RegistrationController::class, 'storeReenrollment'])->name('registrations.reinscription.store');
 
-        // Routes pour la gestion des parents
+        // Routes pour la gestion des parents (admin)
+        // NB : le portail parent (prefix /parents, role:parent) est déclaré plus haut,
+        // AVANT cette resource — sinon /parents/{parent} (show) intercepterait les URL
+        // à un seul segment du portail (/parents/dashboard, /parents/children, ...).
         Route::resource('parents', ParentController::class);
         Route::patch('/parents/{parent}/archive', [ParentController::class, 'archive'])->name('parents.archive');
         Route::post('/parents/{parent}/attach-student', [ParentController::class, 'attachStudent'])->name('parents.attach-student');
@@ -368,21 +399,6 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::post('/mark-all-read', [UserNotificationController::class, 'markAllAsRead'])->name('mark-all-read');
         Route::post('/{notification}/mark-as-read', [UserNotificationController::class, 'markAsRead'])->name('mark-as-read');
         Route::get('/{notification}', [UserNotificationController::class, 'show'])->name('show');
-    });
-
-    // Routes spécifiques pour les parents (portail famille)
-    Route::middleware(['role:parent'])->prefix('parents')->name('parents.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\ParentPortalController::class, 'dashboard'])->name('dashboard');
-        Route::get('/children', [\App\Http\Controllers\ParentPortalController::class, 'childrenIndex'])->name('children.index');
-        Route::get('/children/profile', [\App\Http\Controllers\ParentPortalController::class, 'childProfile'])->name('children.profile');
-        Route::get('/children/notes', [\App\Http\Controllers\ParentPortalController::class, 'childNotes'])->name('children.notes');
-        Route::get('/children/bulletins', [\App\Http\Controllers\ParentPortalController::class, 'childBulletins'])->name('children.bulletins');
-        Route::get('/children/attendances', [\App\Http\Controllers\ParentPortalController::class, 'childAttendances'])->name('children.attendances');
-        Route::get('/children/discipline', [\App\Http\Controllers\ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
-        Route::get('/children/timetable', [\App\Http\Controllers\ParentPortalController::class, 'childTimetable'])->name('children.timetable');
-        Route::get('/children/payments', [\App\Http\Controllers\ParentPortalController::class, 'childPayments'])->name('children.payments');
-        Route::get('/messaging', [\App\Http\Controllers\ParentPortalController::class, 'messaging'])->name('messaging');
-        Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
     });
 
 });

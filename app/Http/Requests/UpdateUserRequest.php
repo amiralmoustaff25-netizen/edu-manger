@@ -2,24 +2,23 @@
 
 namespace App\Http\Requests;
 
+use App\Support\UserRoles;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
-    private const ROLES = [
-        'super-admin',
-        'admin',
-        'manager-comptable',
-        'comptable',
-        'professeur',
-        'parent',
-        'eleve',
-    ];
-
     public function authorize(): bool
     {
-        return $this->user()->can('modifier-utilisateur', $this->route('user'));
+        $target = $this->route('user');
+
+        // Seul un super-admin peut modifier un compte super-admin (protège contre
+        // la désactivation/dépossession d'un super-admin par un simple admin).
+        if ($target->hasRole('super-admin') && ! $this->user()->hasRole('super-admin')) {
+            return false;
+        }
+
+        return $this->user()->can('modifier-utilisateur', $target);
     }
 
     public function rules(): array
@@ -29,7 +28,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
-            'role' => ['required', Rule::in(self::ROLES)],
+            'role' => ['required', Rule::in(UserRoles::assignableBy($this->user()))],
             'contract_started_at' => ['nullable', 'date'],
             'is_active' => ['boolean'],
         ];

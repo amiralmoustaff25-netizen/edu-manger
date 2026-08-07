@@ -40,8 +40,8 @@
                                 <p class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ $student->name }}</p>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Matricule : {{ $student->matricule }}</p>
                                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                    Classe : {{ optional($student->latestRegistration->classroom)->name ?? 'Non assignée' }}
-                                    • Année : {{ optional($student->latestRegistration->schoolYear)->year_string ?? 'N/A' }}
+                                    Classe : {{ optional(optional($student->latestRegistration)->classroom)->name ?? 'Non assignée' }}
+                                    • Année : {{ optional(optional($student->latestRegistration)->schoolYear)->year_string ?? 'N/A' }}
                                 </p>
                             </div>
                             <div class="mt-4 sm:mt-0 flex flex-wrap gap-2 items-center">

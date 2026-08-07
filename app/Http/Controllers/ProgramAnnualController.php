@@ -188,18 +188,28 @@ class ProgramAnnualController extends Controller
         $path = $request->file('file')->store('imports');
         $contents = Storage::get($path);
 
-        $rows = array_map('str_getcsv', preg_split('/\r\n|\r|\n/', $contents));
-        $header = array_map('trim', $rows[0]);
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\r|\n/', trim($contents)));
+        $header = array_map('trim', $rows[0] ?? []);
         $dataRows = array_slice($rows, 1);
 
-        $program = ProgramAnnual::create([
-            'classroom_id' => $request->input('classroom_id'),
-            'subject_id' => $request->input('subject_id'),
-            'teacher_id' => $request->user()->id,
-            'school_year_id' => $request->input('school_year_id'),
-        ]);
+        if ($header === [] || $header === ['']) {
+            return back()->withErrors(['file' => 'Le fichier importé est vide ou mal formé.']);
+        }
 
-        $this->createImportedChapters($program, $dataRows, $header);
+        // Toutes les lignes doivent être importées ensemble : si l'une d'elles échoue,
+        // aucun programme ni chapitre partiel ne doit rester en base.
+        $program = DB::transaction(function () use ($request, $dataRows, $header) {
+            $program = ProgramAnnual::create([
+                'classroom_id' => $request->input('classroom_id'),
+                'subject_id' => $request->input('subject_id'),
+                'teacher_id' => $request->user()->id,
+                'school_year_id' => $request->input('school_year_id'),
+            ]);
+
+            $this->createImportedChapters($program, $dataRows, $header);
+
+            return $program;
+        });
 
         return redirect()->route('programs.show', $program)->with('success', 'Import terminé.');
     }

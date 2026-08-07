@@ -21,6 +21,8 @@ class Registration extends Model
     protected $casts = [
         'registration_date' => 'date',
         'options' => 'array',
+        'registration_fee_paid' => 'decimal:2',
+        'monthly_fee' => 'decimal:2',
     ];
 
     protected static function newFactory()

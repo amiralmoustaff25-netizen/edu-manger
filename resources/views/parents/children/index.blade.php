@@ -10,7 +10,7 @@
         <div class="grid gap-4 md:grid-cols-2">
             @foreach($parent->students as $student)
                 <div class="p-4 border rounded">
-                    <h2 class="font-bold">{{ $student->full_name }}</h2>
+                    <h2 class="font-bold">{{ $student->name }}</h2>
                     <p>Matricule: {{ $student->matricule }}</p>
                     <div class="mt-2">
                         <a href="{{ route('parents.children.profile', ['student' => $student->id]) }}" class="text-blue-600">Voir le profil</a>
