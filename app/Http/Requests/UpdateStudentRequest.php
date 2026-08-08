@@ -9,7 +9,13 @@ class UpdateStudentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('voir-detail-eleve', $this->route('student'));
+        // 'voir-detail-eleve' est aussi accordée à un parent pour son propre enfant
+        // (consultation) — la vérifier seule ici laisserait la route de modification
+        // reposer uniquement sur le middleware role:super-admin|admin de routes/web.php.
+        // Vérification explicite du rôle en plus, pour que ce Form Request reste sûr
+        // même si ce middleware venait à changer.
+        return $this->user()->hasAnyRole(['super-admin', 'admin'])
+            && $this->user()->can('voir-detail-eleve', $this->route('student'));
     }
 
     public function rules(): array

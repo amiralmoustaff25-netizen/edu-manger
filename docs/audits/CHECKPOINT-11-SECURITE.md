@@ -4,6 +4,21 @@
 
 ---
 
+## 0. Hors périmètre sécurité : correction de la barre latérale (signalé en direct)
+
+Pendant ce checkpoint, vous avez signalé un problème d'ergonomie de la sidebar : plusieurs sections pouvaient rester ouvertes simultanément (ex. Finance et ses 9 sous-menus), poussant la barre latérale bien au-delà de la hauteur de l'écran et rendant Administration/Mon Profil difficiles à atteindre. Sans lien avec la sécurité, mais corrigé immédiatement puisque vous l'avez remonté pendant la session de travail — comme pour le bug de navigation trouvé au Checkpoint 10.
+
+**Cause racine (CSS) :** le conteneur de la sidebar portait à la fois `flex` (base) et `lg:block` (à partir du desktop). En CSS, une règle définie dans une media query l'emporte sur une règle de base à spécificité égale — `lg:block` désactivait donc silencieusement `display:flex` à partir de 1024px, rendant inopérants tous les réglages `flex-1`/`overflow-y-auto` prévus pour confiner le défilement à l'intérieur de la navigation. La navigation grossissait alors à la taille de son contenu au lieu d'être bornée à l'écran.
+
+**Corrigé :**
+- `resources/views/components/sidebar.blade.php` : `lg:block` → `lg:flex` (et la bascule mobile Alpine alignée sur `flex` plutôt que `block`, pour la même raison) ; ajout de `min-h-0` sur les conteneurs flex concernés (nécessaire pour qu'`overflow-y-auto` confine réellement le défilement — sans ça, un enfant flex ne rétrécit jamais sous la taille de son contenu).
+- **Comportement accordéon** (`resources/views/components/sidebar/menu.blade.php`) : au niveau racine (École, Pédagogie, Finance, Administration...), ouvrir une section referme automatiquement les autres, via un événement Alpine plutôt qu'un état partagé — limite la hauteur totale quelle que soit la section consultée.
+- **« Mon Profil » épinglé** : retiré de la liste déroulante (`config/sidebar.php`, où il était le tout dernier élément après Administration) et affiché dans un pied de page fixe, toujours visible, en dehors de la zone de défilement. Comme il est en dehors de `<main>` et de `#sidebar-nav`, `resources/js/pjax.js` le resynchronise désormais aussi après chaque navigation PJAX (même raison que la sidebar elle-même, corrigée au Checkpoint 9).
+
+**Vérifié en direct dans le navigateur** : accordéon testé (École → Pédagogie → Finance, une seule section ouverte à chaque fois) ; avec Finance ouvert (9 sous-menus), la navigation défile désormais réellement en interne (confirmé : hauteur du contenu 608px contre 591px visibles) tandis que « Mon Profil » reste visible en bas d'écran ; bascule mobile (ouverture/fermeture du menu hamburger) revérifiée après la modification de la classe Alpine.
+
+---
+
 ## 1. Dépendances vulnérables
 
 `composer audit` a signalé **26 avis de sécurité sur 5 paquets**. Après mise à jour (dans les contraintes déjà définies par `composer.json` — aucun changement de version majeure requise) :
@@ -58,9 +73,22 @@ Vérification systématique des 4 autres contrôleurs renvoyant du JSON (`Paymen
 
 96 routes state-changing (POST/PUT/PATCH/DELETE) recensées. 16 d'entre elles n'ont pas de middleware `role:`/`permission:` au niveau route — vérification individuelle de chacune : toutes protègent l'action via `$this->authorize()` ou `Gate::authorize()` en tout début de méthode (y compris `CahierTexteController::markLessonDone`, qui ajoute même une vérification explicite que l'enseignant agit uniquement sur ses propres cours). Aucune lacune trouvée — les corrections des Checkpoints 1 à 3 (contrôle d'accès, IDOR, escalade de privilèges) tiennent toujours après tous les changements des checkpoints suivants.
 
+## 9. Portail parent : contrôles de modification réservés au personnel affichés (et partiellement joignables) par un parent
+
+Vous avez signalé que sur la fiche de son enfant, un parent voit des informations qu'il ne devrait pas pouvoir modifier. Vérification : `ParentPortalController::childProfile()` réutilise directement la vue **staff** `students/show.blade.php` (celle des administrateurs) sans aucune adaptation par rôle. Résultat, un parent consultant la fiche de son enfant voyait s'afficher, en plus des informations de lecture : le bouton « ✏️ Modifier » (menant au formulaire complet d'édition — nom, date de naissance, classe, mensualité, montant payé...) et deux formulaires **actifs et soumissibles** : « Changer de classe » et « Changer le statut ».
+
+Le middleware de route (`role:super-admin|admin`) bloquait déjà la soumission de ces deux derniers formulaires côté serveur (confirmé : requête directe → 403). Mais le formulaire d'édition complète (`students.update`) n'avait **qu'une seule couche de protection** — le middleware de route — car `UpdateStudentRequest::authorize()` réutilisait la permission `voir-detail-eleve`, qui est justement accordée aux parents pour consulter (pas modifier) leur propre enfant. Un futur changement de ce middleware (par exemple pour l'aligner sur la permission `voir-detail-eleve` comme la route `students.show` juste au-dessus dans `routes/web.php`) aurait silencieusement ouvert l'édition complète — y compris la mensualité et le montant payé — à tout parent.
+
+**Corrigé :**
+- `resources/views/students/show.blade.php` : le bouton « Modifier » et les deux formulaires (classe, statut) n'apparaissent plus que pour `super-admin`/`admin` (`@hasanyrole`). Rien n'est perdu pour le parent : la classe et le statut actuels restent visibles dans les cartes de synthèse en haut de la fiche, seule la possibilité de les *changer* disparaît.
+- `app/Http/Requests/UpdateStudentRequest.php::authorize()` : vérification explicite du rôle ajoutée en plus de la permission de consultation, pour que ce point d'écriture reste protégé indépendamment du middleware de route.
+- Vérifié que `transferer-eleve` et `modifier-statut-eleve` (permissions derrière `StudentController::transfer`/`updateStatus`) ne sont déjà accordées à aucun rôle parent — ces deux actions étaient donc déjà correctement protégées en profondeur, seul le formulaire d'édition complète avait la lacune.
+
+**Vérifié en direct** : page de la fiche enfant testée avec un compte parent réel — plus aucun `<form>` sur la page ; requêtes directes vers `students.update`, `students.transfer` et `students.status` (contournant l'interface) toutes bloquées avec 403, y compris pour son propre enfant. Nouveau test de régression (`tests/Feature/ParentPortalTest.php`) couvrant les trois routes.
+
 ---
 
-## 9. Fichiers modifiés
+## 10. Fichiers modifiés
 
 **Dépendances :** `composer.lock`, `package-lock.json`.
 
@@ -70,13 +98,19 @@ Vérification systématique des 4 autres contrôleurs renvoyant du JSON (`Paymen
 
 **Fuite de données :** `app/Http/Controllers/Api/StudentController.php`.
 
-**Tests :** `tests/Feature/PaymentApiTest.php` (nouveau test de non-régression sur la minimisation des données).
+**Sidebar (hors périmètre sécurité, signalé en direct) :** `resources/views/components/sidebar.blade.php`, `resources/views/components/sidebar/menu.blade.php`, `config/sidebar.php`, `resources/js/pjax.js`.
 
-## 10. Tests
+**Portail parent (signalé en direct) :** `resources/views/students/show.blade.php`, `app/Http/Requests/UpdateStudentRequest.php`.
+
+**Tests :** `tests/Feature/PaymentApiTest.php`, `tests/Feature/ParentPortalTest.php` (nouveaux tests de non-régression).
+
+## 11. Tests
 
 - Suite complète relancée après chaque changement de dépendance (dompdf, PDF/bulletins testés spécifiquement).
 - `tests/Feature/PaymentApiTest.php` : nouveau test vérifiant explicitement l'absence de `medical_notes`, `emergency_contact_phone`, `adresse`, `parents` et `payments` dans la réponse de recherche par matricule.
-- Suite complète : voir validation ci-dessous.
+- `tests/Feature/ParentPortalTest.php` : nouveau test vérifiant que les contrôles de modification (bouton Modifier, formulaires classe/statut) n'apparaissent pas pour un parent, et que les trois routes d'écriture (`students.update`, `students.transfer`, `students.status`) rejettent une requête directe d'un parent avec 403 — y compris pour son propre enfant.
+- Correction de la sidebar vérifiée en direct dans le navigateur (accordéon, défilement interne, épinglage de Mon Profil, bascule mobile) — pas de test automatisé dédié, ce type de comportement CSS/Alpine n'étant pas couvert par la suite Pest/PHPUnit de ce projet.
+- Suite complète : **342 passed (847 assertions), 0 échec** (338 tests hérités + 2 du Checkpoint 10 + 2 nouveaux ce checkpoint).
 
 ---
 

@@ -12,9 +12,15 @@
          class="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
          @click="sidebarOpen = false"></div>
 
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 shadow-lg lg:static lg:inset-0 lg:block hidden flex flex-col min-h-0"
-         :class="{ 'block': sidebarOpen, 'hidden': !sidebarOpen }"
+    <!-- Sidebar. lg:flex (pas lg:block) : le layout interne (logo fixe + nav qui
+         défile + pied de page fixe) dépend de display:flex sur ce conteneur. Avec
+         lg:block, la règle de la media query @media(min-width:1024px) l'emportait
+         sur la classe flex de base au même niveau de spécificité (dernière règle
+         du CSS généré gagne), désactivant silencieusement le flex layout à partir
+         du desktop — la nav grossissait alors à la hauteur de son contenu au lieu
+         d'être bornée à l'écran, poussant "Mon Profil" hors de l'écran. -->
+    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 shadow-lg lg:static lg:inset-0 lg:flex hidden flex flex-col min-h-0"
+         :class="{ 'flex': sidebarOpen, 'hidden': !sidebarOpen }"
          @click.away="sidebarOpen = false">
 
         <!-- Fixed top: logo -->
