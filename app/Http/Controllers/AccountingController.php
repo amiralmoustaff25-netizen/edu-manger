@@ -106,63 +106,59 @@ class AccountingController extends Controller
         ));
     }
 
-    public function reports(): View
+    /**
+     * "Rapports financiers" a été fusionnée dans "Analyse avancée" (accounting.advanced-reports) :
+     * mêmes données (revenus, répartition par classe/type de paiement), en mieux — filtres de
+     * période/classe et export Excel en plus. Redirection conservée pour tout lien existant.
+     */
+    public function reports()
     {
-        $this->authorize('voir-rapports-financiers');
+        return redirect()->route('accounting.advanced-reports');
+    }
 
-        $activeYear = SchoolYear::where('is_active', true)->first();
+    /**
+     * Requête de paiements filtrée par période/classe/type de frais, partagée entre
+     * l'écran de rapport et son export Excel pour qu'ils restent toujours cohérents.
+     */
+    private function filteredPaymentsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
+        $classroomId = $request->input('classroom_id');
+        $feeTypeId = $request->input('fee_type_id');
 
-        // Les paiements partiels comptent dans ces rapports : leur montant est de
-        // l'argent réellement encaissé, pas une projection (cohérent avec le tableau de
-        // bord comptable et la trésorerie — auparavant ces rapports ne comptaient que les
-        // paiements complets, sous-évaluant les montants dès qu'un paiement partiel existait).
-        $revenueStatuses = ['complet', 'partiel'];
+        // Seuls les paiements complets et partiels sont un revenu réel (même règle que
+        // AccountingController::index et le tableau de bord) : sans ce filtre, les paiements
+        // rejetés/en attente gonflaient à tort le revenu total, les répartitions par classe/
+        // type/méthode de paiement, et l'export Excel.
+        $query = Payment::with(['registration.user', 'registration.classroom'])
+            ->whereIn('status', ['complet', 'partiel'])
+            ->notCancelled()
+            ->whereBetween('payment_date', [$startDate, $endDate]);
 
-        // Rapport journalier du mois courant
-        $dailyReport = [];
-        for ($i = 1; $i <= now()->daysInMonth; $i++) {
-            $date = now()->setDay($i);
-            $dailyReport[] = [
-                'date' => $date->format('d/m/Y'),
-                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
-                    ->whereDate('created_at', $date)
-                    ->sum('amount'),
-                'count' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
-                    ->whereDate('created_at', $date)
-                    ->count(),
-            ];
+        if ($classroomId) {
+            $query->whereHas('registration', function ($q) use ($classroomId) {
+                $q->where('classroom_id', $classroomId);
+            });
         }
 
-        // Rapport par classe
-        $classReport = Payment::with(['registration.classroom'])
-            ->whereIn('status', $revenueStatuses)
-            ->notCancelled()
-            ->whereYear('created_at', now()->year)
-            ->get()
-            ->groupBy(function ($payment) {
-                return $payment->registration->classroom?->name ?? 'Non assigné';
-            })
-            ->map(function ($payments) {
-                return [
-                    'count' => $payments->count(),
-                    'total' => $payments->sum('amount'),
-                ];
-            });
+        if ($feeTypeId) {
+            // payments.payment_type stocke un libellé affichable ('mensualité', avec
+            // accent) et non le code brut de fee_types ('mensualite') — voir
+            // PaymentController::displayPaymentType(). Traduire le code vers ce même
+            // libellé avant de filtrer, sinon la comparaison ne matche jamais.
+            $feeTypeCode = FeeType::find($feeTypeId)?->code;
+            $paymentTypeLabel = match ($feeTypeCode) {
+                'mensualite' => 'mensualité',
+                null => null,
+                default => $feeTypeCode,
+            };
+            if ($paymentTypeLabel) {
+                $query->where('payment_type', $paymentTypeLabel);
+            }
+        }
 
-        // Rapport par type de paiement
-        $paymentTypeReport = Payment::select('payment_type', \DB::raw('COUNT(*) as count'), \DB::raw('SUM(amount) as total'))
-            ->whereIn('status', $revenueStatuses)
-            ->notCancelled()
-            ->whereYear('created_at', now()->year)
-            ->groupBy('payment_type')
-            ->get();
-
-        return view('accounting.reports', compact(
-            'dailyReport',
-            'classReport',
-            'paymentTypeReport',
-            'activeYear'
-        ));
+        return $query;
     }
 
     public function advancedReports(Request $request): View
@@ -174,17 +170,7 @@ class AccountingController extends Controller
         $classroomId = $request->input('classroom_id');
         $feeTypeId = $request->input('fee_type_id');
 
-        $query = Payment::with(['registration.user', 'registration.classroom'])
-            ->notCancelled()
-            ->whereBetween('payment_date', [$startDate, $endDate]);
-
-        if ($classroomId) {
-            $query->whereHas('registration', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
-            });
-        }
-
-        $payments = $query->latest()->get();
+        $payments = $this->filteredPaymentsQuery($request)->latest()->get();
 
         // Calculs pour le rapport (les paiements annulés sont déjà exclus par la requête ci-dessus).
         // Le "revenu total" doit inclure l'argent réellement encaissé via les paiements
@@ -206,6 +192,16 @@ class AccountingController extends Controller
                 ];
             });
 
+        // Répartition par classe et par type de paiement — fusionnées ici depuis l'ancienne
+        // page "Rapports financiers" (accounting.reports, supprimée) qui montrait les mêmes
+        // données mais figées sur l'année courante, sans filtre ni export : ce même écran
+        // couvre désormais les deux besoins, sur la période choisie ci-dessus.
+        $classroomBreakdown = $payments->groupBy(fn ($payment) => $payment->registration->classroom?->name ?? 'Non assigné')
+            ->map(fn ($group) => ['count' => $group->count(), 'total' => $group->sum('amount')]);
+
+        $paymentTypeBreakdown = $payments->groupBy('payment_type')
+            ->map(fn ($group) => ['count' => $group->count(), 'total' => $group->sum('amount')]);
+
         $classrooms = \App\Models\Classroom::all();
         $feeTypes = FeeType::all();
 
@@ -216,6 +212,8 @@ class AccountingController extends Controller
             'totalPayments',
             'averagePayment',
             'paymentMethods',
+            'classroomBreakdown',
+            'paymentTypeBreakdown',
             'classrooms',
             'feeTypes',
             'startDate',
@@ -231,19 +229,8 @@ class AccountingController extends Controller
 
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
-        $classroomId = $request->input('classroom_id');
 
-        $query = Payment::with(['registration.user', 'registration.classroom'])
-            ->notCancelled()
-            ->whereBetween('payment_date', [$startDate, $endDate]);
-
-        if ($classroomId) {
-            $query->whereHas('registration', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
-            });
-        }
-
-        $payments = $query->latest()->get();
+        $payments = $this->filteredPaymentsQuery($request)->latest()->get();
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

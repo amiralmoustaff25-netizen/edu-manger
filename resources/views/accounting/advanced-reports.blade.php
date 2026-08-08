@@ -11,7 +11,7 @@
                 <!-- Formulaire de filtres -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <form action="{{ route('accounting.advanced-reports') }}" method="GET">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                                 <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date début</label>
                                 <input type="date" name="start_date" id="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -26,6 +26,15 @@
                                     <option value="">Toutes</option>
                                     @foreach($classrooms as $classroom)
                                         <option value="{{ $classroom->id }}" {{ $classroomId == $classroom->id ? 'selected' : '' }}>{{ $classroom->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="fee_type_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de frais</label>
+                                <select name="fee_type_id" id="fee_type_id" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">Tous</option>
+                                    @foreach($feeTypes as $feeType)
+                                        <option value="{{ $feeType->id }}" {{ $feeTypeId == $feeType->id ? 'selected' : '' }}>{{ $feeType->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -97,38 +106,80 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Répartition par méthode de paiement -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Répartition par méthode de paiement</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Par méthode de paiement</h3>
                         <div class="space-y-3">
-                            @foreach($paymentMethods as $method => $data)
+                            @forelse($paymentMethods as $method => $data)
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700 dark:text-gray-300">{{ ucfirst($method) }}</span>
                                     <div class="text-right">
-                                        <span class="font-medium text-gray-900 dark:text-white">{{ $data['count'] }} paiements</span>
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $data['count'] }}</span>
                                         <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ number_format($data['total'], 0, ',', ' ') }} FCFA</span>
                                     </div>
                                 </div>
-                            @endforeach
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Aucun paiement sur cette période.</p>
+                            @endforelse
                         </div>
                     </div>
 
-                    <!-- Export Excel -->
+                    <!-- Répartition par classe (fusionnée depuis l'ancienne page "Rapports financiers") -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Exporter le rapport</h3>
-                        <form action="{{ route('accounting.export-advanced-reports') }}" method="GET">
-                            <input type="hidden" name="start_date" value="{{ $startDate }}">
-                            <input type="hidden" name="end_date" value="{{ $endDate }}">
-                            <input type="hidden" name="classroom_id" value="{{ $classroomId }}">
-                            <button type="submit" class="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                </svg>
-                                Télécharger Excel
-                            </button>
-                        </form>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Par classe</h3>
+                        <div class="space-y-3">
+                            @forelse($classroomBreakdown as $classroom => $data)
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700 dark:text-gray-300">{{ $classroom }}</span>
+                                    <div class="text-right">
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $data['count'] }}</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ number_format($data['total'], 0, ',', ' ') }} FCFA</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Aucun paiement sur cette période.</p>
+                            @endforelse
+                        </div>
                     </div>
+
+                    <!-- Répartition par type de paiement (fusionnée depuis l'ancienne page "Rapports financiers") -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Par type de paiement</h3>
+                        <div class="space-y-3">
+                            @forelse($paymentTypeBreakdown as $type => $data)
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700 dark:text-gray-300">{{ ucfirst($type) }}</span>
+                                    <div class="text-right">
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $data['count'] }}</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ number_format($data['total'], 0, ',', ' ') }} FCFA</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Aucun paiement sur cette période.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Excel -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <form action="{{ route('accounting.export-advanced-reports') }}" method="GET" class="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Exporter le rapport</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Export Excel des paiements de la période et des filtres sélectionnés ci-dessus.</p>
+                        </div>
+                        <input type="hidden" name="start_date" value="{{ $startDate }}">
+                        <input type="hidden" name="end_date" value="{{ $endDate }}">
+                        <input type="hidden" name="classroom_id" value="{{ $classroomId }}">
+                        <input type="hidden" name="fee_type_id" value="{{ $feeTypeId }}">
+                        <button type="submit" class="shrink-0 px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            Télécharger Excel
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Liste des paiements -->
