@@ -25,9 +25,11 @@
 
             {{-- Actions rapides : chaque action mène à son objectif en 1 clic --}}
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('students.edit', $student) }}" class="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
-                    ✏️ Modifier
-                </a>
+                @hasanyrole('super-admin|admin')
+                    <a href="{{ route('students.edit', $student) }}" class="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
+                        ✏️ Modifier
+                    </a>
+                @endhasanyrole
                 @can('enregistrer-paiement')
                     <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
                         💳 Paiement
@@ -94,6 +96,7 @@
                 </x-card>
             </div>
 
+            @hasanyrole('super-admin|admin')
             @if($currentRegistration)
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                     <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
@@ -143,6 +146,7 @@
                     </div>
                 </div>
             @endif
+            @endhasanyrole
 
             <div id="finance" class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Historique des inscriptions</h3>

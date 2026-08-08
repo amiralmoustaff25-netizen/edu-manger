@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Classroom;
 use App\Models\ParentModel;
+use App\Models\Registration;
+use App\Models\SchoolYear;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,6 +66,51 @@ test('a parent cannot view a child that is not theirs (IDOR protection)', functi
     // resolveStudentFromRequest() ne retrouve rien pour un enfant qui n'est pas le
     // sien : redirection vers le dashboard plutôt que la fiche d'un tiers.
     $response->assertRedirect(route('parents.dashboard'));
+});
+
+test('a parent cannot see or use the staff-only edit/transfer/status controls on their child profile', function () {
+    [$parentUser, , $child] = createParentPortalFixture();
+
+    $year = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $year->id, 'cycle' => 'primaire']);
+    $registration = Registration::create([
+        'user_id' => $child->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $year->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 25000,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-TEST-001',
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($parentUser)
+        ->get(route('parents.children.profile', ['student' => $child->id]));
+
+    $response->assertOk()
+        ->assertDontSee('Changer de classe')
+        ->assertDontSee('Changer le statut')
+        ->assertDontSee(route('students.edit', $child));
+
+    // Défense en profondeur : même en soumettant directement ces routes, un parent
+    // (y compris pour son propre enfant) doit être bloqué, pas seulement l'UI cachée.
+    $this->actingAs($parentUser)
+        ->putJson(route('students.update', $child), [
+            'nom' => 'Hacked', 'prenom' => 'Name', 'email' => $child->email,
+            'date_naissance' => '2010-01-01', 'lieu_naissance' => 'Dakar', 'sexe' => 'M',
+            'cycle' => 'primaire', 'classroom_id' => $classroom->id,
+        ])->assertForbidden();
+
+    $this->actingAs($parentUser)
+        ->patchJson(route('students.transfer', $child), [
+            'registration_id' => $registration->id, 'classroom_id' => $classroom->id,
+        ])->assertForbidden();
+
+    $this->actingAs($parentUser)
+        ->patchJson(route('students.status', $child), [
+            'registration_id' => $registration->id, 'status' => 'suspendu',
+        ])->assertForbidden();
 });
 
 test('the admin parents resource still works and is not shadowed by the parent portal routes', function () {
