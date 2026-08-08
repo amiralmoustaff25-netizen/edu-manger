@@ -40,7 +40,13 @@ class ParentControllerTest extends TestCase
 
         $response = $this->get(route('parents.show', $parent));
 
-        $response->assertOk();
+        // assertOk() seul ne suffit pas : un <x-slot> sans <x-app-layout> englobant ne
+        // provoque pas forcément un code d'erreur HTTP, seulement une page rendue sans
+        // layout (pas de <title>, pas de sidebar). On vérifie donc que le layout complet
+        // est bien présent, pas seulement que la requête n'a pas échoué.
+        $response->assertOk()
+            ->assertSee('<title>', false)
+            ->assertSee('Fiche Parent');
     }
 
     /** @test */
@@ -115,5 +121,28 @@ class ParentControllerTest extends TestCase
         $response = $this->get(route('parents.show', 9999));
 
         $response->assertNotFound();
+    }
+
+    /** @test */
+    public function parent_policy_ability_methods_are_actually_reached_by_kebab_case_permission_names(): void
+    {
+        // Régression Phase 2 (finding M5) : ParentController::authorize() passe des noms de
+        // permission kebab-case ('voir-detail-parent', 'modifier-parent', ...), pas les noms
+        // conventionnels ('view', 'update', ...). Avant le correctif, Laravel ne trouvait
+        // aucune méthode correspondante sur ParentPolicy et retombait systématiquement sur le
+        // Gate plat de Spatie, qui ignore l'instance $parent ciblée — la logique "un parent
+        // peut voir/modifier son propre profil" de la policy était donc du code mort. On le
+        // vérifie ici directement via Gate, sans passer par les routes (bloquées par le
+        // middleware role:super-admin|admin, hors sujet pour ce test).
+        $parentUser = User::factory()->create();
+        $parentUser->assignRole('parent');
+        $parentRecord = ParentModel::factory()->create(['user_id' => $parentUser->id]);
+
+        $otherParentUser = User::factory()->create();
+        $otherParentUser->assignRole('parent');
+
+        $this->assertTrue($parentUser->can('voir-detail-parent', $parentRecord));
+        $this->assertTrue($parentUser->can('modifier-parent', $parentRecord));
+        $this->assertFalse($otherParentUser->can('voir-detail-parent', $parentRecord));
     }
 }

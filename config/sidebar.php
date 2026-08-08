@@ -42,13 +42,16 @@ return [
             'label' => 'Finance',
             'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
             'roles' => ['super-admin', 'admin'],
-            'permissions' => ['voir-comptabilite', 'voir-paiements', 'voir-factures', 'voir-recouvrement', 'voir-types-frais', 'voir-frais-classe', 'voir-rapports-financiers', 'voir-rapports-avances', 'voir-tresorerie'],
+            'permissions' => ['voir-comptabilite', 'voir-paiements', 'voir-factures', 'voir-recouvrement', 'voir-alertes-impayes', 'voir-types-frais', 'voir-frais-classe', 'voir-rapports-avances', 'voir-tresorerie'],
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
                 ['label' => 'Vue financière', 'route' => 'accounting.dashboard', 'permission' => 'voir-comptabilite'],
                 ['label' => 'Paiements', 'route' => 'payments.index', 'permission' => 'voir-paiements'],
                 ['label' => 'Factures', 'route' => 'invoices.index', 'permission' => 'voir-factures'],
-                ['label' => 'Impayés & Recouvrement', 'route' => 'accounting.alerts', 'permission' => 'voir-recouvrement'],
+                // voir-alertes-impayes, pas voir-recouvrement : c'est la permission réellement
+                // exigée par AccountingController::alerts(). Les deux sont accordées ensemble
+                // à tous les rôles actuels, donc sans effet observable aujourd'hui.
+                ['label' => 'Impayés & Recouvrement', 'route' => 'accounting.alerts', 'permission' => 'voir-alertes-impayes'],
                 ['label' => 'Rappels', 'route' => 'reminders.index', 'roles' => ['super-admin', 'manager-comptable']],
                 ['label' => 'Grille tarifaire', 'route' => 'fee-types.index', 'permission' => 'voir-types-frais'],
                 ['label' => 'Analyse avancée', 'route' => 'accounting.advanced-reports', 'permission' => 'voir-rapports-avances'],
@@ -102,7 +105,7 @@ return [
                 ['label' => 'Types de Frais', 'route' => 'fee-types.index', 'permission' => 'voir-types-frais'],
                 ['label' => 'Frais par Classe', 'route' => 'classroom-fees.index', 'permission' => 'voir-frais-classe'],
                 ['label' => 'Analyse avancée', 'route' => 'accounting.advanced-reports', 'permission' => 'voir-rapports-avances'],
-                ['label' => 'Alertes Impayés', 'route' => 'accounting.alerts', 'permission' => 'voir-recouvrement'],
+                ['label' => 'Alertes Impayés', 'route' => 'accounting.alerts', 'permission' => 'voir-alertes-impayes'],
                 ['label' => 'Trésorerie', 'route' => 'accounting.cash-flow', 'permission' => 'voir-tresorerie'],
             ],
         ],

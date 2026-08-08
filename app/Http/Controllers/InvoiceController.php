@@ -13,7 +13,13 @@ class InvoiceController extends Controller
 {
     public function index(Request $request): View
     {
-        $this->authorize('voir-comptabilite');
+        // Aligné sur config/sidebar.php, qui affiche l'entrée "Factures" sous la permission
+        // dédiée voir-factures (groupée sous 'invoices' dans config/permissions.php) plutôt
+        // que la permission générique voir-comptabilite : les deux sont accordées ensemble
+        // pour tous les rôles actuels, donc sans effet observable aujourd'hui, mais un futur
+        // réglage fin par utilisateur (UserPermissionOverride) rendrait sinon ce lien du menu
+        // trompeur (visible mais 403, ou l'inverse).
+        $this->authorize('voir-factures');
 
         $query = Invoice::with(['registration.user', 'registration.classroom']);
 

@@ -13,6 +13,13 @@ class ClassroomPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
+        // 'delete' est exclu du passe-droit : le garde-fou de delete() (aucune inscription
+        // rattachée) doit s'appliquer même aux super-admin/admin, sinon un clic malheureux
+        // détruit en cascade tout l'historique de paiements/notes/présences de la classe.
+        if ($ability === 'delete') {
+            return null;
+        }
+
         if ($user->hasRole(['super-admin', 'admin'])) {
             return true;
         }
@@ -54,10 +61,21 @@ class ClassroomPolicy
 
     /**
      * Détermine si l'utilisateur peut supprimer une classe.
+     *
+     * Une classe ayant eu des inscriptions ne peut jamais être supprimée : la suppression
+     * SQL réelle cascaderait sur registrations -> payments/invoices/discounts/credits/
+     * credit_notes/reminders, notes et attendances, détruisant tout l'historique financier
+     * et pédagogique des élèves qui y ont été inscrits, sans confirmation ni possibilité de
+     * restauration. Classroom utilise désormais SoftDeletes, mais ce garde-fou reste
+     * nécessaire pour ne jamais faire disparaître une classe qui a un historique réel.
      */
     public function delete(User $user, Classroom $classroom): bool
     {
-        return $user->hasPermissionTo('supprimer-classe');
+        if ($classroom->registrations()->exists()) {
+            return false;
+        }
+
+        return $user->hasRole(['super-admin', 'admin']) || $user->hasPermissionTo('supprimer-classe');
     }
 
     /**

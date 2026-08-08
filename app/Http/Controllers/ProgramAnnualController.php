@@ -185,6 +185,19 @@ class ProgramAnnualController extends Controller
     public function importExcel(ImportProgramRequest $request): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('create', ProgramAnnual::class);
+
+        // Même source de vérité que store() : la classe/matière/professeur/année viennent
+        // de l'affectation pédagogique, jamais d'un identifiant brut envoyé par le client —
+        // sinon un professeur pourrait importer un programme sur une classe qu'il n'enseigne
+        // pas en modifiant classroom_id/subject_id, et en devenir teacher_id.
+        $assignment = PedagogicalAssignment::with('teacher')->whereKey($request->integer('pedagogical_assignment_id'))->where('is_active', true)->firstOrFail();
+
+        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+            abort_unless($assignment->teacher->user_id === $request->user()->id, 403);
+        }
+
+        abort_if(ProgramAnnual::where('classroom_id', $assignment->classroom_id)->where('subject_id', $assignment->matiere_id)->where('school_year_id', $assignment->school_year_id)->exists(), 422, 'Un programme existe déjà pour cette classe, cette matière et cette année scolaire.');
+
         $path = $request->file('file')->store('imports');
         $contents = Storage::get($path);
 
@@ -198,12 +211,14 @@ class ProgramAnnualController extends Controller
 
         // Toutes les lignes doivent être importées ensemble : si l'une d'elles échoue,
         // aucun programme ni chapitre partiel ne doit rester en base.
-        $program = DB::transaction(function () use ($request, $dataRows, $header) {
+        $program = DB::transaction(function () use ($request, $assignment, $dataRows, $header) {
             $program = ProgramAnnual::create([
-                'classroom_id' => $request->input('classroom_id'),
-                'subject_id' => $request->input('subject_id'),
-                'teacher_id' => $request->user()->id,
-                'school_year_id' => $request->input('school_year_id'),
+                'pedagogical_assignment_id' => $assignment->id,
+                'academic_period_id' => $request->input('academic_period_id'),
+                'classroom_id' => $assignment->classroom_id,
+                'subject_id' => $assignment->matiere_id,
+                'teacher_id' => $assignment->teacher->user_id,
+                'school_year_id' => $assignment->school_year_id,
             ]);
 
             $this->createImportedChapters($program, $dataRows, $header);

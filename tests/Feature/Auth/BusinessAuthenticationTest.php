@@ -50,6 +50,20 @@ test('a user forced to change their password can still reach the profile page an
     $this->actingAs($user)->post('/logout')->assertRedirect('/');
 });
 
+test('the forced password change redirect is skipped when FORCE_PASSWORD_CHANGE is disabled', function () {
+    config(['edu.force_password_change' => false]);
+
+    $user = User::factory()->create(['password_must_change' => true]);
+    $user->assignRole('admin');
+
+    // Le compte reste marqué password_must_change=true (le code n'est pas supprimé, voir
+    // config/edu.php) : seule l'application de la redirection est coupée par le flag.
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $this->assertTrue($user->fresh()->password_must_change);
+});
+
 test('an eleve is redirected to their own dashboard after login', function () {
     $user = User::factory()->create(['password' => Hash::make('password')]);
     $user->assignRole('eleve');

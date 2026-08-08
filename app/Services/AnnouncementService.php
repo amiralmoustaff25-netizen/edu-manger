@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Announcement;
 use App\Models\Classroom;
+use App\Models\ParentModel;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use Illuminate\Database\Eloquent\Collection;

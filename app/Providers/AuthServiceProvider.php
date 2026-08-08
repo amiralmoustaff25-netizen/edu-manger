@@ -5,20 +5,28 @@ namespace App\Providers;
 use App\Models\Attendance;
 use App\Models\ChapterCompletion;
 use App\Models\Classroom;
+use App\Models\ClassroomFee;
+use App\Models\FeeType;
+use App\Models\Invoice;
 use App\Models\LoginLog;
 use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\ProgramAnnual;
+use App\Models\SchoolYear;
 use App\Models\User;
 use App\Policies\AttendancePolicy;
 use App\Policies\ChapterCompletionPolicy;
+use App\Policies\ClassroomFeePolicy;
 use App\Policies\ClassroomPolicy;
+use App\Policies\FeeTypePolicy;
+use App\Policies\InvoicePolicy;
 use App\Policies\LoginLogPolicy;
 use App\Policies\NotePolicy;
 use App\Policies\ParentPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\ProgramAnnualPolicy;
+use App\Policies\SchoolYearPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -38,6 +46,10 @@ class AuthServiceProvider extends ServiceProvider
         Classroom::class => ClassroomPolicy::class,
         Attendance::class => AttendancePolicy::class,
         Note::class => NotePolicy::class,
+        ClassroomFee::class => ClassroomFeePolicy::class,
+        FeeType::class => FeeTypePolicy::class,
+        Invoice::class => InvoicePolicy::class,
+        SchoolYear::class => SchoolYearPolicy::class,
     ];
 
     public function boot(): void

@@ -6,10 +6,13 @@ use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Registration;
-use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
+    public function __construct(private AuditLogService $auditLogService)
+    {
+    }
+
     /**
      * Applique un paiement aux factures en attente de l'inscription.
      * Renvoie le montant non alloué aux factures (non compté comme surplus cash).
@@ -71,6 +74,9 @@ class PaymentService
 
     /**
      * Journalise une action comptable dans la table d'audit.
+     *
+     * Délègue à AuditLogService (source de vérité unique pour la journalisation d'audit,
+     * utilisée par tous les modules) plutôt que de dupliquer l'écriture en base ici.
      */
     public function logAction(
         string $action,
@@ -80,18 +86,6 @@ class PaymentService
         ?array $newValues = null,
         ?string $comment = null
     ): void {
-        DB::table('audit_logs')->insert([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'model_type' => $modelType,
-            'model_id' => $modelId,
-            'old_values' => $oldValues ? json_encode($oldValues) : null,
-            'new_values' => $newValues ? json_encode($newValues) : null,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'comment' => $comment,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->auditLogService->log($action, $modelType, $modelId, $oldValues, $newValues, $comment);
     }
 }

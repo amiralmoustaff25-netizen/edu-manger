@@ -15,6 +15,8 @@ class ImportProgramRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+            'pedagogical_assignment_id' => ['required', 'exists:pedagogical_assignments,id'],
+            'academic_period_id' => ['nullable', 'exists:academic_periods,id'],
         ];
     }
 }
