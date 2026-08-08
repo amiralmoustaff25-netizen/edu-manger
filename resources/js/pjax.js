@@ -71,14 +71,17 @@ document.addEventListener('alpine:init', () => {
                 document.title = newTitle.textContent || document.title;
 
                 // La surbrillance du lien actif est calculée côté serveur (request()->routeIs()
-                // dans components/sidebar/link.blade.php et menu.blade.php). La sidebar est en
-                // dehors de <main>, donc on la resynchronise aussi pour refléter la nouvelle page.
-                const newNav = doc.getElementById('sidebar-nav');
-                const nav = this.$root.querySelector('#sidebar-nav');
-                if (newNav && nav) {
-                    nav.innerHTML = newNav.innerHTML;
-                    this.initializeNewContent(nav);
-                }
+                // dans components/sidebar/link.blade.php, menu.blade.php et sidebar.blade.php).
+                // Ces éléments sont en dehors de <main>, donc on les resynchronise aussi pour
+                // refléter la nouvelle page.
+                ['sidebar-nav', 'sidebar-profile-link'].forEach((id) => {
+                    const updated = doc.getElementById(id);
+                    const current = this.$root.querySelector('#' + id);
+                    if (updated && current) {
+                        current.innerHTML = updated.innerHTML;
+                        this.initializeNewContent(current);
+                    }
+                });
 
                 // fetch() suit les redirections silencieusement : si le serveur a redirigé
                 // ailleurs que l'URL cliquée (ex. EnsurePasswordChanged qui renvoie tout vers

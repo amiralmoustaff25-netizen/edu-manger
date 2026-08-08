@@ -198,8 +198,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         // consommées uniquement par accounting/payments/create.blade.php. Restreintes
         // au personnel comptable : sinon tout utilisateur authentifié pouvait énumérer
         // les données personnelles et financières de n'importe quel élève.
-        Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
-        Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
+        // throttle:api (limiteur défini dans AuthServiceProvider) : ralentit une
+        // énumération automatisée de matricules même par un compte comptable autorisé.
+        Route::middleware(['throttle:api'])->group(function () {
+            Route::get('/api/students/by-matricule/{matricule}', [ApiStudentController::class, 'getByMatricule']);
+            Route::get('/api/students/{registrationId}/fees', [ApiStudentController::class, 'getStudentFees']);
+        });
 
         // Routes comptabilité
         Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.dashboard');

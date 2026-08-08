@@ -13,7 +13,7 @@
          @click="sidebarOpen = false"></div>
 
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 shadow-lg lg:static lg:inset-0 lg:block hidden flex flex-col"
+    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 shadow-lg lg:static lg:inset-0 lg:block hidden flex flex-col min-h-0"
          :class="{ 'block': sidebarOpen, 'hidden': !sidebarOpen }"
          @click.away="sidebarOpen = false">
 
@@ -25,12 +25,34 @@
             </a>
         </div>
 
-        <!-- Scrollable navigation -->
-        <nav id="sidebar-nav" class="mt-2 px-2 pb-4 space-y-1 flex-1 overflow-y-auto overflow-x-hidden">
+        <!-- Scrollable navigation. min-h-0 ci-dessus est nécessaire pour que ce
+             overflow-y-auto confine réellement le défilement ici : sans lui, un
+             enfant flex avec beaucoup de contenu (ex. le module Finance et ses 9
+             sous-menus) pousse toute la barre latérale au-delà de la hauteur de
+             l'écran au lieu de défiler dans son propre conteneur (min-height:auto
+             est la valeur par défaut d'un enfant flex, qui l'empêche de se
+             réduire sous son contenu — bug classique de Flexbox). -->
+        <nav id="sidebar-nav" class="mt-2 px-2 pb-4 space-y-1 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             @auth
                 <x-sidebar.menu :items="config('sidebar.items')" />
             @endauth
         </nav>
+
+        <!-- Accès permanent, toujours visible sans avoir à parcourir la navigation.
+             En dehors de #sidebar-nav (donc pas de défilement), mais pour la même
+             raison que #sidebar-nav (voir resources/js/pjax.js), cet état actif
+             calculé côté serveur doit être resynchronisé manuellement après une
+             navigation PJAX — id dédié pour cela. -->
+        @auth
+            <div id="sidebar-profile-link" class="flex-shrink-0 border-t border-gray-200 dark:border-slate-700 p-2">
+                <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ request()->routeIs('profile.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
+                    <svg class="h-6 w-6 flex-shrink-0 {{ request()->routeIs('profile.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span class="truncate">Mon Profil</span>
+                </a>
+            </div>
+        @endauth
     </div>
 
     <!-- Main content -->
