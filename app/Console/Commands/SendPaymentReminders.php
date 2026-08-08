@@ -7,6 +7,7 @@ use App\Models\Registration;
 use App\Notifications\PaymentReminder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class SendPaymentReminders extends Command
 {
@@ -50,13 +51,22 @@ class SendPaymentReminders extends Command
                     continue;
                 }
 
-                // Envoyer la notification
+                // Envoyer la notification à l'élève ET à ses parents — un rappel de
+                // paiement concerne d'abord les parents, responsables du règlement,
+                // pas seulement l'élève (voir PaymentController::notifyPaymentReceived
+                // qui suit déjà ce même principe pour les confirmations de paiement).
                 $registration->user->notify(new PaymentReminder($reminder));
-                
+
+                $parentUsers = $registration->user->parents()->with('user')->get()->pluck('user')->filter();
+                if ($parentUsers->isNotEmpty()) {
+                    Notification::send($parentUsers, new PaymentReminder($reminder));
+                }
+
                 // Marquer comme envoyé
                 $reminder->markAsSent();
-                
-                $this->info("✓ Rappel #{$reminder->id} envoyé à {$registration->user->name}");
+
+                $recipientCount = 1 + $parentUsers->count();
+                $this->info("✓ Rappel #{$reminder->id} envoyé à {$registration->user->name} ({$recipientCount} destinataire(s))");
                 
             } catch (\Exception $e) {
                 $this->error("✗ Erreur lors de l'envoi du rappel #{$reminder->id}: {$e->getMessage()}");

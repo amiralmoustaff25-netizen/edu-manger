@@ -120,9 +120,10 @@ test('partial payments count as real revenue on the dashboard and reports, not j
     $cashFlow = $this->actingAs($manager)->get(route('accounting.cash-flow'));
     expect((float) $cashFlow->viewData('monthlyInflow'))->toBe(27000.0);
 
-    $reports = $this->actingAs($manager)->get(route('accounting.reports'));
-    $classReport = $reports->viewData('classReport');
-    expect((float) $classReport->first()['total'])->toBe(27000.0);
+    // "Rapports financiers" a été fusionnée dans "Analyse avancée" (voir Checkpoint 12).
+    $reports = $this->actingAs($manager)->get(route('accounting.advanced-reports'));
+    $classroomBreakdown = $reports->viewData('classroomBreakdown');
+    expect((float) $classroomBreakdown->first()['total'])->toBe(27000.0);
 });
 
 test('remaining balance on the dashboard matches FeeService, not a naive sum of remaining_balance across payments', function () {
