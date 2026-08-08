@@ -1,4 +1,5 @@
-<x-slot name="header">
+<x-app-layout>
+    <x-slot name="header">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">Fiche Parent</h2>
@@ -219,3 +220,4 @@
         </div>
     </div>
 </div>
+</x-app-layout>

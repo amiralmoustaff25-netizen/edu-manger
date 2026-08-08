@@ -28,6 +28,27 @@ test('it_toggles_chapter_completion', function () {
     $this->assertDatabaseHas('chapter_completions', ['program_chapter_id' => $chapter->id]);
 });
 
+test('it_returns_real_planned_hours_in_the_progress_payload_instead_of_hardcoded_zero', function () {
+    // Régression Phase 2 (finding M8) : computeProgress() renvoyait toujours
+    // volume_realise/volume_prevu à 0, jamais les vraies valeurs calculées par
+    // ProgramProgressService (utilisé ailleurs pour la même notion de progression).
+    $teacher = User::factory()->create();
+    $teacher->assignRole('professeur');
+    $program = ProgramAnnual::factory()->create(['teacher_id' => $teacher->id, 'status' => 'valide_surveillant']);
+    ProgramChapter::factory()->create(['program_annual_id' => $program->id, 'type' => 'lecon', 'volume_horaire_prevu' => 5]);
+    // type fixé à 'sous_partie' (pas laissé au hasard du factory) : ProgramAnnual::lessons()
+    // ne compte que le type 'lecon' dans volume_prevu — un tirage aléatoire à 'lecon' ici
+    // aurait fait varier le total attendu de façon non déterministe (5 vs 6.5).
+    $chapter = ProgramChapter::factory()->create(['program_annual_id' => $program->id, 'type' => 'sous_partie']);
+
+    $response = actingAs($teacher)->postJson(route('cahier-textes.toggle'), [
+        'chapter_id' => $chapter->id,
+        'date' => now()->toDateString(),
+    ]);
+
+    $response->assertJsonPath('progress.volume_prevu', 5);
+});
+
 test('it_undoes_toggle_on_second_click', function () {
     $teacher = User::factory()->create();
     $teacher->assignRole('professeur');

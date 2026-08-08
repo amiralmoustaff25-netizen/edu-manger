@@ -10,7 +10,9 @@ class FeeTypeController extends Controller
 {
     public function index(): View
     {
-        $this->authorize('voir-comptabilite');
+        // Voir InvoiceController::index() — aligné sur la permission dédiée déjà utilisée par
+        // le menu (config/sidebar.php) pour cette entrée.
+        $this->authorize('voir-types-frais');
 
         $feeTypes = FeeType::all();
 

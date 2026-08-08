@@ -23,6 +23,11 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
+
+        <!-- Indépendant du feature flag local (.env) : les tests doivent toujours couvrir le
+             comportement par défaut, sécurisé, de production — pas le réglage temporaire de
+             désactivation utilisé en dev pour accélérer les tests fonctionnels manuels. -->
+        <env name="FORCE_PASSWORD_CHANGE" value="true"/>
         
         <!-- SQLite en mémoire pour les tests -->
         <env name="DB_CONNECTION" value="sqlite"/>

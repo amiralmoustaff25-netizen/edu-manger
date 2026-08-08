@@ -105,15 +105,38 @@ class ClassroomControllerTest extends TestCase
     }
 
     /** @test */
-    public function it_can_delete_a_classroom(): void
+    public function it_can_delete_a_classroom_without_registrations(): void
     {
         $classroom = Classroom::factory()->create();
 
         $response = $this->delete(route('classrooms.destroy', $classroom));
 
         $response->assertRedirect(route('classrooms.index'));
-        $this->assertDatabaseMissing('classrooms', [
+        $this->assertSoftDeleted('classrooms', [
             'id' => $classroom->id,
+        ]);
+    }
+
+    /** @test */
+    public function it_blocks_deleting_a_classroom_with_registrations_even_for_an_admin(): void
+    {
+        $classroom = Classroom::factory()->create();
+        $schoolYear = SchoolYear::factory()->create();
+        $student = User::factory()->create();
+        $student->assignRole('eleve');
+
+        \App\Models\Registration::factory()->create([
+            'user_id' => $student->id,
+            'classroom_id' => $classroom->id,
+            'school_year_id' => $schoolYear->id,
+        ]);
+
+        $response = $this->delete(route('classrooms.destroy', $classroom));
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('classrooms', [
+            'id' => $classroom->id,
+            'deleted_at' => null,
         ]);
     }
 

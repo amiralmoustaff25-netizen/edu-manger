@@ -19,6 +19,8 @@ class ProgramAnnual extends Model
         'subject_id',
         'teacher_id',
         'school_year_id',
+        'pedagogical_assignment_id',
+        'academic_period_id',
         'status',
         'submitted_at',
         'validated_by_surveillant_id',

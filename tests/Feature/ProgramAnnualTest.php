@@ -125,6 +125,55 @@ test('it_blocks_invalid_transitions', function () {
     $response->assertStatus(403);
 });
 
+test('it_blocks_importing_a_program_for_a_classroom_the_teacher_is_not_assigned_to', function () {
+    // Régression Phase 2 / audit complet (finding C2) : importExcel() ne vérifiait pas
+    // l'affectation prof<->classe/matière avant de créer le programme, contrairement à
+    // store(). Un professeur pouvait donc importer (et donc s'attribuer, teacher_id) un
+    // programme sur une classe/matière qui n'est pas la sienne.
+    $context = createProgramContext();
+    $otherTeacherUser = User::factory()->create();
+    $otherTeacherUser->assignRole('professeur');
+    \App\Models\Teacher::factory()->create(['user_id' => $otherTeacherUser->id]);
+
+    $file = \Illuminate\Http\UploadedFile::fake()->createWithContent(
+        'programme.csv',
+        "Chapitre,Leçon,Sous-partie,Titre,Objectifs,Volume horaire\nChap1,Lecon1,SP1,Titre,Obj,2\n"
+    );
+
+    $response = actingAs($otherTeacherUser)->post(route('programs.import'), [
+        'pedagogical_assignment_id' => $context['assignment']->id,
+        'file' => $file,
+    ]);
+
+    $response->assertStatus(403);
+    $this->assertDatabaseMissing('program_annuals', [
+        'classroom_id' => $context['classroom']->id,
+        'subject_id' => $context['subject']->id,
+    ]);
+});
+
+test('it_imports_a_program_for_the_teachers_own_assignment', function () {
+    $context = createProgramContext();
+
+    $file = \Illuminate\Http\UploadedFile::fake()->createWithContent(
+        'programme.csv',
+        "Chapitre,Leçon,Sous-partie,Titre,Objectifs,Volume horaire\nChap1,Lecon1,SP1,Titre,Obj,2\n"
+    );
+
+    $response = actingAs($context['teacherUser'])->post(route('programs.import'), [
+        'pedagogical_assignment_id' => $context['assignment']->id,
+        'file' => $file,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('program_annuals', [
+        'classroom_id' => $context['classroom']->id,
+        'subject_id' => $context['subject']->id,
+        'teacher_id' => $context['teacherUser']->id,
+        'pedagogical_assignment_id' => $context['assignment']->id,
+    ]);
+});
+
 test('it_rejects_program_with_mandatory_motif', function () {
     $context = createProgramContext();
     $surveillant = User::factory()->create();

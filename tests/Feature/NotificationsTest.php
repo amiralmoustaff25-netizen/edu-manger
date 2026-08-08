@@ -87,6 +87,51 @@ it('isolates classroom targeted announcements by role', function () {
     ]);
 });
 
+it('notifies parents (not just students/teachers) on a classroom announcement with no explicit role restriction', function () {
+    // Régression Phase 2 / Checkpoint "audit complet" (finding C1) : AnnouncementService
+    // n'importait pas ParentModel, ce qui faisait planter (500) toute annonce ciblée par
+    // classe dès que le rôle "parent" faisait partie du ciblage — le cas par défaut quand
+    // target_roles est vide (voir AnnouncementService::resolveByClassroom()).
+    $admin = User::factory()->create(['role' => 'super-admin'])->assignRole('super-admin');
+    $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+    $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
+
+    $student = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
+    \App\Models\Registration::factory()->create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'status' => 'active',
+    ]);
+
+    $parentUser = User::factory()->create(['role' => 'parent', 'is_active' => true])->assignRole('parent');
+    $parent = \App\Models\ParentModel::factory()->create(['user_id' => $parentUser->id]);
+    $parent->students()->attach($student->id);
+
+    $announcement = Announcement::create([
+        'title' => 'Information classe',
+        'content' => 'Message pour la classe, tous destinataires par défaut.',
+        'type' => 'information',
+        'priority' => 'normal',
+        'target_mode' => 'classroom',
+        'target_roles' => [],
+        'classroom_id' => $classroom->id,
+        'status' => 'draft',
+        'created_by' => $admin->id,
+    ]);
+
+    app(AnnouncementService::class)->publish($announcement);
+
+    $this->assertDatabaseHas('notifications', [
+        'notifiable_id' => $student->id,
+        'type' => AnnouncementPublished::class,
+    ]);
+
+    $this->assertDatabaseHas('notifications', [
+        'notifiable_id' => $parentUser->id,
+        'type' => AnnouncementPublished::class,
+    ]);
+});
+
 it('prevents students from creating announcements', function () {
     $student = User::factory()->create(['role' => 'eleve'])->assignRole('eleve');
 

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Database\Factories\TeacherFactory;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
 
 class Teacher extends Model
 {
@@ -132,9 +134,32 @@ class Teacher extends Model
         return $this->volume_horaire_actuel >= config('edu.volume_horaire_hebdomadaire_maximum', 18);
     }
 
+    /**
+     * Le RIB doit rester utilisable pour un virement de salaire — bcrypt() (hachage à sens
+     * unique) le rendait irrémédiablement irrécupérable, y compris pour ce besoin métier
+     * légitime. Chiffrement réversible à la place ; la vue ne l'affiche jamais en clair
+     * (resources/views/teachers/show.blade.php), donc la confidentialité à l'écran est
+     * inchangée.
+     */
     public function setRibAttribute(?string $value): void
     {
-        $this->attributes['rib'] = $value ? bcrypt($value) : null;
+        $this->attributes['rib'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    public function getRibAttribute(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (DecryptException $e) {
+            // Valeur enregistrée avant ce correctif (bcrypt, irréversible) : impossible à
+            // déchiffrer. On renvoie la valeur brute plutôt que null, pour ne pas faire
+            // croire à tort qu'aucun RIB n'est enregistré.
+            return $value;
+        }
     }
 
     public static function generateMatricule(): string

@@ -163,7 +163,11 @@ class AccountingController extends Controller
 
     public function advancedReports(Request $request): View
     {
-        $this->authorize('voir-rapports-financiers');
+        // voir-rapports-avances, pas voir-rapports-financiers : cette dernière était la
+        // permission de l'ancienne page "Rapports financiers", fusionnée dans "Analyse
+        // avancée" au Checkpoint 12 (voir reports()/config/sidebar.php ci-dessus) — le menu
+        // utilise déjà voir-rapports-avances, ce contrôleur avait gardé l'ancienne par oubli.
+        $this->authorize('voir-rapports-avances');
 
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
@@ -225,7 +229,8 @@ class AccountingController extends Controller
 
     public function exportAdvancedReports(Request $request)
     {
-        $this->authorize('voir-rapports-financiers');
+        // Voir advancedReports() ci-dessus — même correctif.
+        $this->authorize('voir-rapports-avances');
 
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));

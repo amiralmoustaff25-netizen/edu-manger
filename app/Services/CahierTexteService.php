@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Cache;
 
 class CahierTexteService
 {
+    public function __construct(private ProgramProgressService $programProgressService)
+    {
+    }
+
     public function computeProgress(ProgramAnnual $program): array
     {
         $global = $program->progressPercentage;
@@ -19,11 +23,16 @@ class CahierTexteService
             ];
         }
 
+        // Volumes horaires réel/prévu : délègue à ProgramProgressService (source de vérité
+        // déjà utilisée par le tableau de bord pédagogique) plutôt que de dupliquer le calcul
+        // ici — cette méthode renvoyait auparavant 0/0 en dur, jamais les vraies valeurs.
+        $metrics = $this->programProgressService->metrics($program);
+
         return [
             'global' => $global,
             'chapters' => $chapters,
-            'volume_realise' => 0,
-            'volume_prevu' => 0,
+            'volume_realise' => $metrics['realised_hours'],
+            'volume_prevu' => $metrics['planned_hours'],
         ];
     }
 
