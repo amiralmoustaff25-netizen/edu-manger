@@ -64,16 +64,17 @@ class StudentController extends Controller
 
         $feeService = new FeeService();
 
+        // Réponse volontairement réduite au strict nécessaire pour
+        // accounting/payments/create.blade.php (recherche par matricule avant
+        // saisie d'un paiement) : le modèle User complet (notes médicales, contact
+        // d'urgence, adresse...) et les données des parents n'ont rien à faire dans
+        // un écran de saisie de paiement consulté par le personnel comptable.
         return response()->json([
             'registration_id' => $registration->id,
             'matricule' => $registration->matricule,
-            'user' => $registration->user,
-            'classroom' => $registration->classroom,
-            'school_year' => $registration->schoolYear,
-            'monthly_fee' => $registration->monthly_fee,
-            'options' => $registration->options ?? [],
-            'parents' => $registration->user->parents ?? [],
-            'payments' => $registration->payments,
+            'user' => ['name' => $registration->user->name],
+            'classroom' => ['name' => $registration->classroom?->name],
+            'school_year' => ['year_string' => $registration->schoolYear?->year_string],
             'situation' => $feeService->getFinancialSituation($registration),
         ]);
     }

@@ -78,7 +78,20 @@ $visibleItems = $filterVisible($items);
                 </div>
             </div>
         @else
-            <div x-data="{ open: {{ $isOpen ? 'true' : 'false' }} }">
+            @php
+                // Comportement accordéon au niveau 0 seulement (École / Pédagogie / Finance /
+                // Administration...) : ouvrir une section referme les autres via un événement
+                // window plutôt qu'un store partagé, pour rester simple et local à ce composant
+                // récursif. Sans ça, plusieurs sections à nombreux sous-menus (ex. Finance, 9
+                // liens) pouvaient rester ouvertes en même temps et pousser toute la barre
+                // latérale bien au-delà de la hauteur de l'écran.
+                $accordionKey = addslashes($item['label']);
+                $toggleClick = $level === 0
+                    ? "open = !open; if (open) \$dispatch('sidebar-accordion', '{$accordionKey}')"
+                    : 'open = !open';
+            @endphp
+            <div x-data="{ open: {{ $isOpen ? 'true' : 'false' }} }"
+                 @if ($level === 0) x-on:sidebar-accordion.window="if ($event.detail !== '{{ $accordionKey }}') open = false" @endif>
                 <div class="w-full flex items-center justify-between gap-2">
                     @if (!empty($item['route']))
                         <a href="{{ route($item['route']) }}" class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
@@ -92,7 +105,7 @@ $visibleItems = $filterVisible($items);
                     @else
                         <button
                             type="button"
-                            @click="open = !open"
+                            @click="{{ $toggleClick }}"
                             class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-left rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}"
                         >
                             @if ($showIcon && !empty($item['icon']))
@@ -106,7 +119,7 @@ $visibleItems = $filterVisible($items);
 
                     <button
                         type="button"
-                        @click="open = !open"
+                        @click="{{ $toggleClick }}"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
                         aria-label="{{ $isOpen ? __('Réduire le menu') : __('Ouvrir le menu') }}"
                     >
