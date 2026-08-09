@@ -25,17 +25,17 @@
                                 </p>
                                 
                                 <div class="flex gap-2">
-                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_1']) }}" method="GET" class="flex-1">
+                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_1']) }}" method="GET" data-no-pjax class="flex-1">
                                         <button type="submit" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition">
                                             T1 PDF
                                         </button>
                                     </form>
-                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_2']) }}" method="GET" class="flex-1">
+                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_2']) }}" method="GET" data-no-pjax class="flex-1">
                                         <button type="submit" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition">
                                             T2 PDF
                                         </button>
                                     </form>
-                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_3']) }}" method="GET" class="flex-1">
+                                    <form action="{{ route('bulletins.class-pdf', [$classroom, 'trimestre_3']) }}" method="GET" data-no-pjax class="flex-1">
                                         <button type="submit" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition">
                                             T3 PDF
                                         </button>

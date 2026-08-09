@@ -164,7 +164,7 @@
 
                 <!-- Export Excel -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <form action="{{ route('accounting.export-advanced-reports') }}" method="GET" class="flex items-center justify-between gap-4">
+                    <form action="{{ route('accounting.export-advanced-reports') }}" method="GET" data-no-pjax class="flex items-center justify-between gap-4">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Exporter le rapport</h3>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Export Excel des paiements de la période et des filtres sélectionnés ci-dessus.</p>

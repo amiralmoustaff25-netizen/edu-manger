@@ -10,7 +10,7 @@
             <select
                 id="classroom_id"
                 name="classroom_id"
-                onchange="this.form.submit()"
+                onchange="this.form.requestSubmit()"
                 class="border rounded p-2 text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             >
                 <option value="">Toutes les classes</option>
