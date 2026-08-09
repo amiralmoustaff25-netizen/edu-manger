@@ -119,7 +119,7 @@
                 </div>
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" x-on:click="open = false" class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Annuler</button>
-                    <button type="button" x-on:click="open = false; form.submit()" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" x-text="confirmLabel"></button>
+                    <button type="button" x-on:click="open = false; submitForm(form)" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" x-text="confirmLabel"></button>
                 </div>
             </div>
         </div>
