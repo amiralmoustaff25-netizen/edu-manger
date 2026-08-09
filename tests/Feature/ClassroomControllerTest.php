@@ -37,6 +37,20 @@ class ClassroomControllerTest extends TestCase
     }
 
     /** @test */
+    public function the_classroom_list_links_to_the_multi_teacher_management_page(): void
+    {
+        // Régression Phase 3 (finding M10) : classrooms/index.blade.php ne liait jamais vers
+        // classrooms.teachers, pourtant fonctionnelle (attachTeacher/detachTeacher).
+        $classroom = Classroom::factory()->create();
+
+        $response = $this->get(route('classrooms.index'));
+
+        $response->assertOk()->assertSee(route('classrooms.teachers', $classroom->id), false);
+
+        $this->get(route('classrooms.teachers', $classroom->id))->assertOk();
+    }
+
+    /** @test */
     public function it_can_show_create_form(): void
     {
         $response = $this->get(route('classrooms.create'));

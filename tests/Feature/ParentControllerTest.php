@@ -108,6 +108,50 @@ class ParentControllerTest extends TestCase
     }
 
     /** @test */
+    public function an_archived_parent_appears_when_filtering_by_archived_status(): void
+    {
+        // Régression Phase 3 (finding H7) : archive() soft-supprime le parent, mais
+        // index() n'utilisait jamais withTrashed() — le filtre "Archivés" ne pouvait
+        // structurellement jamais rien retourner.
+        $parent = ParentModel::factory()->create(['statut' => 'actif']);
+        $this->patch(route('parents.archive', $parent));
+
+        $response = $this->get(route('parents.index', ['statut' => 'archive']));
+
+        $response->assertOk()->assertSee($parent->nom);
+    }
+
+    /** @test */
+    public function an_archived_parent_can_still_be_viewed_instead_of_404(): void
+    {
+        // Régression Phase 3 (finding H7) : ParentModel n'avait pas de resolveRouteBinding()
+        // personnalisé, donc {parent} dans les routes renvoyait 404 pour tout parent
+        // archivé — devenu visible dans la liste par le fix ci-dessus, mais menant nulle
+        // part au clic sur "Voir" sans ce second correctif.
+        $parent = ParentModel::factory()->create();
+        $this->patch(route('parents.archive', $parent));
+
+        $response = $this->get(route('parents.show', $parent));
+
+        $response->assertOk();
+    }
+
+    /** @test */
+    public function an_admin_can_restore_an_archived_parent(): void
+    {
+        $parent = ParentModel::factory()->create(['statut' => 'actif']);
+        $this->patch(route('parents.archive', $parent));
+        $this->assertTrue($parent->fresh()->trashed());
+
+        $response = $this->post(route('parents.restore', $parent->id));
+
+        $response->assertRedirect();
+        $parent->refresh();
+        $this->assertFalse($parent->trashed());
+        $this->assertSame('actif', $parent->statut);
+    }
+
+    /** @test */
     public function it_validates_required_fields_on_creation(): void
     {
         $response = $this->post(route('parents.store'), []);

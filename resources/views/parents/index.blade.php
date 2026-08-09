@@ -78,7 +78,16 @@
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-2">
                                             <a href="{{ route('parents.show', $parent) }}" class="rounded-md border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Voir</a>
-                                            <a href="{{ route('parents.edit', $parent) }}" class="rounded-md border border-gray-200 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Modifier</a>
+                                            @if($parent->trashed())
+                                                @can('restaurer-parent', $parent)
+                                                    <form method="POST" action="{{ route('parents.restore', $parent->id) }}" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="rounded-md border border-emerald-200 dark:border-emerald-700 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Restaurer</button>
+                                                    </form>
+                                                @endcan
+                                            @else
+                                                <a href="{{ route('parents.edit', $parent) }}" class="rounded-md border border-gray-200 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Modifier</a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
