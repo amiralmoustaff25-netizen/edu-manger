@@ -26,6 +26,17 @@ test('super admin can access the pedagogical configuration center', function () 
         ->assertSee('2026-2027');
 });
 
+test('the grades tab now links the note lock/reopen workflow to the UI', function () {
+    // Régression Phase 3 (finding H8) : notes.validate/notes.reopen existaient côté serveur
+    // (testés dans GradeValidationWorkflowTest) mais aucune vue n'y menait — même pas une
+    // page orpheline. L'onglet "Notes & verrouillage" annonçait déjà cette fonctionnalité
+    // dans son libellé, sans jamais la construire.
+    $this->get(route('pedagogical-configuration.index'))
+        ->assertOk()
+        ->assertSee(route('notes.validate'), false)
+        ->assertSee(route('notes.reopen'), false);
+});
+
 test('super admin can create multi-subject pedagogical assignments', function () {
     $teacher = Teacher::factory()->create();
     $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);

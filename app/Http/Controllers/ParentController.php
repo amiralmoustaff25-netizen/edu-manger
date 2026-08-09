@@ -25,7 +25,12 @@ class ParentController extends Controller
     {
         $this->authorize('voir-parents');
 
-        $parents = ParentModel::query()
+        // withTrashed() : archive() soft-supprime le parent en même temps qu'il pose
+        // statut='archive' (voir archive() ci-dessous). Sans ça, le filtre "Archivés" ne
+        // pouvait structurellement jamais rien retourner — les parents archivés étaient
+        // exclus par le scope global de SoftDeletes avant même que le filtre par statut
+        // ne s'applique.
+        $parents = ParentModel::withTrashed()
             ->with('user')
             ->withCount('students')
             ->when($request->filled('search'), function ($query) use ($request) {

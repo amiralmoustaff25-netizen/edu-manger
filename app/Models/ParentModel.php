@@ -126,6 +126,17 @@ class ParentModel extends Model
     }
 
     /**
+     * Inclut les parents archivés (soft-deleted) dans la résolution des routes
+     * (route model binding). Sans ça, {parent} dans parents.show/parents.edit/... renvoyait
+     * un 404 pour tout parent archivé — un lien "Voir"/"Modifier" cliquable mais qui ne mène
+     * nulle part dès que le parent est affiché dans la liste (voir ParentController::index()).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->withTrashed()->where($field ?? $this->getRouteKeyName(), $value)->first();
+    }
+
+    /**
      * Obtenir les contacts d'urgence
      */
     public function scopeContactUrgence($query)

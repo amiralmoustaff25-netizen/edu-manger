@@ -118,7 +118,14 @@
 
                     <!-- Paiements partiels en attente -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Paiements partiels en attente</h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Paiements partiels en attente</h3>
+                            @can('valider-paiement-partiel')
+                                <a href="{{ route('payments.validation') }}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                                    Valider →
+                                </a>
+                            @endcan
+                        </div>
                         @if($partialPayments->count() > 0)
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

@@ -83,13 +83,24 @@
             </div>
 
             <div class="mt-6 flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
-                <form method="POST" action="{{ route('parents.archive', $parent) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le parent', message: 'Le parent sera archivé et son accès pourra être désactivé. Les associations avec les élèves seront conservées.', confirmLabel: 'Archiver' })">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                        Archiver
-                    </button>
-                </form>
+                @if($parent->trashed())
+                    @can('restaurer-parent', $parent)
+                        <form method="POST" action="{{ route('parents.restore', $parent->id) }}">
+                            @csrf
+                            <button type="submit" class="rounded-md border border-emerald-200 dark:border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
+                                Restaurer
+                            </button>
+                        </form>
+                    @endcan
+                @else
+                    <form method="POST" action="{{ route('parents.archive', $parent) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le parent', message: 'Le parent sera archivé et son accès pourra être désactivé. Les associations avec les élèves seront conservées.', confirmLabel: 'Archiver' })">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                            Archiver
+                        </button>
+                    </form>
+                @endif
                 @if($parent->user)
                 <form method="POST" action="{{ route('parents.reset-password', $parent) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Réinitialiser le mot de passe', message: 'Un mot de passe temporaire sera généré pour ce parent.', confirmLabel: 'Réinitialiser' })">
                     @csrf
