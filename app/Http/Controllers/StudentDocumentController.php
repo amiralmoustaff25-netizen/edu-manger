@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Intervention\Image\ImageManagerStatic as Image;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentDocumentController extends Controller
@@ -24,7 +25,26 @@ class StudentDocumentController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('student-documents/'.$student->id, 'local');
+        $directory = 'student-documents/'.$student->id;
+
+        // Les images sont ré-encodées afin de supprimer les métadonnées EXIF
+        // (GPS, appareil, etc.) avant stockage. Les PDF sont conservés tels quels.
+        if (in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png'], true)) {
+            $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.jpg';
+            $path = $directory.'/'.$filename;
+
+            if (extension_loaded('imagick')) {
+                Image::configure(['driver' => 'imagick']);
+            }
+
+            $encoded = Image::make($file)
+                ->orientate()
+                ->encode('jpg', 95);
+
+            Storage::disk('local')->put($path, $encoded);
+        } else {
+            $path = $file->store($directory, 'local');
+        }
 
         StudentDocument::create([
             'user_id' => $student->id,

@@ -78,13 +78,13 @@ class ParentController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make('password'),
                 'matricule' => User::generateMatricule('parent'),
-                'role' => 'parent',
                 'is_active' => $validated['statut'] === 'actif',
                 'password_must_change' => true,
                 'created_by' => auth()->id(),
             ]);
 
             $user->assignRole('parent');
+            $user->syncPrimaryRoleColumn();
 
             $parent = ParentModel::create([
                 'matricule_parent' => ParentModel::generateMatricule(),

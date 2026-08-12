@@ -137,7 +137,6 @@ class User extends Authenticatable
         'prenom',
         'email',
         'password',
-        'role',
         'cycle',
         'specialite',
         'telephone',
@@ -363,6 +362,20 @@ class User extends Authenticatable
     }
 
     // Dans app/Models/User.php
+
+    /**
+     * Met à jour la colonne legacy `role` depuis le premier rôle Spatie actif.
+     * Cette colonne est en cours de migration vers Spatie ; l'assignation via
+     * forceFill est protégée car elle n'est pas exposée au mass assignment.
+     */
+    public function syncPrimaryRoleColumn(): void
+    {
+        $primary = $this->roles->first()?->name;
+
+        if ($primary) {
+            $this->forceFill(['role' => $primary])->save();
+        }
+    }
 
     public static function generateMatricule(string $role): string
     {

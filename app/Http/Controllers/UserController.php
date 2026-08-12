@@ -76,17 +76,21 @@ class UserController extends Controller
 
         // Combiner nom et prénom pour le champ name
         $validated['name'] = trim($validated['nom'] . ' ' . $validated['prenom']);
-        
-        $validated['matricule'] = User::generateMatricule($validated['role']);
+
+        $role = $validated['role'];
+        unset($validated['role']);
+
+        $validated['matricule'] = User::generateMatricule($role);
         $temporaryPassword = Str::password(12);
         $validated['password'] = Hash::make($temporaryPassword);
         $validated['created_by'] = auth()->id();
         $validated['password_must_change'] = true;
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        $user = DB::transaction(function () use ($validated) {
+        $user = DB::transaction(function () use ($validated, $role) {
             $user = User::create($validated);
-            $user->syncRoles([$validated['role']]);
+            $user->syncRoles([$role]);
+            $user->syncPrimaryRoleColumn();
 
             return $user;
         });
@@ -113,9 +117,13 @@ class UserController extends Controller
         $validated['name'] = trim($validated['nom'].' '.$validated['prenom']);
         $validated['is_active'] = $request->boolean('is_active');
 
-        DB::transaction(function () use ($user, $validated) {
+        $role = $validated['role'];
+        unset($validated['role']);
+
+        DB::transaction(function () use ($user, $validated, $role) {
             $user->update($validated);
-            $user->syncRoles([$validated['role']]);
+            $user->syncRoles([$role]);
+            $user->syncPrimaryRoleColumn();
         });
 
         return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');

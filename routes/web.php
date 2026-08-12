@@ -10,7 +10,6 @@ use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ClassroomFeeController;
 use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FeeTypeController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
@@ -46,11 +45,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
-
-// Routes pour tester les exports (PDF/Excel)
-Route::get('/export/pdf-hello-world', [ExportController::class, 'pdfHelloWorld'])->name('export.pdf.hello-world');
-Route::get('/export/pdf-preview', [ExportController::class, 'pdfPreview'])->name('export.pdf.preview');
-Route::get('/export/excel-hello-world', [ExportController::class, 'excelHelloWorld'])->name('export.excel.hello-world');
 
 Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
     Route::get('/dashboard', function () {

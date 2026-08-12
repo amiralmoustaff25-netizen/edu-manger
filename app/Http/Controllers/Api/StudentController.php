@@ -14,6 +14,8 @@ class StudentController extends Controller
 {
     public function getByMatricule($matricule): JsonResponse
     {
+        \Illuminate\Support\Facades\Gate::authorize('enregistrer-paiement');
+
         // 1. Recherche par le matricule de l'élève (User) — rôle coloîne OU rôle Spatie
         $student = User::query()
             ->where(function ($query) {
@@ -81,6 +83,8 @@ class StudentController extends Controller
 
     public function getStudentFees($registrationId, FeeService $feeService): JsonResponse
     {
+        \Illuminate\Support\Facades\Gate::authorize('enregistrer-paiement');
+
         $registration = Registration::with(['classroom', 'schoolYear', 'payments'])
             ->findOrFail($registrationId);
 

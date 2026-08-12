@@ -39,7 +39,6 @@ class StudentEnrollmentService
                 'email' => $data['email'] ?? null,
                 'password' => Hash::make($this->studentTemporaryPassword),
                 'matricule' => User::generateMatricule('eleve'),
-                'role' => 'eleve',
                 'cycle' => $data['cycle'],
                 'telephone' => $data['telephone'] ?? null,
                 'date_naissance' => $data['date_naissance'],
@@ -57,6 +56,7 @@ class StudentEnrollmentService
             ]);
 
             $student->syncRoles(['eleve']);
+            $student->syncPrimaryRoleColumn();
 
             if ($photo) {
                 $path = $this->storeStudentPhoto($photo, $student->matricule);
@@ -194,7 +194,6 @@ class StudentEnrollmentService
             'email' => $data['parent_email'],
             'password' => Hash::make($parentPassword),
             'matricule' => User::generateMatricule('parent'),
-            'role' => 'parent',
             'telephone' => $data['parent_telephone'] ?? null,
             'adresse' => $data['parent_adresse'] ?? null,
             'is_active' => true,
@@ -202,6 +201,7 @@ class StudentEnrollmentService
         ]);
 
         $parentUser->syncRoles(['parent']);
+        $parentUser->syncPrimaryRoleColumn();
 
         $parent = ParentModel::create([
             'matricule_parent' => $this->generateParentMatricule(),
