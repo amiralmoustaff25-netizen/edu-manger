@@ -14,7 +14,9 @@ return [
         [
             'label' => 'École',
             'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-            'roles' => ['super-admin', 'admin'],
+            // Pas de 'roles' ici : le groupe se base uniquement sur les permissions de ses
+            // enfants (chacun a déjà son propre 'permission'), pour qu'un rôle personnalisé
+            // avec la bonne permission voie le groupe sans devoir s'appeler 'admin'.
             'active_routes' => ['students.*', 'registrations.*', 'parents.*', 'classrooms.*', 'teachers.*'],
             'children' => [
                 ['label' => 'Élèves', 'route' => 'students.index', 'permission' => 'voir-eleves'],
@@ -25,7 +27,7 @@ return [
         [
             'label' => 'Pédagogie',
             'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
-            'roles' => ['super-admin', 'admin'],
+            // Pas de 'roles' ici : voir commentaire du groupe 'École'.
             'active_routes' => ['programs.*', 'cahier-textes.*', 'bulletins.*', 'attendances.overview', 'pedagogical-configuration.*'],
             'children' => [
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
@@ -41,7 +43,9 @@ return [
         [
             'label' => 'Finance',
             'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-            'roles' => ['super-admin', 'admin'],
+            // Pas de 'roles' ici : voir commentaire du groupe 'École'. La liste 'permissions'
+            // ci-dessous suffit à elle seule (et redevient enfin effective : avec 'roles'
+            // présent en même temps, elle n'était jamais évaluée par filterVisible()).
             'permissions' => ['voir-comptabilite', 'voir-paiements', 'valider-paiement-partiel', 'voir-factures', 'voir-recouvrement', 'voir-alertes-impayes', 'voir-types-frais', 'voir-frais-classe', 'voir-rapports-avances', 'voir-tresorerie'],
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
@@ -62,10 +66,13 @@ return [
         [
             'label' => 'Administration',
             'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
-            'roles' => ['super-admin', 'admin'],
+            // Pas de 'roles' ici : voir commentaire du groupe 'École'. 'Vue d'ensemble'
+            // ci-dessous porte son propre verrou de rôle car sa route (admin.dashboard)
+            // est protégée côté serveur par rôle (middleware role:super-admin|admin),
+            // pas par permission — le menu doit rester cohérent avec ça.
             'active_routes' => ['admin.dashboard', 'users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
             'children' => [
-                ['label' => 'Vue d\'ensemble', 'route' => 'admin.dashboard'],
+                ['label' => 'Vue d\'ensemble', 'route' => 'admin.dashboard', 'roles' => ['super-admin', 'admin']],
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
                 ['label' => 'Professeurs', 'route' => 'teachers.index', 'permission' => 'voir-professeurs'],
                 ['label' => 'Parents & Tuteurs', 'route' => 'parents.index', 'permission' => 'voir-parents'],
