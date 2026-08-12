@@ -11,6 +11,7 @@ use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
+use App\Services\SchoolYearContext;
 use App\Services\StudentStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,13 +23,21 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 class StudentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SchoolYearContext $context): View
     {
         $this->authorize('voir-eleves');
+
+        $viewingYear = $context->current();
 
         $students = User::query()
             ->students()
             ->with(['latestRegistration.classroom', 'latestRegistration.schoolYear'])
+            ->when($viewingYear, function ($query) use ($viewingYear) {
+                // Sans ce filtre, la liste mélangeait indéfiniment tous les comptes élèves
+                // jamais créés, quelle que soit l'année : le sélecteur d'année transverse
+                // n'aurait alors aucun effet visible ici.
+                $query->whereHas('registrations', fn ($query) => $query->where('school_year_id', $viewingYear->id));
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
 
@@ -59,8 +68,11 @@ class StudentController extends Controller
 
         return view('students.index', [
             'students' => $students,
-            'classrooms' => Classroom::orderBy('name')->get(),
+            'classrooms' => $viewingYear
+                ? Classroom::where('school_year_id', $viewingYear->id)->orderBy('name')->get()
+                : Classroom::orderBy('name')->get(),
             'filters' => $request->only(['search', 'classroom_id', 'status']),
+            'viewingYear' => $viewingYear,
         ]);
     }
 

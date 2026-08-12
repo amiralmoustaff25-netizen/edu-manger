@@ -22,6 +22,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\SchoolYearContextController;
 use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolYearController;
@@ -54,6 +55,8 @@ Route::get('/export/pdf-preview', [ExportController::class, 'pdfPreview'])->name
 Route::get('/export/excel-hello-world', [ExportController::class, 'excelHelloWorld'])->name('export.excel.hello-world');
 
 Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
+    Route::post('/context/school-year', [SchoolYearContextController::class, 'update'])->name('context.school-year.update');
+
     Route::get('/dashboard', function () {
         // REDIRECTION ÉLÈVE vers /mon-espace
         if (auth()->user()->hasRole('eleve')) {

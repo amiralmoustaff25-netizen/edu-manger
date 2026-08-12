@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Classroom;
 use App\Models\User;
 use App\Services\GradeCalculationService;
+use App\Services\SchoolYearContext;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -99,12 +100,18 @@ class BulletinController extends Controller
     /**
      * Afficher la sélection pour générer des bulletins
      */
-    public function index(Request $request): View
+    public function index(Request $request, SchoolYearContext $context): View
     {
         abort_unless($request->user()->can('generer-bulletins'), 403);
 
-        $classrooms = Classroom::with('schoolYear')->get();
+        $viewingYear = $context->current();
 
-        return view('bulletins.index', compact('classrooms'));
+        $classrooms = Classroom::with('schoolYear')
+            ->when($viewingYear, fn ($query) => $query->where('school_year_id', $viewingYear->id))
+            ->orderBy('ordre')
+            ->orderBy('name')
+            ->get();
+
+        return view('bulletins.index', compact('classrooms', 'viewingYear'));
     }
 }

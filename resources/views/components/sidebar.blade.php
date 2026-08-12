@@ -178,6 +178,10 @@
                 </header>
             @endisset
 
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-slate-700">
+                <x-school-year-selector />
+            </div>
+
             @if (session('success'))
                 <div x-data="{ show: true }"
                     x-init="setTimeout(() => show = false, 3000)"

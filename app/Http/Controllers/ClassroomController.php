@@ -7,6 +7,7 @@ use App\Models\Matiere;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\SchoolYearContext;
 use App\Services\SchoolYearGuardService;
 use App\Support\ClassroomLevel;
 use Illuminate\Http\Request;
@@ -24,15 +25,22 @@ class ClassroomController extends Controller
         };
     }
 
-    public function index()
+    public function index(SchoolYearContext $context)
     {
         Gate::authorize('viewAny', Classroom::class);
+
+        $viewingYear = $context->current();
+
         $classrooms = Classroom::with('teacher')
+            ->when($viewingYear, fn ($query) => $query->where('school_year_id', $viewingYear->id))
             ->withCount([
                 'registrations as students_count' => fn ($query) => $query->where('status', 'active'),
-            ])->get();
+            ])
+            ->orderBy('ordre')
+            ->orderBy('name')
+            ->get();
 
-        return view('classrooms.index', compact('classrooms'));
+        return view('classrooms.index', compact('classrooms', 'viewingYear'));
     }
 
     public function create()
