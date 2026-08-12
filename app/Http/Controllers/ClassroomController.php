@@ -7,6 +7,7 @@ use App\Models\Matiere;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -82,9 +83,10 @@ class ClassroomController extends Controller
         return view('classrooms.edit', compact('classroom'));
     }
 
-    public function update(Request $request, Classroom $classroom)
+    public function update(Request $request, Classroom $classroom, SchoolYearGuardService $schoolYearGuard)
     {
         Gate::authorize('update', $classroom);
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         $validated = $request->validate([
             'level' => 'required|string',
@@ -117,9 +119,10 @@ class ClassroomController extends Controller
         return redirect()->route('classrooms.index')->with('success', 'Classe modifiée avec succès.');
     }
 
-    public function destroy(Classroom $classroom)
+    public function destroy(Classroom $classroom, SchoolYearGuardService $schoolYearGuard)
     {
         Gate::authorize('delete', $classroom);
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
         $classroom->delete();
 
         return redirect()->route('classrooms.index')->with('success', 'La classe a été supprimée.');
@@ -140,9 +143,10 @@ class ClassroomController extends Controller
         return view('classrooms.teachers', compact('classroom', 'teachers', 'matieres', 'activeYear'));
     }
 
-    public function attachTeacher(Request $request, Classroom $classroom)
+    public function attachTeacher(Request $request, Classroom $classroom, SchoolYearGuardService $schoolYearGuard)
     {
         Gate::authorize('gerer-enseignants-classe');
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         $validated = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
@@ -171,9 +175,10 @@ class ClassroomController extends Controller
         return back()->with('success', 'Professeur affecté à la classe avec succès.');
     }
 
-    public function detachTeacher(Classroom $classroom, Teacher $teacher)
+    public function detachTeacher(Classroom $classroom, Teacher $teacher, SchoolYearGuardService $schoolYearGuard)
     {
         Gate::authorize('gerer-enseignants-classe');
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
 

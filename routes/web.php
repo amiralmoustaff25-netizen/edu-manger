@@ -423,8 +423,13 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::post('/parents/{id}/restore', [ParentController::class, 'restore'])->name('parents.restore');
 
         // Gestion des années scolaires
-        Route::resource('school-years', SchoolYearController::class)->only(['index', 'store', 'destroy']);
+        Route::resource('school-years', SchoolYearController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
         Route::post('school-years/{schoolYear}/activate', [SchoolYearController::class, 'activate'])->name('school-years.activate');
+        Route::get('school-years/{schoolYear}/closure-checklist', [SchoolYearController::class, 'closureChecklist'])->name('school-years.closure-checklist');
+        Route::post('school-years/{schoolYear}/start-closing', [SchoolYearController::class, 'startClosing'])->name('school-years.start-closing');
+        Route::post('school-years/{schoolYear}/cancel-closing', [SchoolYearController::class, 'cancelClosing'])->name('school-years.cancel-closing');
+        Route::get('school-years/{schoolYear}/reopen', [SchoolYearController::class, 'showReopenForm'])->name('school-years.reopen.show');
+        Route::post('school-years/{schoolYear}/reopen', [SchoolYearController::class, 'reopen'])->name('school-years.reopen');
 
         // Routes pour les logs de connexion
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');

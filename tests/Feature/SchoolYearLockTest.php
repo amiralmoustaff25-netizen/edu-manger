@@ -6,13 +6,14 @@ use App\Models\FeeType;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Support\SchoolYearStatus;
 
 function createLockedYearFixture(): array
 {
     $lockedYear = SchoolYear::create([
         'year_string' => '2024-2025',
         'is_active' => false,
-        'status' => 'completed',
+        'status' => SchoolYearStatus::CLOSED,
     ]);
 
     $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $lockedYear->id, 'cycle' => 'primaire']);
@@ -128,7 +129,7 @@ test('manager comptable cannot grant or revoke a tariff derogation on a locked s
 });
 
 test('active school year is not locked', function () {
-    $activeYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true, 'status' => 'active']);
+    $activeYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true, 'status' => SchoolYearStatus::ACTIVE]);
 
     expect($activeYear->isLocked())->toBeFalse();
 });
