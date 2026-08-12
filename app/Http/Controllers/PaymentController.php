@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
+use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Notifications\PaymentReceived;
@@ -75,7 +76,7 @@ class PaymentController extends Controller
         return view('accounting.payments.edit', compact('payment'));
     }
 
-    public function update(Request $request, Payment $payment, SchoolYearGuardService $schoolYearGuard): RedirectResponse
+    public function update(UpdatePaymentRequest $request, Payment $payment, SchoolYearGuardService $schoolYearGuard): RedirectResponse
     {
         $this->authorize('update', $payment);
 
@@ -86,16 +87,7 @@ class PaymentController extends Controller
 
         $schoolYearGuard->assertNotLocked($payment->registration->schoolYear);
 
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'status' => 'required|in:complet,partiel',
-            'remaining_balance' => 'nullable|numeric|min:0',
-            'month' => 'required|string',
-            'payment_date' => 'required|date',
-            'payment_method' => 'required|string',
-            'payment_type' => 'required|string',
-            'comment' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $oldValues = $payment->toArray();
         $payment->update($validated);

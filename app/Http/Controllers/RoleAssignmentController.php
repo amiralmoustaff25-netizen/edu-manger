@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateRoleAssignmentRequest;
 use App\Models\User;
 use App\Services\SuperAdminProtectionService;
 use App\Services\UserPermissionService;
@@ -58,7 +59,7 @@ class RoleAssignmentController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(UpdateRoleAssignmentRequest $request, User $user): RedirectResponse
     {
         $this->authorize('modifier-utilisateur', $user);
 
@@ -71,13 +72,7 @@ class RoleAssignmentController extends Controller
             "modifier les accès d'un"
         );
 
-        $validated = $request->validate([
-            'roles' => ['nullable', 'array'],
-            'roles.*' => [Rule::in($this->availableRoleNames())],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name'],
-            'confirm_super_admin' => ['nullable', 'in:1'],
-        ]);
+        $validated = $request->validated();
 
         $requestedRoles = collect($validated['roles'] ?? [])->unique()->values();
         $requestedPermissions = $request->has('permissions')
