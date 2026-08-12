@@ -24,16 +24,14 @@ class UserFactory extends Factory
     public function definition(): array
     {
         $uniqueId = random_int(1, 99999);
-        $emailSuffix = random_int(1000, 9999);
 
         return [
             'matricule' => sprintf('MAT-%05d', $uniqueId),
             'name' => 'Utilisateur '.$uniqueId,
-            'email' => 'user'.$emailSuffix.'@example.com',
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => 'password',
             'remember_token' => Str::random(10),
-            'role' => 'user', // Ajoute une valeur par défaut ici
         ];
     }
 

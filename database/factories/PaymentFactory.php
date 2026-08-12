@@ -20,12 +20,13 @@ class PaymentFactory extends Factory
     {
         return [
             'registration_id' => Registration::factory(),
-            'amount' => $this->faker->numberBetween(50000, 150000),
+            'amount' => $this->faker->numberBetween(5000, 150000),
             'payment_date' => $this->faker->date(),
-            'payment_method' => $this->faker->randomElement(['cash', 'bank_transfer', 'mobile_money', 'check']),
-            'status' => $this->faker->randomElement(['completed', 'pending', 'failed', 'refunded']),
-            'reference' => 'PAY-' . date('y') . '-' . strtoupper($this->faker->unique()->bothify('??????')),
-            'notes' => $this->faker->optional()->sentence(),
+            'payment_method' => $this->faker->randomElement(['espèces', 'virement', 'chèque', 'mobile_money']),
+            'payment_type' => $this->faker->randomElement(['mensualite', 'inscription', 'cantine', 'transport', 'internat', 'autre']),
+            'status' => $this->faker->randomElement(['complet', 'partiel']),
+            'month' => $this->faker->randomElement(['Septembre', 'Octobre', 'Novembre', 'Décembre', null]),
+            'comment' => $this->faker->optional()->sentence(),
         ];
     }
 }
