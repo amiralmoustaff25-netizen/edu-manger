@@ -9,6 +9,7 @@ use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ClassroomFeeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\FeeTypeController;
 use App\Http\Controllers\GradeController;
@@ -32,14 +33,7 @@ use App\Http\Controllers\TeachingSessionController;
 use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserNotificationController;
-use App\Models\Classroom;
-use App\Models\Invoice;
 use App\Models\Matiere;
-use App\Models\ParentModel;
-use App\Models\Payment;
-use App\Models\Registration;
-use App\Models\SchoolYear;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,108 +41,7 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
-    Route::get('/dashboard', function () {
-        // REDIRECTION ÉLÈVE vers /mon-espace
-        if (auth()->user()->hasRole('eleve')) {
-            return redirect()->route('student.dashboard');
-        }
-
-        // REDIRECTION PROFESSEUR vers /professeur/dashboard
-        if (auth()->user()->hasRole('professeur')) {
-            return redirect()->route('professeur.dashboard');
-        }
-
-        // Parent dashboard personnalisé
-        if (auth()->user()->hasRole('parent')) {
-            $parent = auth()->user()->parentProfile()
-                ->with(['students' => function ($query) {
-                    $query->with(['latestRegistration.classroom.schoolYear'])
-                        ->withCount(['notes', 'attendances']);
-                }])
-                ->firstOrFail();
-
-            return view('parents.dashboard', compact('parent'));
-        }
-
-        // Ce tableau de bord (chiffres financiers, paiements récents, inscriptions)
-        // est réservé au personnel de direction/comptabilité. Sans ce contrôle,
-        // n'importe quel compte authentifié n'ayant aucun des rôles ci-dessus
-        // (eleve/professeur/parent traités plus haut) tombait dans cette branche
-        // et voyait les données financières de l'établissement.
-        abort_unless(
-            auth()->user()->hasAnyRole(['super-admin', 'admin', 'manager-comptable', 'comptable', 'surveillant']),
-            403
-        );
-
-        $activeYear = SchoolYear::where('is_active', true)->first();
-
-        $registrations = Registration::with(['user', 'classroom', 'schoolYear'])
-            ->latest()
-            ->take(8)
-            ->get();
-
-        $recentPayments = Payment::with(['registration.user', 'registration.classroom'])
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // Solde restant réel : recalculé via FeeService (frais réellement dus) pour les
-        // inscriptions actives de l'année en cours, jamais via le module Invoice (peu
-        // utilisé, déconnecté du suivi réel des paiements) ni en sommant remaining_balance.
-        $feeService = app(\App\Services\FeeService::class);
-        $activeRegistrationsForBalance = $activeYear
-            ? Registration::where('school_year_id', $activeYear->id)->where('status', 'active')->get()
-            : collect();
-        $remainingBalance = $activeRegistrationsForBalance->sum(
-            fn (Registration $registration) => $feeService->getFinancialSituation($registration)['remaining']
-        );
-
-        $stats = [
-            'students' => User::role('eleve')->count(),
-            'classrooms' => Classroom::count(),
-            'parents' => ParentModel::count(),
-            'active_parents' => ParentModel::where('statut', 'actif')->count(),
-            'paid_this_month' => Payment::where('status', 'complet')->notCancelled()
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count(),
-            'partial_payments' => Payment::where('status', 'partiel')->notCancelled()->count(),
-            // Inclut les paiements partiels : leur montant "amount" est de l'argent
-            // réellement encaissé, pas une projection — l'exclure sous-évaluait le
-            // revenu mensuel réel dès qu'un paiement partiel avait eu lieu.
-            'monthly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->sum('amount'),
-            'remaining_balance' => $remainingBalance,
-        ];
-
-        $monthlyRevenue = collect(range(5, 0))->map(function ($monthsAgo) {
-            $date = now()->subMonths($monthsAgo);
-
-            return [
-                'label' => $date->translatedFormat('M Y'),
-                'amount' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
-                    ->whereMonth('payment_date', $date->month)
-                    ->whereYear('payment_date', $date->year)
-                    ->sum('amount'),
-            ];
-        })->values();
-
-        // Alertes synchronisées avec les données réelles (Payment/Registration/Classroom),
-        // plus de dépendance au module Invoice qui n'est pas utilisé en pratique.
-        $alerts = [
-            'partial_payments' => Payment::where('status', 'partiel')
-                ->notCancelled()
-                ->where('remaining_balance', '>', 0)
-                ->count(),
-            'students_without_class' => Registration::where('status', 'active')->whereNull('classroom_id')->count(),
-            'classrooms_without_teacher' => Classroom::whereNull('teacher_id')->count(),
-            'missing_active_year' => $activeYear === null,
-        ];
-
-        return view('dashboard', compact('registrations', 'recentPayments', 'stats', 'alerts', 'activeYear', 'monthlyRevenue'));
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
     Route::get('/classrooms/{classroom}/teachers', [ClassroomController::class, 'teachers'])->name('classrooms.teachers');

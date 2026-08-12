@@ -13,13 +13,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\ImageManagerStatic as Image;
 
 class StudentEnrollmentService
 {
     public ?array $parentCredentials = null;
 
     public ?string $studentTemporaryPassword = null;
+
+    public function __construct(private readonly StudentPhotoService $photoService)
+    {
+    }
 
     public function getParentCredentials(): ?array
     {
@@ -59,7 +62,7 @@ class StudentEnrollmentService
             $student->syncPrimaryRoleColumn();
 
             if ($photo) {
-                $path = $this->storeStudentPhoto($photo, $student->matricule);
+                $path = $this->photoService->store($photo, $student->matricule);
                 $student->update(['profile_photo_path' => $path]);
             }
 
@@ -148,28 +151,6 @@ class StudentEnrollmentService
 
             return $registration;
         });
-    }
-
-    private function storeStudentPhoto(UploadedFile $photo, string $matricule): string
-    {
-        $filename = $matricule.'_'.time().'.jpg';
-        $path = 'photos/eleves/'.$filename;
-
-        try {
-            if (extension_loaded('imagick')) {
-                Image::configure(['driver' => 'imagick']);
-            }
-
-            $image = Image::make($photo)->fit(150, 150)->encode('jpg', 90);
-            Storage::disk('public')->put($path, $image);
-        } catch (\Throwable $e) {
-            $ext = $photo->getClientOriginalExtension() ?: 'jpg';
-            $filename = $matricule.'_'.time().'.'.$ext;
-            $path = 'photos/eleves/'.$filename;
-            Storage::disk('public')->putFileAs('photos/eleves', $photo, $filename);
-        }
-
-        return $path;
     }
 
     private function generateRegistrationMatricule(): string

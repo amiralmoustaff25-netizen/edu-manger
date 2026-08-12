@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\SuperAdminProtectionService;
 use App\Services\UserPermissionService;
 use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,12 @@ class RoleAssignmentController extends Controller
         'super-admin', 'admin', 'manager-comptable', 'comptable', 'surveillant',
         'professeur', 'parent', 'eleve',
     ];
+
+    public function __construct(
+        private readonly SuperAdminProtectionService $superAdminProtection,
+        private readonly UserPermissionService $permissionService,
+    ) {
+    }
 
     public function index(Request $request): View
     {
@@ -51,7 +58,7 @@ class RoleAssignmentController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user, UserPermissionService $service): RedirectResponse
+    public function update(Request $request, User $user): RedirectResponse
     {
         $this->authorize('modifier-utilisateur', $user);
 
@@ -59,10 +66,9 @@ class RoleAssignmentController extends Controller
         // attribuer le rôle super-admin. Ce contrôle doit être explicite : Spatie
         // court-circuite les Policies via Gate::before dès que l'acteur possède la
         // permission plate 'modifier-utilisateur' (accordée au rôle admin).
-        abort_if(
-            $user->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin'),
-            403,
-            "Seul un super-administrateur peut modifier les accès d'un compte super-administrateur."
+        $this->superAdminProtection->ensureCanTarget(
+            $user,
+            "modifier les accès d'un"
         );
 
         $validated = $request->validate([
@@ -89,7 +95,7 @@ class RoleAssignmentController extends Controller
             }
         }
 
-        $service->apply($user, $requestedRoles->toArray(), $requestedPermissions->toArray(), auth()->id());
+        $this->permissionService->apply($user, $requestedRoles->toArray(), $requestedPermissions->toArray(), auth()->id());
 
         $this->syncPrimaryRoleColumn($user);
 
