@@ -367,6 +367,17 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
     });
 
+    // Utilisateurs : pas de verrou par rôle ici — chaque action de UserController vérifie déjà
+    // sa propre permission Spatie (voir-utilisateurs, creer-utilisateur, modifier-utilisateur,
+    // supprimer-utilisateur, activer-desactiver-utilisateur, reinitialiser-mot-de-passe-utilisateur),
+    // y compris via StoreUserRequest/UpdateUserRequest::authorize(). Un middleware role:super-admin|admin
+    // ici bloquait tout rôle personnalisé ayant reçu une de ces permissions individuellement
+    // (ex. Manager Comptable + voir-utilisateurs), en contradiction avec le menu (config/sidebar.php)
+    // qui n'exige lui que la permission.
+    Route::resource('users', UserController::class)->except(['show']);
+    Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
+    Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
     Route::middleware(['role:super-admin|admin'])->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
@@ -383,9 +394,6 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
             Route::post('/subject-configurations', [PedagogicalConfigurationController::class, 'storeSubjectConfiguration'])->name('subjects.store');
             Route::put('/school-years/{schoolYear}/grade-settings', [PedagogicalConfigurationController::class, 'updateSettings'])->name('settings.update');
         });
-        Route::resource('users', UserController::class)->except(['show']);
-        Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
-        Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
         Route::get('/users/roles/assign', [RoleAssignmentController::class, 'index'])->name('users.roles.index');
         Route::patch('/users/{user}/roles', [RoleAssignmentController::class, 'update'])->name('users.roles.update');
