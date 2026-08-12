@@ -17,10 +17,11 @@ return [
             // Pas de 'roles' ici : le groupe se base uniquement sur les permissions de ses
             // enfants (chacun a déjà son propre 'permission'), pour qu'un rôle personnalisé
             // avec la bonne permission voie le groupe sans devoir s'appeler 'admin'.
-            'active_routes' => ['students.*', 'registrations.*', 'parents.*', 'classrooms.*', 'teachers.*'],
+            'active_routes' => ['students.*', 'registrations.*', 'parents.*', 'classrooms.*', 'teachers.*', 'promotion.*'],
             'children' => [
                 ['label' => 'Élèves', 'route' => 'students.index', 'permission' => 'voir-eleves'],
                 ['label' => 'Inscriptions', 'route' => 'registrations.create', 'permission' => 'creer-inscription'],
+                ['label' => 'Promotion des élèves', 'route' => 'promotion.index', 'permission' => 'promouvoir-eleves'],
                 ['label' => 'Classes & Niveaux', 'route' => 'classrooms.index', 'permission' => 'voir-classes'],
             ],
         ],

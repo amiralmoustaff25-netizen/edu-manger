@@ -59,6 +59,7 @@ class SchoolYearConfigDuplicationService
             $new = Classroom::create([
                 'name' => $classroom->name,
                 'cycle' => $classroom->cycle,
+                'ordre' => $classroom->ordre,
                 'school_year_id' => $target->id,
                 'teacher_id' => $classroom->teacher_id,
                 'max_students' => $classroom->max_students,

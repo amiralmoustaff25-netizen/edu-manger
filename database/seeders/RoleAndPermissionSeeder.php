@@ -51,6 +51,7 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Inscriptions (registrations) ---
             'voir-inscriptions',
             'creer-inscription',
+            'promouvoir-eleves',
 
             // --- Parents ---
             'voir-parents',
