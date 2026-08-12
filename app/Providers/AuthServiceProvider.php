@@ -56,6 +56,13 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        // ATTENTION : ce hook fait court-circuiter toutes les Policies et
+        // permissions pour le rôle super-admin. C'est volontaire (passe-droit
+        // global) mais implique que tout garde-fou métier critique (ex. supprimer
+        // le dernier super-admin, muter un rôle sensible, supprimer une année
+        // scolaire clôturée) DOIT être implémenté explicitement au niveau des
+        // contrôleurs ou services appelants. Cette règle est documentée ; ne pas
+        // la supprimer sans répercuter la logique dans chaque Policy concernée.
         Gate::before(function ($user) {
             return $user->hasRole('super-admin') ? true : null;
         });

@@ -189,10 +189,6 @@ class RoleAssignmentController extends Controller
 
     private function syncPrimaryRoleColumn(User $user): void
     {
-        $primary = $user->roles->first()?->name;
-
-        if ($primary && in_array($primary, self::SEARCHABLE_ROLES, true)) {
-            $user->update(['role' => $primary]);
-        }
+        $user->syncPrimaryRoleColumn();
     }
 }

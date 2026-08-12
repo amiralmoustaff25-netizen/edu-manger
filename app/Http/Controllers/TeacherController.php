@@ -97,7 +97,6 @@ class TeacherController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($temporaryPassword),
                 'matricule' => User::generateMatricule('professeur'),
-                'role' => 'professeur',
                 'telephone' => $validated['telephone'] ?? null,
                 'date_naissance' => $validated['date_naissance'],
                 'specialite' => implode(', ', $validated['specialites']),
@@ -107,6 +106,7 @@ class TeacherController extends Controller
             ]);
 
             $user->assignRole('professeur');
+            $user->syncPrimaryRoleColumn();
 
             return Teacher::create([
                 'user_id' => $user->id,
