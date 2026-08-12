@@ -20,6 +20,7 @@ use App\Http\Controllers\PedagogicalConfigurationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
@@ -410,6 +411,8 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
         Route::get('/registrations/reinscription', [RegistrationController::class, 'reenrollSearch'])->name('registrations.reinscription');
         Route::post('/registrations/reinscription', [RegistrationController::class, 'storeReenrollment'])->name('registrations.reinscription.store');
+        Route::get('/promotion', [PromotionController::class, 'index'])->name('promotion.index');
+        Route::post('/promotion', [PromotionController::class, 'store'])->name('promotion.store');
 
         // Routes pour la gestion des parents (admin)
         // NB : le portail parent (prefix /parents, role:parent) est déclaré plus haut,

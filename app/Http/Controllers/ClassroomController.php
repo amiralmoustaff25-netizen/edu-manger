@@ -8,6 +8,7 @@ use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\SchoolYearGuardService;
+use App\Support\ClassroomLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -68,6 +69,7 @@ class ClassroomController extends Controller
         Classroom::create([
             'name' => $fullName,
             'cycle' => $cycle,
+            'ordre' => ClassroomLevel::ordre($validated['level']),
             'school_year_id' => $activeYear->id,
             'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
@@ -112,6 +114,7 @@ class ClassroomController extends Controller
         $classroom->update([
             'name' => $fullName,
             'cycle' => $cycle,
+            'ordre' => ClassroomLevel::ordre($validated['level']),
             'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
         ]);
