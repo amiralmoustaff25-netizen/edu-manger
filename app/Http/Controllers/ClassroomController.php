@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreClassroomRequest;
+use App\Http\Requests\UpdateClassroomRequest;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\SchoolYear;
@@ -40,25 +42,12 @@ class ClassroomController extends Controller
         return view('classrooms.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreClassroomRequest $request)
     {
         Gate::authorize('create', Classroom::class);
-        $validated = $request->validate([
-            'level' => 'required|string',
-            'section' => 'nullable|string',
-            'teacher_id' => 'nullable|exists:users,id',
-            'max_students' => 'required|integer|min:1|max:60',
-        ]);
+        $validated = $request->validated();
 
         $teacherId = $validated['teacher_id'] ?? null;
-
-        // Vérifier que le teacher_id est bien un professeur
-        if ($teacherId) {
-            $teacher = User::findOrFail($teacherId);
-            if (! $teacher->hasRole('professeur')) {
-                return back()->withErrors(['teacher_id' => 'L\'utilisateur sélectionné n\'est pas un professeur.']);
-            }
-        }
 
         $cycle = $this->determineCycle($validated['level']);
         $fullName = $validated['level'].($validated['section'] ? ' '.$validated['section'] : '');
@@ -82,26 +71,13 @@ class ClassroomController extends Controller
         return view('classrooms.edit', compact('classroom'));
     }
 
-    public function update(Request $request, Classroom $classroom)
+    public function update(UpdateClassroomRequest $request, Classroom $classroom)
     {
         Gate::authorize('update', $classroom);
 
-        $validated = $request->validate([
-            'level' => 'required|string',
-            'section' => 'nullable|string',
-            'teacher_id' => 'nullable|exists:users,id',
-            'max_students' => 'required|integer|min:1|max:60',
-        ]);
+        $validated = $request->validated();
 
         $teacherId = $validated['teacher_id'] ?? null;
-
-        // Vérifier que le teacher_id est bien un professeur
-        if ($teacherId) {
-            $teacher = User::findOrFail($teacherId);
-            if (! $teacher->hasRole('professeur')) {
-                return back()->withErrors(['teacher_id' => 'L\'utilisateur sélectionné n\'est pas un professeur.']);
-            }
-        }
 
         $cycle = $this->determineCycle($validated['level']);
         $fullName = $validated['level'].($validated['section'] ? ' '.$validated['section'] : '');

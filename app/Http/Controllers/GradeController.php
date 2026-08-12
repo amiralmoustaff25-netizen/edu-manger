@@ -9,6 +9,7 @@ use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Http\Requests\StoreGradeRequest;
 use App\Services\AuditLogService;
 use App\Support\EvaluationTypeScope;
 use Illuminate\Http\Request;
@@ -33,18 +34,9 @@ class GradeController extends Controller
         return view('teachers.grades.index', compact('classrooms', 'matieres'));
     }
 
-    public function store(Request $request)
+    public function store(StoreGradeRequest $request)
     {
-        $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
-            'matiere_id' => 'required|exists:matieres,id',
-            'type_evaluation' => 'required|string',
-            'periode' => 'required|string',
-            'grades' => 'required|array',
-            'grades.*.user_id' => 'required|exists:users,id',
-            'grades.*.valeur' => 'nullable|numeric|min:0|max:20',
-            'grades.*.appreciation' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
