@@ -30,40 +30,40 @@
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
                             <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
-                            <input id="nom" name="nom" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input id="nom" name="nom" type="text" value="{{ old('nom') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
                             <label for="prenom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prénom</label>
-                            <input id="prenom" name="prenom" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input id="prenom" name="prenom" type="text" value="{{ old('prenom') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                     </div>
 
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                        <input id="email" name="email" type="email" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div>
                         <label for="telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Téléphone</label>
-                        <input id="telephone" name="telephone" type="text" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <input id="telephone" name="telephone" type="text" value="{{ old('telephone') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div>
                         <label for="adresse" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse</label>
-                        <textarea id="adresse" name="adresse" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        <textarea id="adresse" name="adresse" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('adresse') }}</textarea>
                     </div>
 
                     <div>
                         <label for="profession" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Profession</label>
-                        <input id="profession" name="profession" type="text" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <input id="profession" name="profession" type="text" value="{{ old('profession') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div>
                         <label for="statut" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statut</label>
                         <select id="statut" name="statut" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="en_attente_activation">En attente d'activation</option>
-                            <option value="actif">Actif</option>
-                            <option value="archive">Archivé</option>
+                            <option value="en_attente_activation" @selected(old('statut', 'en_attente_activation') === 'en_attente_activation')>En attente d'activation</option>
+                            <option value="actif" @selected(old('statut') === 'actif')>Actif</option>
+                            <option value="archive" @selected(old('statut') === 'archive')>Archivé</option>
                         </select>
                     </div>
 
