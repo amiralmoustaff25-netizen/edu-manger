@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\UserPermissionService;
+use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -77,6 +79,7 @@ class RoleAssignmentController extends Controller
             : $user->effectivePermissionNames();
 
         $this->ensureLastSuperAdminNotRemoved($user, $requestedRoles);
+        $this->ensureBusinessRoleTransitionIsSafe($user, $requestedRoles);
 
         if ($requestedRoles->contains('super-admin') && ! $user->hasRole('super-admin')) {
             abort_unless(auth()->user()->hasRole('super-admin'), 403, "Seul un super-administrateur peut attribuer le rôle Super-Admin.");
@@ -134,6 +137,37 @@ class RoleAssignmentController extends Controller
         }
 
         return $grouped;
+    }
+
+    /**
+     * Cette page permet d'attribuer/retirer des rôles indépendamment du
+     * formulaire d'édition générique (UpdateUserRequest) : elle doit répliquer
+     * les mêmes garde-fous métier, sinon elle offre un second chemin pour
+     * casser un compte professeur/élève/parent (voir UserRoles).
+     */
+    private function ensureBusinessRoleTransitionIsSafe(User $user, Collection $requestedRoles): void
+    {
+        $hasDedicatedProfile = [
+            'professeur' => fn () => $user->teacher !== null,
+            'eleve' => fn () => $user->registrations()->exists(),
+            'parent' => fn () => $user->parentProfile !== null,
+        ];
+
+        foreach ($hasDedicatedProfile as $role => $hasProfile) {
+            $adding = $requestedRoles->contains($role) && ! $user->hasRole($role);
+
+            if ($adding && ! $hasProfile()) {
+                abort(422, "Le rôle {$role} ne peut être attribué que depuis son module dédié (fiche complète requise), pas depuis cette page.");
+            }
+        }
+
+        if (in_array($user->role, UserRoles::DEDICATED_PROFILE_ROLES, true) && ! $requestedRoles->contains($user->role)) {
+            $blockingReason = UserRoles::activeBusinessLinkBlockingRoleChange($user);
+
+            if ($blockingReason) {
+                abort(422, $blockingReason);
+            }
+        }
     }
 
     private function ensureLastSuperAdminNotRemoved(User $user, \Illuminate\Support\Collection $requestedRoles): void

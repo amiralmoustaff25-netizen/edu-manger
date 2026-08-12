@@ -27,6 +27,7 @@
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Matricule :</span> {{ $teacher->matricule }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Nom :</span> {{ $teacher->user->name }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Email :</span> {{ $teacher->user->email }}</p>
+                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Téléphone :</span> {{ $teacher->user->telephone ?? 'Non renseigné' }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Date de naissance :</span> {{ $teacher->date_naissance?->format('d/m/Y') }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Lieu de naissance :</span> {{ $teacher->lieu_naissance }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Sexe :</span> {{ ucfirst($teacher->sexe) }}</p>
@@ -34,6 +35,7 @@
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Statut :</span> {{ ucfirst($teacher->statut) }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Date de recrutement :</span> {{ $teacher->date_recrutement?->format('d/m/Y') }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Ancienneté :</span> {{ $teacher->anciennete() }}</p>
+                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Volume horaire contractuel :</span> {{ $teacher->nombre_heures_semaine ?? 0 }} h/semaine</p>
                     </div>
                 </div>
 

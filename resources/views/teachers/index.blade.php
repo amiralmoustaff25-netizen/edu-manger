@@ -46,6 +46,18 @@
                         <label for="matiere" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classe / Matière</label>
                         <input id="matiere" name="matiere" value="{{ $filters['matiere'] ?? '' }}" type="text" placeholder="Nom de la matière ou classe" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
+
+                    <div>
+                        <label for="statut_compte" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Compte</label>
+                        <select id="statut_compte" name="statut_compte" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Actifs</option>
+                            <option value="archived" @selected(($filters['statut_compte'] ?? '') === 'archived')>Archivés</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="submit" class="rounded-md bg-gray-900 dark:bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 dark:hover:bg-slate-600">Filtrer</button>
+                    </div>
                 </form>
             </div>
 
@@ -67,23 +79,38 @@
                                     <td class="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-700 dark:text-gray-300">{{ $teacher->matricule }}</td>
                                     <td class="px-4 py-3">
                                         <p class="font-medium text-gray-900 dark:text-gray-100">{{ $teacher->user->name }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $teacher->user->email }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $teacher->user->display_email ?? $teacher->user->email }}</p>
                                     </td>
-                                    <td class="px-4 py-3 dark:text-gray-200">{{ ucfirst($teacher->statut) }}</td>
+                                    <td class="px-4 py-3 dark:text-gray-200">
+                                        @if($teacher->trashed())
+                                            <x-badge color="red">Archivé</x-badge>
+                                        @else
+                                            {{ ucfirst($teacher->statut) }}
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 dark:text-gray-200">{{ $teacher->volume_horaire_actuel }}h</td>
                                     <td class="px-4 py-3 text-right whitespace-nowrap">
                                         <div class="flex justify-end gap-2 whitespace-nowrap">
-                                            <a href="{{ route('teachers.show', $teacher) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Voir</a>
-                                            @can('modifier-professeur')
-                                                <a href="{{ route('teachers.edit', $teacher) }}" class="rounded-md border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Modifier</a>
-                                            @endcan
-                                            @can('supprimer-professeur')
-                                                <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer le professeur', message: 'Le profil de {{ addslashes($teacher->user->name) }} sera supprimé. Vérifiez ses affectations avant de confirmer.', confirmLabel: 'Supprimer' })">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="rounded-md border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30">Supprimer</button>
-                                                </form>
-                                            @endcan
+                                            @if($teacher->trashed())
+                                                @can('supprimer-professeur')
+                                                    <form action="{{ route('teachers.restore', $teacher->id) }}" method="POST">
+                                                        @csrf
+                                                        <button type="submit" class="rounded-md border border-emerald-200 dark:border-emerald-700 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">Restaurer</button>
+                                                    </form>
+                                                @endcan
+                                            @else
+                                                <a href="{{ route('teachers.show', $teacher) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Voir</a>
+                                                @can('modifier-professeur')
+                                                    <a href="{{ route('teachers.edit', $teacher) }}" class="rounded-md border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Modifier</a>
+                                                @endcan
+                                                @can('supprimer-professeur')
+                                                    <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le professeur', message: 'Le compte de {{ addslashes($teacher->user->name) }} sera désactivé et archivé. Impossible si des affectations pédagogiques actives existent.', confirmLabel: 'Archiver' })">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="rounded-md border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30">Archiver</button>
+                                                    </form>
+                                                @endcan
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

@@ -2,8 +2,11 @@
 @csrf
 
 @php
-    $studentNom = $student->name ? (explode(' ', $student->name)[0] ?? '') : '';
-    $studentPrenom = $student->name ? (implode(' ', array_slice(explode(' ', $student->name), 1)) ?? '') : '';
+    // $student->nom (accesseur sur User) retire proprement le suffixe 'prenom' de
+    // 'name' plutôt que de couper au premier espace, ce qui tronquerait un nom de
+    // famille composé ("El Hadji Diop Amadou" → "El").
+    $studentNom = $student->nom;
+    $studentPrenom = $student->prenom;
 @endphp
 
 @php
@@ -18,6 +21,7 @@
         'monthlyFee' => (float) old('monthly_fee', $student->latestRegistration?->monthly_fee ?? 0),
         'optionCantine' => (bool) ($formOptions['cantine'] ?? false),
         'optionTransport' => (bool) ($formOptions['transport'] ?? false),
+        'submitting' => false,
     ];
 @endphp
 <div x-data='@json($enrollmentFormData)' x-init="if (classroomId && feeLibrary[classroomId] && !canEditFees) {
@@ -144,8 +148,33 @@
         <x-input-error :messages="$errors->get('adresse')" class="mt-2" />
     </div>
 
+    <div class="lg:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-5 dark:border-slate-700 dark:bg-slate-700/30">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Contact d'urgence &amp; informations médicales</h3>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+                <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact d'urgence (nom)</label>
+                <input id="emergency_contact_name" name="emergency_contact_name" type="text" value="{{ old('emergency_contact_name', $student->emergency_contact_name) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <x-input-error :messages="$errors->get('emergency_contact_name')" class="mt-2" />
+            </div>
+            <div>
+                <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact d'urgence (téléphone)</label>
+                <input id="emergency_contact_phone" name="emergency_contact_phone" type="text" value="{{ old('emergency_contact_phone', $student->emergency_contact_phone) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <x-input-error :messages="$errors->get('emergency_contact_phone')" class="mt-2" />
+            </div>
+            <div>
+                <label for="allergies" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Allergies</label>
+                <textarea id="allergies" name="allergies" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('allergies', $student->allergies) }}</textarea>
+                <x-input-error :messages="$errors->get('allergies')" class="mt-2" />
+            </div>
+            <div>
+                <label for="medical_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Informations médicales</label>
+                <textarea id="medical_notes" name="medical_notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('medical_notes', $student->medical_notes) }}</textarea>
+                <x-input-error :messages="$errors->get('medical_notes')" class="mt-2" />
+            </div>
+        </div>
+    </div>
+
     @if($enrollment ?? false)
-        <input name="role" value="eleve" type="hidden">
         <div class="lg:col-span-2 rounded-lg border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-800 dark:bg-indigo-900/20">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Informations de l'inscription</h3>
             <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -264,8 +293,12 @@
     @if($parents->count() > 0)
         <div class="lg:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Parents associés</label>
+            {{-- Au moins un emplacement par parent déjà lié à l'élève, sinon la sauvegarde du
+                 formulaire (sync() sur la relation parents()) supprimerait silencieusement
+                 tout lien au-delà des 2 premiers emplacements (perte de données). --}}
+            @php $parentSlots = max($student->parents->count(), 2); @endphp
             <div class="mt-2 space-y-3">
-                @for($i = 0; $i < 2; $i++)
+                @for($i = 0; $i < $parentSlots; $i++)
                     @php
                         $parent = $student->parents->get($i);
                     @endphp
@@ -300,17 +333,21 @@
             </div>
         </div>
     @endif
-</div>
 
-<div class="mt-6 flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-        @if($student->exists)
-            Enregistrer les modifications
-        @elseif($enrollment ?? false)
-            Créer et inscrire l'élève
-        @else
-            Créer l'élève
-        @endif
-    </button>
-    <a href="{{ $student->exists ? route('students.show', $student) : route('students.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
+    <div class="lg:col-span-2 mt-6 flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+        <button type="submit" x-on:click="submitting = true" :disabled="submitting" :class="submitting ? 'opacity-60 cursor-not-allowed' : ''" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+            <span x-show="!submitting">
+                @if($student->exists)
+                    Enregistrer les modifications
+                @else
+                    {{-- _form.blade.php n'est inclus que par students/edit.blade.php (élève existant)
+                         et registrations/create.blade.php ($enrollment=true) : ce cas est toujours vrai
+                         ici, il n'existe pas de route students.create/store autonome. --}}
+                    Créer et inscrire l'élève
+                @endif
+            </span>
+            <span x-show="submitting" x-cloak>Enregistrement…</span>
+        </button>
+        <a href="{{ $student->exists ? route('students.show', $student) : route('students.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
+    </div>
 </div>

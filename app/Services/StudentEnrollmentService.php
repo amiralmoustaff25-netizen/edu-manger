@@ -6,6 +6,7 @@ use App\Models\ClassroomFee;
 use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
+use App\Models\StudentClassHistory;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ class StudentEnrollmentService
 {
     public ?array $parentCredentials = null;
 
+    public ?string $studentTemporaryPassword = null;
+
     public function getParentCredentials(): ?array
     {
         return $this->parentCredentials;
@@ -26,6 +29,7 @@ class StudentEnrollmentService
     public function enroll(array $data, ?UploadedFile $photo = null, ?int $createdBy = null, bool $canEditFees = false): User
     {
         $this->parentCredentials = null;
+        $this->studentTemporaryPassword = Str::password(12);
 
         return DB::transaction(function () use ($data, $photo, $createdBy, $canEditFees) {
             $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
@@ -33,7 +37,7 @@ class StudentEnrollmentService
                 'name' => trim($data['nom'].' '.$data['prenom']),
                 'prenom' => $data['prenom'],
                 'email' => $data['email'] ?? null,
-                'password' => Hash::make('password'),
+                'password' => Hash::make($this->studentTemporaryPassword),
                 'matricule' => User::generateMatricule('eleve'),
                 'role' => 'eleve',
                 'cycle' => $data['cycle'],
@@ -43,6 +47,10 @@ class StudentEnrollmentService
                 'sexe' => $data['sexe'],
                 'nationalite' => $data['nationalite'] ?? null,
                 'adresse' => $data['adresse'] ?? null,
+                'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+                'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
+                'medical_notes' => $data['medical_notes'] ?? null,
+                'allergies' => $data['allergies'] ?? null,
                 'created_by' => $createdBy,
                 'is_active' => (bool) ($data['is_active'] ?? false),
                 'password_must_change' => true,
@@ -106,6 +114,19 @@ class StudentEnrollmentService
 
             if (Registration::where('user_id', $student->id)->where('school_year_id', $activeYear->id)->exists()) {
                 throw new \RuntimeException('Cet élève est déjà inscrit pour l\'année scolaire active.');
+            }
+
+            // Historise la classe/année que l'élève quitte avant de créer la nouvelle
+            // inscription — sans ceci, StudentClassHistory ne serait jamais alimenté
+            // et l'onglet "Historique de classe" de la fiche élève resterait vide.
+            $previousRegistration = Registration::where('user_id', $student->id)->latest('registration_date')->first();
+            if ($previousRegistration) {
+                StudentClassHistory::create([
+                    'user_id' => $student->id,
+                    'classroom_id' => $previousRegistration->classroom_id,
+                    'school_year_id' => $previousRegistration->school_year_id,
+                    'annee_scolaire' => $previousRegistration->academic_year,
+                ]);
             }
 
             [$registrationFee, $monthlyFee] = $this->resolveFeeAmounts($data, $activeYear, $canEditFees);
@@ -220,11 +241,15 @@ class StudentEnrollmentService
     }
 
     /**
-     * Détermine les montants d'inscription/mensualité à appliquer : toujours issus de
-     * la bibliothèque des frais (ClassroomFee) quand un tarif existe pour la classe et
-     * l'année active. Seul un Super Administrateur / Manager Comptable peut saisir un
-     * montant personnalisé (ex. dérogation), pour tous les autres utilisateurs la valeur
-     * saisie côté formulaire est ignorée et remplacée par le tarif officiel.
+     * Détermine les montants d'inscription/mensualité à appliquer. Quand un tarif
+     * existe dans la bibliothèque des frais (ClassroomFee) pour la classe et l'année
+     * active, il prévaut toujours pour un utilisateur non privilégié : la valeur
+     * saisie côté formulaire est ignorée et remplacée par le tarif officiel. Si AUCUN
+     * tarif n'y est configuré, la valeur saisie sert de repli — y compris pour un
+     * utilisateur non privilégié — pour ne pas bloquer une inscription tant que la
+     * bibliothèque des frais n'a pas encore été renseignée pour cette classe. Seul un
+     * Super Administrateur / Manager Comptable peut saisir un montant personnalisé
+     * qui prévaut MÊME quand un tarif officiel existe (ex. dérogation).
      */
     private function resolveFeeAmounts(array $data, SchoolYear $activeYear, bool $canEditFees): array
     {

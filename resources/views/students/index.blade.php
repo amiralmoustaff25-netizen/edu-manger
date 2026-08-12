@@ -27,6 +27,7 @@
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actif</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>En attente</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactif</option>
+                            <option value="archived" {{ request('status') === 'archived' ? 'selected' : '' }}>Archivé</option>
                         </select>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">Filtrer</button>
                         <a href="{{ route('students.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300 text-center dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">Réinit.</a>
@@ -64,34 +65,51 @@
                                     {{ $student->latestRegistration?->registration_date?->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if(!$student->is_active)
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200">Inactif</span>
+                                    @if($student->trashed())
+                                        <x-badge color="red">Archivé</x-badge>
+                                    @elseif(!$student->is_active)
+                                        <x-badge color="red">Inactif</x-badge>
                                     @elseif($student->latestRegistration?->status === 'pending')
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200">En attente</span>
+                                        <x-badge color="amber">En attente</x-badge>
                                     @else
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200">Actif</span>
+                                        <x-badge color="green">Actif</x-badge>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right align-middle">
                                     <div class="flex flex-nowrap justify-end gap-2">
-                                        <a href="{{ route('students.show', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors">
-                                            Voir
-                                        </a>
-                                        @can('enregistrer-paiement')
-                                            <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 transition-colors">
-                                                Payer
+                                        @if($student->trashed())
+                                            @can('supprimer-eleve', $student)
+                                                <form action="{{ route('students.restore', $student->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition-colors">
+                                                        Restaurer
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        @else
+                                            <a href="{{ route('students.show', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors">
+                                                Voir
                                             </a>
-                                        @endcan
-                                        <a href="{{ route('students.edit', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50 transition-colors">
-                                            Modifier
-                                        </a>
-                                        <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver l’élève', message: 'Le dossier de {{ addslashes($student->name) }} sera archivé. Les données historiques seront conservées.', confirmLabel: 'Archiver' })">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors">
-                                                Archiver
-                                            </button>
-                                        </form>
+                                            @can('enregistrer-paiement')
+                                                <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 transition-colors">
+                                                    Payer
+                                                </a>
+                                            @endcan
+                                            @can('modifier-eleve', $student)
+                                                <a href="{{ route('students.edit', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50 transition-colors">
+                                                    Modifier
+                                                </a>
+                                            @endcan
+                                            @can('supprimer-eleve', $student)
+                                                <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver l’élève', message: 'Le dossier de {{ addslashes($student->name) }} sera archivé. Les données historiques seront conservées.', confirmLabel: 'Archiver' })">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors">
+                                                        Archiver
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

@@ -19,6 +19,7 @@ return [
             'children' => [
                 ['label' => 'Élèves', 'route' => 'students.index', 'permission' => 'voir-eleves'],
                 ['label' => 'Inscriptions', 'route' => 'registrations.create', 'permission' => 'creer-inscription'],
+                ['label' => 'Réinscription', 'route' => 'registrations.reinscription', 'permission' => 'voir-inscriptions'],
                 ['label' => 'Classes & Niveaux', 'route' => 'classrooms.index', 'permission' => 'voir-classes'],
             ],
         ],

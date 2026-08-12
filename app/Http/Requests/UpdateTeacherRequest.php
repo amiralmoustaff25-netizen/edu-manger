@@ -30,7 +30,12 @@ class UpdateTeacherRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('teacher')->user->id ?? null)],
+            'email' => [
+                'required', 'email', 'max:255',
+                Rule::unique('users', 'email')
+                    ->ignore($this->route('teacher')->user->id ?? null)
+                    ->where(fn ($q) => $q->whereNull('deleted_at')),
+            ],
             'date_naissance' => ['required', 'date'],
             'lieu_naissance' => ['required', 'string', 'max:255'],
             'sexe' => ['required', Rule::in(['masculin', 'feminin'])],
@@ -47,10 +52,6 @@ class UpdateTeacherRequest extends FormRequest
             'rib' => ['nullable', 'string', 'max:255'],
             'nombre_heures_semaine' => ['nullable', 'integer', 'min:0'],
             'telephone' => ['nullable', 'string', 'max:20'],
-            'classrooms' => ['sometimes', 'array'],
-            'classrooms.*.classroom_id' => ['nullable', 'exists:classrooms,id'],
-            'classrooms.*.matiere_id' => ['nullable', 'exists:matieres,id'],
-            'classrooms.*.volume_horaire_hebdo' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

@@ -1,19 +1,23 @@
 @csrf
 
 @php
-    $teacherUserName = optional($teacher->user)->name;
+    // $teacher->user->nom (accesseur sur User) retire proprement le suffixe 'prenom'
+    // de 'name' plutôt que de couper au premier espace, ce qui tronquerait un nom de
+    // famille composé.
+    $teacherNom = optional($teacher->user)->nom;
+    $teacherPrenom = optional($teacher->user)->prenom;
 @endphp
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <div>
         <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
-        <input id="nom" name="nom" type="text" value="{{ old('nom', $teacherUserName ? explode(' ', $teacherUserName)[0] : '') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <input id="nom" name="nom" type="text" value="{{ old('nom', $teacherNom) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         <x-input-error :messages="$errors->get('nom')" class="mt-2" />
     </div>
 
     <div>
         <label for="prenom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Prénom</label>
-        <input id="prenom" name="prenom" type="text" value="{{ old('prenom', $teacherUserName ? implode(' ', array_slice(explode(' ', $teacherUserName), 1)) : '') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <input id="prenom" name="prenom" type="text" value="{{ old('prenom', $teacherPrenom) }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         <x-input-error :messages="$errors->get('prenom')" class="mt-2" />
     </div>
 
@@ -111,51 +115,21 @@
         <x-input-error :messages="$errors->get('contact_urgence_tel')" class="mt-2" />
     </div>
 
-    <div>
-        <label for="rib" class="block text-sm font-medium text-gray-700 dark:text-gray-300">RIB</label>
-        <input id="rib" name="rib" type="text" value="" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-        <x-input-error :messages="$errors->get('rib')" class="mt-2" />
-        @if($teacher->exists && $canViewRib)
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Le RIB est masqué pour des raisons de sécurité.</p>
-        @endif
-    </div>
+    @if($canViewRib)
+        <div>
+            <label for="rib" class="block text-sm font-medium text-gray-700 dark:text-gray-300">RIB</label>
+            <input id="rib" name="rib" type="text" value="" placeholder="{{ $teacher->exists ? 'Laisser vide pour conserver le RIB actuel' : '' }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <x-input-error :messages="$errors->get('rib')" class="mt-2" />
+            @if($teacher->exists)
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Le RIB actuel est masqué pour des raisons de sécurité et n'est pas modifié si ce champ reste vide.</p>
+            @endif
+        </div>
+    @endif
 
     <div>
         <label for="nombre_heures_semaine" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre d'heures/semaine</label>
         <input id="nombre_heures_semaine" name="nombre_heures_semaine" type="number" min="0" value="{{ old('nombre_heures_semaine', $teacher->nombre_heures_semaine ?? 0) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         <x-input-error :messages="$errors->get('nombre_heures_semaine')" class="mt-2" />
-    </div>
-
-    <div class="lg:col-span-2">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classes et volume horaire</label>
-        <div class="space-y-4">
-            @for($i = 0; $i < 2; $i++)
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classe</label>
-                        <select name="classrooms[{{ $i }}][classroom_id]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Aucune</option>
-                            @foreach($classrooms as $classroom)
-                                <option value="{{ $classroom->id }}" @selected(old("classrooms.{$i}.classroom_id") == $classroom->id)>{{ $classroom->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Matière</label>
-                        <select name="classrooms[{{ $i }}][matiere_id]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Aucune</option>
-                            @foreach($matieres as $matiere)
-                                <option value="{{ $matiere->id }}" @selected(old("classrooms.{$i}.matiere_id") == $matiere->id)>{{ $matiere->name ?? 'Matière '.$matiere->id }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Volume horaire</label>
-                        <input name="classrooms[{{ $i }}][volume_horaire_hebdo]" type="number" min="0" value="{{ old("classrooms.{$i}.volume_horaire_hebdo", 0) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-                </div>
-            @endfor
-        </div>
     </div>
 </div>
 

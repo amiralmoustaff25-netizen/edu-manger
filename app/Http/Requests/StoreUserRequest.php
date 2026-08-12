@@ -20,7 +20,7 @@ class StoreUserRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->where(fn ($query) => $query->whereNull('deleted_at'))],
             'telephone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', Rule::in(UserRoles::CREATABLE_VIA_USER_FORM)],
             'is_active' => ['boolean'],

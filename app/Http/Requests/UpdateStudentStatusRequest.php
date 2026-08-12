@@ -10,6 +10,10 @@ class UpdateStudentStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // Même limite que TransferStudentRequest::authorize() : $student n'est pas
+        // réellement exploité pour restreindre par instance (Gate::before de Spatie
+        // court-circuite sur la permission globale 'modifier-statut-eleve'). Voir la
+        // note détaillée dans TransferStudentRequest.
         return $this->user()->can('modifier-statut-eleve', $this->route('student'));
     }
 

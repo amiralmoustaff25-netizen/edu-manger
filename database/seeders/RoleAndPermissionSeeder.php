@@ -43,6 +43,8 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Élèves (students) ---
             'voir-eleves',
             'voir-detail-eleve',
+            'modifier-eleve',
+            'supprimer-eleve',
             'transferer-eleve',
             'modifier-statut-eleve',
             'upload-photo-eleve',
@@ -296,7 +298,12 @@ class RoleAndPermissionSeeder extends Seeder
             'exporter-rapports-excel',
             'voir-alertes-impayes',
             'voir-tresorerie',
-            'voir-eleves',
+            // 'voir-eleves' (liste complète /students) volontairement absente : la
+            // route est restreinte à role:super-admin|admin, cette permission serait
+            // structurellement inutilisable (même famille que H9-Utilisateurs).
+            // 'voir-detail-eleve' reste accordée : elle protège /students/{id}, une
+            // route séparée non restreinte par rôle, réellement utile pour consulter
+            // un dossier élève dans un contexte financier.
             'voir-detail-eleve',
             'voir-parents',
             'voir-detail-parent',
@@ -323,7 +330,6 @@ class RoleAndPermissionSeeder extends Seeder
             'exporter-rapports-excel',
             'voir-alertes-impayes',
             'voir-tresorerie',
-            'voir-eleves',
             'voir-detail-eleve',
             'voir-parents',
             'voir-detail-parent',
@@ -352,7 +358,6 @@ class RoleAndPermissionSeeder extends Seeder
             'saisir-notes',
             'marquer-absences',
             'generer-bulletins',
-            'voir-eleves',
             'voir-detail-eleve',
             'voir-programmes',
             'creer-programme',
