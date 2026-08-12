@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Support\SchoolYearStatus;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -81,7 +82,7 @@ class SchoolYearControllerTest extends TestCase
             'start_date' => '2099-09-01',
             'end_date' => '2100-06-30',
             'is_active' => false,
-            'status' => 'upcoming',
+            'status' => SchoolYearStatus::PREPARATION,
         ]);
 
         $response = $this->delete(route('school-years.destroy', $schoolYear));

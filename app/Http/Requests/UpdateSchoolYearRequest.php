@@ -3,12 +3,13 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreSchoolYearRequest extends FormRequest
+class UpdateSchoolYearRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('creer-annee-scolaire');
+        return $this->user()->can('modifier-annee-scolaire');
     }
 
     public function rules(): array
@@ -17,13 +18,11 @@ class StoreSchoolYearRequest extends FormRequest
             'year_string' => [
                 'required',
                 'string',
-                'unique:school_years,year_string',
+                Rule::unique('school_years', 'year_string')->ignore($this->route('school_year')),
                 'regex:/^\d{4}-\d{4}$/',
             ],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after:start_date'],
-            'is_active' => ['boolean'],
-            'duplicate_from_id' => ['nullable', 'integer', 'exists:school_years,id'],
         ];
     }
 

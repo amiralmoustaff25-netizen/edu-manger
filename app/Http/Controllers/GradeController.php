@@ -10,6 +10,7 @@ use App\Models\Registration;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\SchoolYearGuardService;
 use App\Support\EvaluationTypeScope;
 use Illuminate\Http\Request;
 
@@ -33,7 +34,7 @@ class GradeController extends Controller
         return view('teachers.grades.index', compact('classrooms', 'matieres'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $validated = $request->validate([
             'classroom_id' => 'required|exists:classrooms,id',
@@ -55,6 +56,8 @@ class GradeController extends Controller
 
         $classroom = Classroom::findOrFail($validated['classroom_id']);
         $matiere = Matiere::findOrFail($validated['matiere_id']);
+
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         // Le type d'évaluation autorisé dépend du cycle (le primaire n'a que la
         // composition) : le formulaire ne propose déjà que les bonnes options, mais
@@ -194,7 +197,7 @@ class GradeController extends Controller
     /**
      * Enregistrer les notes d'un seul élève, toutes matières confondues, pour une période donnée.
      */
-    public function storeForStudent(Request $request)
+    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -214,6 +217,7 @@ class GradeController extends Controller
         }
 
         $classroom = Classroom::findOrFail($validated['classroom_id']);
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
         $assignedMatiereIds = PedagogicalAssignment::where('teacher_id', $teacher->id)
             ->where('classroom_id', $classroom->id)
             ->where('is_active', true)
@@ -286,7 +290,7 @@ class GradeController extends Controller
      * Valider (verrouiller) un lot de notes pour une classe / matière / évaluation / période.
      * Une fois validées, ces notes ne peuvent plus être modifiées par le professeur.
      */
-    public function validateNotes(Request $request)
+    public function validateNotes(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('validateNotes', Note::class);
 
@@ -296,6 +300,8 @@ class GradeController extends Controller
             'type_evaluation' => 'required|string',
             'periode' => 'required|string',
         ]);
+
+        $schoolYearGuard->assertNotLocked(Classroom::findOrFail($validated['classroom_id'])->schoolYear);
 
         $notes = Note::where($validated)->notValidated()->get();
 
@@ -311,7 +317,7 @@ class GradeController extends Controller
     /**
      * Rouvrir un lot de notes validées : action privilégiée réservée au super-admin.
      */
-    public function reopenNotes(Request $request)
+    public function reopenNotes(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('reopen', Note::class);
 
@@ -321,6 +327,8 @@ class GradeController extends Controller
             'type_evaluation' => 'required|string',
             'periode' => 'required|string',
         ]);
+
+        $schoolYearGuard->assertNotLocked(Classroom::findOrFail($validated['classroom_id'])->schoolYear);
 
         $notes = Note::where($validated)->validated()->get();
 
