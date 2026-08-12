@@ -256,13 +256,13 @@ class AccountingController extends Controller
         $row = 5;
         foreach ($payments as $payment) {
             $sheet->setCellValue('A' . $row, $payment->payment_date->format('d/m/Y'));
-            $sheet->setCellValue('B' . $row, $payment->receipt_number);
-            $sheet->setCellValue('C' . $row, $payment->registration->user->name);
-            $sheet->setCellValue('D' . $row, $payment->registration->classroom?->name ?? 'Non assigné');
+            $sheet->setCellValue('B' . $row, $this->escapeCellValue($payment->receipt_number));
+            $sheet->setCellValue('C' . $row, $this->escapeCellValue($payment->registration->user->name));
+            $sheet->setCellValue('D' . $row, $this->escapeCellValue($payment->registration->classroom?->name ?? 'Non assigné'));
             $sheet->setCellValue('E' . $row, $payment->amount);
-            $sheet->setCellValue('F' . $row, ucfirst($payment->status));
-            $sheet->setCellValue('G' . $row, ucfirst($payment->payment_method));
-            $sheet->setCellValue('H' . $row, ucfirst($payment->payment_type));
+            $sheet->setCellValue('F' . $row, $this->escapeCellValue(ucfirst($payment->status)));
+            $sheet->setCellValue('G' . $row, $this->escapeCellValue(ucfirst($payment->payment_method)));
+            $sheet->setCellValue('H' . $row, $this->escapeCellValue(ucfirst($payment->payment_type)));
             $row++;
         }
 
@@ -280,6 +280,19 @@ class AccountingController extends Controller
             },
             $filename
         );
+    }
+
+    private function escapeCellValue(?string $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (preg_match('/^[\+\-=\\t\\r\\n@]/', $value)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 
     public function alerts(FeeService $feeService): View

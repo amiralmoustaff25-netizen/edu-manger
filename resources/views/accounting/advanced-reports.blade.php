@@ -229,4 +229,15 @@
             </div>
         </div>
     </div>
+    <script>
+        document.querySelectorAll('form[data-no-pjax]').forEach(form => {
+            form.addEventListener('submit', function () {
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = 'Téléchargement...';
+                }
+            });
+        });
+    </script>
 </x-app-layout>
