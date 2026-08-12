@@ -55,7 +55,7 @@ class AccountingController extends Controller
         for ($i = 1; $i <= 12; $i++) {
             $monthlyRevenue[] = [
                 'month' => date('F', mktime(0, 0, 0, $i, 1)),
-                'amount' => Payment::where('status', 'complet')->notCancelled()
+                'amount' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                     ->whereMonth('created_at', $i)
                     ->whereYear('created_at', now()->year)
                     ->sum('amount'),

@@ -477,6 +477,11 @@
 
         function submitPaymentForm() {
             closeConfirmModal();
+            const submitButton = document.querySelector('button[onclick="submitPaymentForm()"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Enregistrement...';
+            }
             // requestSubmit(), pas submit() : submit() ne déclenche jamais l'événement
             // 'submit' (spec DOM), donc jamais interceptable par pjax.js — le formulaire
             // rechargeait toujours la page entière malgré l'extension du PJAX aux actions.

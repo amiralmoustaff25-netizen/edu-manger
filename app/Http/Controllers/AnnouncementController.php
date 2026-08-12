@@ -203,7 +203,7 @@ class AnnouncementController extends Controller
             'classroom_id' => 'nullable|required_if:target_mode,classroom|exists:classrooms,id',
             'target_user_ids' => 'nullable|array',
             'target_user_ids.*' => 'exists:users,id',
-            'attachment' => 'nullable|file|max:5120',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
             'published_at' => 'nullable|date',
             'expires_at' => 'nullable|date|after_or_equal:published_at',
             'status' => 'required|in:draft,scheduled,published',
