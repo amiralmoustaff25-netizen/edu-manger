@@ -15,6 +15,7 @@ class CreditNote extends Model
         'amount',
         'reason',
         'used_amount',
+        'remaining_amount',
         'status',
     ];
 

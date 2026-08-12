@@ -28,6 +28,8 @@ class ParentModel extends Model
         'profession',
         'statut',
         'user_id',
+        'est_responsable_financier',
+        'est_contact_urgence',
     ];
 
     protected $casts = [
