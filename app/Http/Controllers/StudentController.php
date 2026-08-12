@@ -9,9 +9,11 @@ use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
+use App\Models\StudentClassHistory;
 use App\Models\User;
 use App\Services\FeeService;
 use App\Services\StudentStatusService;
+use App\Support\StudentStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +30,9 @@ class StudentController extends Controller
 
         $students = User::query()
             ->students()
+            // withTrashed() : sans ça, le filtre "Archivé" ne peut structurellement
+            // jamais rien retourner (même bug déjà corrigé pour Utilisateurs/Parents).
+            ->withTrashed()
             ->with(['latestRegistration.classroom', 'latestRegistration.schoolYear'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
@@ -42,7 +47,11 @@ class StudentController extends Controller
             ->when($request->filled('classroom_id'), function ($query) use ($request) {
                 $query->whereHas('registrations', fn ($query) => $query->where('classroom_id', $request->integer('classroom_id')));
             })
-            ->when($request->filled('status'), function ($query) use ($request) {
+            ->when($request->string('status')->toString() === 'archived', function ($query) {
+                $query->whereNotNull('deleted_at');
+            }, function ($query) use ($request) {
+                $query->whereNull('deleted_at');
+
                 $status = $request->string('status')->toString();
 
                 if (in_array($status, ['pending', 'active'], true)) {
@@ -107,7 +116,11 @@ class StudentController extends Controller
 
         abort_unless($student->isStudent(), 404);
 
-        $this->ensureTeacherIsAssignedToStudent($student);
+        abort_unless(
+            auth()->user()->isTeacherAssignedToStudent($student),
+            403,
+            "Vous n'êtes pas autorisé à consulter le dossier de cet élève."
+        );
 
         $student->load([
             'parents',
@@ -118,6 +131,7 @@ class StudentController extends Controller
             'documents' => fn ($query) => $query->latest(),
             'documents.uploadedBy',
             'registrations' => fn ($query) => $query->with(['classroom', 'schoolYear', 'payments', 'discounts.appliedBy'])->latest(),
+            'classHistories' => fn ($query) => $query->with('classroom', 'schoolYear')->latest('id'),
         ]);
 
         $currentRegistration = $student->registrations->first();
@@ -137,7 +151,7 @@ class StudentController extends Controller
 
     public function edit(User $student): View
     {
-        $this->authorize('voir-detail-eleve', $student);
+        $this->authorize('modifier-eleve', $student);
 
         abort_unless($student->isStudent(), 404);
 
@@ -153,7 +167,7 @@ class StudentController extends Controller
 
     public function update(UpdateStudentRequest $request, User $student): RedirectResponse
     {
-        $this->authorize('voir-detail-eleve', $student);
+        $this->authorize('modifier-eleve', $student);
 
         abort_unless($student->isStudent(), 404);
 
@@ -171,6 +185,10 @@ class StudentController extends Controller
                 'sexe' => $validated['sexe'],
                 'nationalite' => $validated['nationalite'] ?? null,
                 'adresse' => $validated['adresse'] ?? null,
+                'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
+                'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? null,
+                'medical_notes' => $validated['medical_notes'] ?? null,
+                'allergies' => $validated['allergies'] ?? null,
             ];
 
             // Handle photo deletion
@@ -219,16 +237,50 @@ class StudentController extends Controller
         return redirect()->route('students.show', $student)->with('success', 'Élève mis à jour avec succès.');
     }
 
-    public function destroy(User $student): RedirectResponse
+    public function destroy(User $student, StudentStatusService $studentStatusService): RedirectResponse
     {
-        $this->authorize('voir-eleves');
+        $this->authorize('supprimer-eleve', $student);
 
         abort_unless($student->isStudent(), 404);
 
-        $student->update(['is_active' => false]);
-        $student->delete();
+        DB::transaction(function () use ($student, $studentStatusService) {
+            $registration = $student->latestRegistration;
+
+            // Une inscription encore ouverte (non terminale) doit être clôturée en
+            // même temps que le compte est archivé, sinon elle continue de compter
+            // comme "active"/"en attente" dans les agrégats financiers du dashboard
+            // alors que l'élève n'apparaît plus nulle part dans l'UI.
+            if ($registration && ! StudentStatus::isTerminal($registration->status)) {
+                $targetStatus = $registration->status === StudentStatus::PENDING
+                    ? StudentStatus::CANCELLED
+                    : StudentStatus::WITHDRAWN;
+
+                $studentStatusService->transition($registration, $targetStatus, 'Archivage du compte élève.');
+            }
+
+            $student->update(['is_active' => false]);
+            $student->delete();
+        });
 
         return redirect()->route('students.index')->with('success', 'Élève désactivé et archivé.');
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $student = User::withTrashed()->findOrFail($id);
+
+        $this->authorize('supprimer-eleve', $student);
+
+        abort_unless($student->isStudent(), 404);
+
+        $student->restore();
+
+        // L'inscription a été clôturée (retirée/annulée) à l'archivage : elle n'est
+        // pas réactivée automatiquement, car ce statut est volontairement terminal
+        // dans la machine à états (voir StudentStatus::TRANSITIONS). Pour faire
+        // réapparaître l'élève comme actif, utiliser la Réinscription.
+        return redirect()->route('students.index')
+            ->with('success', "Élève restauré. Utilisez « Réinscription » pour lui créer une nouvelle inscription active.");
     }
 
     public function transfer(TransferStudentRequest $request, User $student)
@@ -240,6 +292,17 @@ class StudentController extends Controller
         $validated = $request->validated();
 
         $registration = Registration::where('user_id', $student->id)->findOrFail($validated['registration_id']);
+
+        // Historise la classe/année quittée avant le changement, sinon
+        // StudentClassHistory ne serait jamais alimenté (voir aussi
+        // StudentEnrollmentService::reenroll()).
+        StudentClassHistory::create([
+            'user_id' => $student->id,
+            'classroom_id' => $registration->classroom_id,
+            'school_year_id' => $registration->school_year_id,
+            'annee_scolaire' => $registration->academic_year,
+        ]);
+
         $registration->update(['classroom_id' => $validated['classroom_id']]);
 
         return back()->with('success', 'Classe de l\'élève mise à jour.');
@@ -258,44 +321,6 @@ class StudentController extends Controller
         $studentStatusService->transition($registration, $validated['status'], $validated['status_reason'] ?? null);
 
         return back()->with('success', 'Statut de l\'élève mis à jour.');
-    }
-
-    public function removePhoto(User $student): RedirectResponse
-    {
-        Gate::authorize('remove-photo-eleve');
-
-        abort_unless($student->isStudent(), 404);
-
-        if ($student->profile_photo_path) {
-            Storage::disk('public')->delete($student->profile_photo_path);
-            $student->update(['profile_photo_path' => null]);
-        }
-
-        return back()->with('success', 'Photo de l\'élève supprimée avec succès.');
-    }
-
-    /**
-     * Un professeur ne doit consulter que les élèves d'une classe qui lui est
-     * assignée. La permission 'voir-detail-eleve' est nécessaire pour franchir
-     * le middleware de route mais reste globale : ce contrôle par instance
-     * complète la policy pour ce rôle précis.
-     */
-    private function ensureTeacherIsAssignedToStudent(User $student): void
-    {
-        $user = auth()->user();
-
-        if (! $user->hasRole('professeur') || $user->hasAnyRole(['super-admin', 'admin'])) {
-            return;
-        }
-
-        $teacher = $user->teacher;
-        $classroomId = optional($student->latestRegistration)->classroom_id;
-
-        abort_unless(
-            $teacher && $classroomId && $teacher->classrooms()->where('classrooms.id', $classroomId)->exists(),
-            403,
-            "Vous n'êtes pas autorisé à consulter le dossier de cet élève."
-        );
     }
 
     private function normalizeOptions(?array $options): array

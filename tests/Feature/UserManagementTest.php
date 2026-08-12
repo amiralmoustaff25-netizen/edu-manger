@@ -70,7 +70,12 @@ test('admin can create a user with a generated matricule and temporary password'
     $user = User::where('email', 'nouveau.comptable@edumanager.sn')->firstOrFail();
 
     expect($user->matricule)->toStartWith('CPT-');
-    expect(Hash::check('password', $user->password))->toBeTrue();
+    // Le mot de passe temporaire est désormais généré aléatoirement (plus jamais le
+    // littéral "password", prévisible et identique pour tout compte créé) : on ne
+    // peut donc plus vérifier sa valeur exacte, seulement qu'un changement est exigé
+    // et que le mot de passe stocké n'est pas le mot de passe faible historique.
+    expect(Hash::check('password', $user->password))->toBeFalse();
+    expect($user->password_must_change)->toBeTrue();
     expect($user->created_by)->toBe($admin->id);
     expect($user->hasRole('comptable'))->toBeTrue();
 });
@@ -125,9 +130,13 @@ test('admin can reset a user password', function () {
         ->patch(route('users.reset-password', $user))
         ->assertRedirect();
 
+    $oldPasswordHash = $user->password;
     $user->refresh();
 
-    expect(Hash::check('password', $user->password))->toBeTrue();
+    // Mot de passe temporaire désormais aléatoire (voir test de création ci-dessus) :
+    // on vérifie qu'il a bien changé plutôt que sa valeur littérale.
+    expect($user->password)->not->toBe($oldPasswordHash);
+    expect(Hash::check('old-password', $user->password))->toBeFalse();
     expect($user->password_must_change)->toBeTrue();
 });
 

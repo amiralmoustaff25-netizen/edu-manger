@@ -4,16 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTeacherRequest;
 use App\Http\Requests\UpdateTeacherRequest;
-use App\Models\Classroom;
-use App\Models\Matiere;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Support\UserRoles;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class TeacherController extends Controller
@@ -23,7 +24,12 @@ class TeacherController extends Controller
         Gate::authorize('viewAny', Teacher::class);
 
         $teachers = Teacher::query()
-            ->with(['user', 'classrooms'])
+            // withTrashed() : sans ça, le filtre "Archivé" ne peut structurellement
+            // jamais rien retourner (même bug déjà corrigé pour Utilisateurs/Élèves/
+            // Parents). Le user lié est aussi chargé avec ses lignes soft-deleted,
+            // sinon une ligne archivée afficherait un nom/email vides.
+            ->withTrashed()
+            ->with(['user' => fn ($query) => $query->withTrashed(), 'classrooms'])
             ->withCount('pedagogicalAssignments')
             ->withSum(['pedagogicalAssignments' => fn ($query) => $query->where('is_active', true)], 'volume_horaire_hebdo')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -35,10 +41,26 @@ class TeacherController extends Controller
             })
             ->when($request->filled('statut'), fn ($query) => $query->where('statut', $request->string('statut')->toString()))
             ->when($request->filled('matiere'), function ($query) use ($request) {
-                $matiere = $request->string('matiere')->toString();
-                $query->whereHas('classrooms', function ($query) use ($matiere) {
-                    $query->where('name', 'like', "%{$matiere}%");
+                // Le filtre "Classe / Matière" doit chercher dans les deux mécanismes
+                // d'affectation : le pivot teacher_classroom (nom de classe) et les
+                // PedagogicalAssignment actives (classe ET matière), seule source où la
+                // matière est réellement rattachée à un professeur.
+                $search = $request->string('matiere')->toString();
+                $query->where(function ($query) use ($search) {
+                    $query->whereHas('classrooms', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('pedagogicalAssignments', function ($q) use ($search) {
+                            $q->where('is_active', true)
+                                ->where(function ($q) use ($search) {
+                                    $q->whereHas('classroom', fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                                        ->orWhereHas('matiere', fn ($q) => $q->where('nom', 'like', "%{$search}%"));
+                                });
+                        });
                 });
+            })
+            ->when($request->string('statut_compte')->toString() === 'archived', function ($query) {
+                $query->whereNotNull('deleted_at');
+            }, function ($query) {
+                $query->whereNull('deleted_at');
             })
             ->latest()
             ->paginate(10)
@@ -47,7 +69,7 @@ class TeacherController extends Controller
         return view('teachers.index', [
             'teachers' => $teachers,
             'statuts' => ['fonctionnaire', 'contractuel', 'vacataire'],
-            'filters' => $request->only(['search', 'statut', 'matiere']),
+            'filters' => $request->only(['search', 'statut', 'matiere', 'statut_compte']),
         ]);
     }
 
@@ -57,9 +79,7 @@ class TeacherController extends Controller
 
         return view('teachers.create', [
             'teacher' => new Teacher(),
-            'classrooms' => Classroom::all(),
-            'matieres' => Matiere::all(),
-            'canViewRib' => false,
+            'canViewRib' => $this->authorizeCanViewRib(),
         ]);
     }
 
@@ -68,12 +88,14 @@ class TeacherController extends Controller
         Gate::authorize('create', Teacher::class);
 
         $validated = $request->validated();
+        $temporaryPassword = Str::password(12);
 
-        DB::transaction(function () use ($validated) {
+        $teacher = DB::transaction(function () use ($validated, $temporaryPassword) {
             $user = User::create([
                 'name' => $validated['nom'].' '.$validated['prenom'],
+                'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
-                'password' => bcrypt('password'),
+                'password' => Hash::make($temporaryPassword),
                 'matricule' => User::generateMatricule('professeur'),
                 'role' => 'professeur',
                 'telephone' => $validated['telephone'] ?? null,
@@ -86,7 +108,7 @@ class TeacherController extends Controller
 
             $user->assignRole('professeur');
 
-            $teacher = Teacher::create([
+            return Teacher::create([
                 'user_id' => $user->id,
                 'matricule' => Teacher::generateMatricule(),
                 'date_naissance' => $validated['date_naissance'],
@@ -101,24 +123,14 @@ class TeacherController extends Controller
                 'filiation' => $validated['filiation'],
                 'contact_urgence_nom' => $validated['contact_urgence_nom'],
                 'contact_urgence_tel' => $validated['contact_urgence_tel'],
-                'rib' => $validated['rib'] ?? null,
+                'rib' => ($validated['rib'] ?? '') !== '' ? $validated['rib'] : null,
                 'nombre_heures_semaine' => $validated['nombre_heures_semaine'] ?? 0,
                 'created_by' => auth()->id(),
             ]);
-
-            $classrooms = collect($validated['classrooms'] ?? [])
-                ->filter(fn ($classroomData) => ! empty($classroomData['classroom_id']));
-
-            foreach ($classrooms as $classroomData) {
-                $teacher->classrooms()->attach($classroomData['classroom_id'], [
-                    'annee_scolaire' => now()->year.'-'.(now()->year + 1),
-                    'matiere_id' => $classroomData['matiere_id'] ?? null,
-                    'volume_horaire_hebdo' => $classroomData['volume_horaire_hebdo'] ?? 0,
-                ]);
-            }
         });
 
-        return redirect()->route('teachers.index')->with('success', 'Professeur créé avec succès.');
+        return redirect()->route('teachers.index')
+            ->with('success', 'Professeur créé avec succès. Matricule : '.$teacher->matricule.' | Mot de passe temporaire : '.$temporaryPassword);
     }
 
     public function show(Teacher $teacher): View
@@ -162,8 +174,6 @@ class TeacherController extends Controller
 
         return view('teachers.edit', [
             'teacher' => $teacher,
-            'classrooms' => Classroom::all(),
-            'matieres' => Matiere::all(),
             'canViewRib' => $this->authorizeCanViewRib(),
         ]);
     }
@@ -177,13 +187,14 @@ class TeacherController extends Controller
         DB::transaction(function () use ($validated, $teacher) {
             $teacher->user->update([
                 'name' => $validated['nom'].' '.$validated['prenom'],
+                'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
                 'telephone' => $validated['telephone'] ?? null,
                 'date_naissance' => $validated['date_naissance'],
                 'specialite' => implode(', ', $validated['specialites']),
             ]);
 
-            $teacher->update([
+            $teacherData = [
                 'date_naissance' => $validated['date_naissance'],
                 'lieu_naissance' => $validated['lieu_naissance'],
                 'sexe' => $validated['sexe'],
@@ -196,24 +207,18 @@ class TeacherController extends Controller
                 'filiation' => $validated['filiation'],
                 'contact_urgence_nom' => $validated['contact_urgence_nom'],
                 'contact_urgence_tel' => $validated['contact_urgence_tel'],
-                'rib' => $validated['rib'] ?? null,
                 'nombre_heures_semaine' => $validated['nombre_heures_semaine'] ?? 0,
-            ]);
+            ];
 
-            $teacher->classrooms()->sync([]);
-
-            $classrooms = collect($validated['classrooms'] ?? [])
-                ->filter(fn ($classroomData) => ! empty($classroomData['classroom_id']));
-
-            if ($classrooms->isNotEmpty()) {
-                foreach ($classrooms as $classroomData) {
-                    $teacher->classrooms()->attach($classroomData['classroom_id'], [
-                        'annee_scolaire' => now()->year.'-'.(now()->year + 1),
-                        'matiere_id' => $classroomData['matiere_id'] ?? null,
-                        'volume_horaire_hebdo' => $classroomData['volume_horaire_hebdo'] ?? 0,
-                    ]);
-                }
+            // Le champ RIB du formulaire n'est jamais pré-rempli (volontairement, pour ne
+            // pas exposer le clair) : un formulaire soumis sans y retoucher envoie donc
+            // toujours '' , qui écraserait silencieusement le RIB existant si on l'incluait
+            // tel quel. On ne touche à 'rib' que si une nouvelle valeur a été saisie.
+            if (($validated['rib'] ?? '') !== '') {
+                $teacherData['rib'] = $validated['rib'];
             }
+
+            $teacher->update($teacherData);
         });
 
         return redirect()->route('teachers.show', $teacher)->with('success', 'Professeur mis à jour avec succès.');
@@ -223,9 +228,38 @@ class TeacherController extends Controller
     {
         Gate::authorize('delete', $teacher);
 
-        $teacher->delete();
+        $blockingReason = UserRoles::activeBusinessLinkBlockingRoleChange($teacher->user);
 
-        return redirect()->route('teachers.index')->with('success', 'Professeur supprimé avec succès.');
+        if ($blockingReason) {
+            return back()->withErrors(['teacher' => $blockingReason]);
+        }
+
+        DB::transaction(function () use ($teacher) {
+            $teacher->user->update(['is_active' => false]);
+            $teacher->user->delete();
+            $teacher->delete();
+        });
+
+        return redirect()->route('teachers.index')->with('success', 'Professeur désactivé et archivé.');
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $teacher = Teacher::withTrashed()->findOrFail($id);
+
+        Gate::authorize('delete', $teacher);
+
+        DB::transaction(function () use ($teacher) {
+            $teacher->restore();
+
+            $user = $teacher->user()->withTrashed()->first();
+            if ($user) {
+                $user->restore();
+                $user->update(['is_active' => true]);
+            }
+        });
+
+        return redirect()->route('teachers.index')->with('success', 'Professeur restauré.');
     }
 
     public function exportPdf(Request $request)

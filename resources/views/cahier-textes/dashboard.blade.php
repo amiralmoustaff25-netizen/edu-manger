@@ -33,6 +33,7 @@
         <div class="bg-white dark:bg-gray-800 rounded shadow p-4 text-gray-900 dark:text-white">Programmes validés : {{ $programs->whereIn('status', ['valide_surveillant', 'valide_directeur'])->count() }}</div>
     </div>
     <div class="bg-white dark:bg-gray-800 rounded shadow p-4">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead>
                 <tr class="text-gray-700 dark:text-gray-300">
@@ -61,6 +62,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 @endsection

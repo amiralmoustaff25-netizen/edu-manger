@@ -41,36 +41,36 @@
             @endif
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Élèves inscrits</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $stats['students'] }}</p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tous les comptes élèves</p>
-                </div>
+                </x-card>
 
-                <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Classes actives</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $stats['classrooms'] }}</p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Classes créées dans le système</p>
-                </div>
+                </x-card>
 
                 @role('super-admin|manager-comptable|comptable')
-                    <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                    <x-card padding="p-5">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Paiements complets</p>
                         <p class="mt-3 text-3xl font-bold text-emerald-700 dark:text-emerald-400">{{ $stats['paid_this_month'] }}</p>
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Ce mois-ci</p>
-                    </div>
+                    </x-card>
 
-                    <div class="rounded-lg bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                    <x-card padding="p-5">
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Paiements partiels</p>
                         <p class="mt-3 text-3xl font-bold text-amber-700 dark:text-amber-400">{{ $stats['partial_payments'] }}</p>
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">À suivre par la comptabilité</p>
-                    </div>
+                    </x-card>
                 @endrole
             </div>
 
             @role('super-admin|manager-comptable|comptable')
             <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 xl:col-span-2">
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 xl:col-span-2">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Évolution des paiements</h3>
@@ -126,7 +126,7 @@
                     </div>
                 </div>
 
-                <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Alertes à traiter</h3>
                     <div class="mt-5 space-y-3">
                         <div class="flex items-center justify-between rounded-md bg-amber-50 dark:bg-amber-900 px-4 py-3">
@@ -152,7 +152,7 @@
             @endrole
 
             @role('super-admin|manager-comptable|comptable')
-                <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Enregistrer un paiement</h3>
@@ -165,7 +165,7 @@
                 </div>
             @endrole
 
-            <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+            <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Inscriptions récentes</h3>
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ $registrations->count() }} affichée(s)</span>

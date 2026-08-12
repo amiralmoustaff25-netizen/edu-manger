@@ -42,6 +42,13 @@ class StudentDocumentController extends Controller
     public function download(User $student, StudentDocument $document): StreamedResponse
     {
         $this->authorize('voir-detail-eleve', $student);
+
+        abort_unless(
+            auth()->user()->isTeacherAssignedToStudent($student),
+            403,
+            "Vous n'êtes pas autorisé à consulter le dossier de cet élève."
+        );
+
         abort_unless($document->user_id === $student->id, 404);
 
         abort_unless(Storage::disk('local')->exists($document->path), 404);

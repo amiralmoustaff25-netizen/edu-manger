@@ -386,6 +386,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
         Route::patch('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
 
         Route::get('/users/roles/assign', [RoleAssignmentController::class, 'index'])->name('users.roles.index');
         Route::patch('/users/{user}/roles', [RoleAssignmentController::class, 'update'])->name('users.roles.update');
@@ -394,9 +395,9 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+        Route::post('/students/{id}/restore', [StudentController::class, 'restore'])->name('students.restore');
         Route::patch('/students/{student}/transfer', [StudentController::class, 'transfer'])->name('students.transfer');
         Route::patch('/students/{student}/status', [StudentController::class, 'updateStatus'])->name('students.status');
-        Route::delete('/students/{student}/photo', [StudentController::class, 'removePhoto'])->name('students.remove-photo');
 
         Route::get('/registrations/create', [RegistrationController::class, 'create'])->name('registrations.create');
         Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
@@ -423,6 +424,7 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/login-logs/{loginLog}', [LoginLogController::class, 'show'])->name('login-logs.show');
 
         Route::resource('teachers', TeacherController::class);
+        Route::post('/teachers/{id}/restore', [TeacherController::class, 'restore'])->name('teachers.restore');
         Route::get('/teachers-export-pdf', [TeacherController::class, 'exportPdf'])->name('teachers.export-pdf');
         Route::get('/teachers-export-csv', [TeacherController::class, 'exportCsv'])->name('teachers.export-csv');
 

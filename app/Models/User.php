@@ -33,6 +33,65 @@ class User extends Authenticatable
     }
 
     /**
+     * La colonne 'email' porte une contrainte UNIQUE en base : sans ceci, un compte
+     * archivé (soft delete) continuerait à occuper son adresse indéfiniment, bloquant
+     * toute réutilisation par un nouveau compte. On la libère en la préfixant de façon
+     * réversible à l'archivage, et on la restitue à la restauration. Ceci vit au niveau
+     * du modèle (et non d'un seul contrôleur) car plusieurs chemins soft-suppriment un
+     * User (UserController::destroy(), ProfileController::destroy() en auto-suppression).
+     *
+     * Fait à part de SoftDeletes::runSoftDelete() (qui ne persiste que deleted_at/
+     * updated_at via une requête ciblée) : la mutation d'attribut seule ne suffit pas
+     * côté suppression, d'où la requête explicite ci-dessous. Côté restauration,
+     * restore() appelle save() : muter l'attribut suffit.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            if ($user->isForceDeleting() || ! $user->email) {
+                return;
+            }
+
+            $prefix = "archived-{$user->id}-";
+
+            if (! str_starts_with($user->email, $prefix)) {
+                $archivedEmail = $prefix.$user->email;
+                $user->newQueryWithoutScopes()->whereKey($user->id)->update(['email' => $archivedEmail]);
+                $user->setAttribute('email', $archivedEmail);
+                $user->syncOriginalAttribute('email');
+            }
+        });
+
+        static::restoring(function (User $user) {
+            $prefix = "archived-{$user->id}-";
+
+            if ($user->email && str_starts_with($user->email, $prefix)) {
+                $user->setAttribute('email', substr($user->email, strlen($prefix)));
+            }
+        });
+    }
+
+    /**
+     * Un professeur ne doit consulter/télécharger que les données d'un élève d'une
+     * classe qui lui est assignée. La permission 'voir-detail-eleve' est nécessaire
+     * pour franchir le Gate mais reste globale (Spatie court-circuite Gate::before
+     * dès que l'acteur la possède, sans jamais consulter UserPolicy) : ce contrôle
+     * par instance doit donc être appliqué explicitement par chaque contrôleur
+     * concerné (StudentController::show(), StudentDocumentController::download()).
+     */
+    public function isTeacherAssignedToStudent(User $student): bool
+    {
+        if (! $this->hasRole('professeur') || $this->hasAnyRole(['super-admin', 'admin'])) {
+            return true;
+        }
+
+        $teacher = $this->teacher;
+        $classroomId = optional($student->latestRegistration)->classroom_id;
+
+        return (bool) ($teacher && $classroomId && $teacher->classrooms()->where('classrooms.id', $classroomId)->exists());
+    }
+
+    /**
      * Un utilisateur (élève) peut avoir plusieurs inscriptions (une par année scolaire).
      */
     public function registrations(): HasMany
@@ -125,6 +184,41 @@ class User extends Authenticatable
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Il n'existe pas de colonne 'nom' distincte : 'name' est toujours enregistré
+     * comme trim(nom.' '.prenom) (voir UserController/TeacherController/StudentEnrollmentService).
+     * On retrouve donc 'nom' en retirant le suffixe ' '.prenom de 'name', et non en
+     * prenant le premier mot de 'name' (qui tronquerait un nom de famille composé).
+     */
+    /**
+     * L'email d'un compte archivé est préfixé "archived-{id}-" pour libérer
+     * l'adresse (contrainte UNIQUE en base) tout en la gardant récupérable pour
+     * une restauration (voir UserController::destroy()/restore()). Cet accesseur
+     * retire ce préfixe pour l'affichage, sans toucher à la valeur stockée.
+     */
+    public function getDisplayEmailAttribute(): ?string
+    {
+        $email = $this->attributes['email'] ?? null;
+        $prefix = "archived-{$this->id}-";
+
+        if ($email && str_starts_with($email, $prefix)) {
+            return substr($email, strlen($prefix));
+        }
+
+        return $email;
+    }
+
+    public function getNomAttribute(): string
+    {
+        $name = $this->attributes['name'] ?? '';
+
+        if ($this->prenom && str_ends_with($name, ' '.$this->prenom)) {
+            return mb_substr($name, 0, mb_strlen($name) - mb_strlen($this->prenom) - 1);
+        }
+
+        return $name;
     }
 
     public function notes()

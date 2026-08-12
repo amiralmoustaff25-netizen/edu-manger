@@ -15,7 +15,6 @@
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 dark:text-gray-100">
                 <form method="POST" action="{{ route('teachers.update', $teacher) }}" class="space-y-6">
-                    @csrf
                     @method('PUT')
                     @include('teachers._form')
                 </form>

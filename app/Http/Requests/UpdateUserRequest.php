@@ -30,7 +30,8 @@ class UpdateUserRequest extends FormRequest
             // création) soumet nom/prenom, pas un champ "name" unique.
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($userId)->where(fn ($query) => $query->whereNull('deleted_at'))],
+            'telephone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', Rule::in(UserRoles::assignableBy($this->user()))],
             'contract_started_at' => ['nullable', 'date'],
             'is_active' => ['boolean'],
@@ -43,19 +44,25 @@ class UpdateUserRequest extends FormRequest
             $user = $this->route('user');
             $newRole = $this->input('role');
 
-            if ($newRole === 'professeur' && $user->role !== 'professeur') {
+            $moduleFor = [
+                'professeur' => 'Professeurs',
+                'eleve' => 'Élèves',
+                'parent' => 'Parents',
+            ];
+
+            if (array_key_exists($newRole, $moduleFor) && $user->role !== $newRole) {
                 $validator->errors()->add(
                     'role',
-                    "Impossible d'attribuer le rôle professeur depuis ce formulaire : créez ou convertissez ce compte via le module Professeurs, qui collecte les informations obligatoires (statut, diplômes, filiation, etc.)."
+                    "Impossible d'attribuer le rôle {$newRole} depuis ce formulaire : créez ou convertissez ce compte via le module {$moduleFor[$newRole]}, qui collecte les informations obligatoires."
                 );
             }
 
-            if ($user->role === 'professeur' && $newRole !== 'professeur'
-                && $user->teacher?->pedagogicalAssignments()->where('is_active', true)->exists()) {
-                $validator->errors()->add(
-                    'role',
-                    'Ce compte a des affectations pédagogiques actives. Retirez-les depuis le module Professeurs avant de changer son rôle.'
-                );
+            if ($newRole !== $user->role) {
+                $blockingReason = UserRoles::activeBusinessLinkBlockingRoleChange($user);
+
+                if ($blockingReason) {
+                    $validator->errors()->add('role', $blockingReason);
+                }
             }
         });
     }

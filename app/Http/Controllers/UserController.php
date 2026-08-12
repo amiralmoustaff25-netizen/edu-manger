@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -19,6 +20,9 @@ class UserController extends Controller
         $this->authorize('voir-utilisateurs');
 
         $users = User::query()
+            // withTrashed() : sans ça, le filtre "Archivés" ne peut structurellement
+            // jamais rien retourner (même bug déjà corrigé pour le module Parents).
+            ->withTrashed()
             ->with(['creator', 'roles'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
@@ -31,12 +35,18 @@ class UserController extends Controller
             })
             ->when($request->filled('role'), fn ($query) => $query->role($request->string('role')->toString()))
             ->when($request->filled('status'), function ($query) use ($request) {
-                if ($request->string('status')->toString() === 'active') {
-                    $query->where('is_active', true);
+                $status = $request->string('status')->toString();
+
+                if ($status === 'active') {
+                    $query->whereNull('deleted_at')->where('is_active', true);
                 }
 
-                if ($request->string('status')->toString() === 'inactive') {
-                    $query->where('is_active', false);
+                if ($status === 'inactive') {
+                    $query->whereNull('deleted_at')->where('is_active', false);
+                }
+
+                if ($status === 'archived') {
+                    $query->whereNotNull('deleted_at');
                 }
             })
             ->latest()
@@ -68,7 +78,8 @@ class UserController extends Controller
         $validated['name'] = trim($validated['nom'] . ' ' . $validated['prenom']);
         
         $validated['matricule'] = User::generateMatricule($validated['role']);
-        $validated['password'] = Hash::make('password');
+        $temporaryPassword = Str::password(12);
+        $validated['password'] = Hash::make($temporaryPassword);
         $validated['created_by'] = auth()->id();
         $validated['password_must_change'] = true;
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -82,7 +93,7 @@ class UserController extends Controller
 
         return redirect()
             ->route('users.index')
-            ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.' | Mot de passe temporaire : password');
+            ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.' | Mot de passe temporaire : '.$temporaryPassword);
     }
 
     public function edit(User $user): View
@@ -92,7 +103,7 @@ class UserController extends Controller
 
         return view('users.edit', [
             'user' => $user,
-            'roles' => UserRoles::assignableBy(auth()->user()),
+            'roles' => UserRoles::editableRolesFor(auth()->user(), $user),
         ]);
     }
 
@@ -102,8 +113,10 @@ class UserController extends Controller
         $validated['name'] = trim($validated['nom'].' '.$validated['prenom']);
         $validated['is_active'] = $request->boolean('is_active');
 
-        $user->update($validated);
-        $user->syncRoles([$validated['role']]);
+        DB::transaction(function () use ($user, $validated) {
+            $user->update($validated);
+            $user->syncRoles([$validated['role']]);
+        });
 
         return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');
     }
@@ -117,10 +130,34 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Vous ne pouvez pas supprimer votre propre compte.']);
         }
 
+        $blockingReason = UserRoles::activeBusinessLinkBlockingRoleChange($user);
+
+        if ($blockingReason) {
+            return back()->withErrors(['user' => $blockingReason]);
+        }
+
+        // L'archivage effectif de l'email (contrainte UNIQUE en base) est géré au
+        // niveau du modèle (voir User::booted()) : il s'applique quel que soit le
+        // chemin de suppression, pas seulement celui-ci.
         $user->update(['is_active' => false]);
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'Utilisateur désactivé et archivé.');
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $user = User::withTrashed()->findOrFail($id);
+
+        $this->authorize('supprimer-utilisateur', $user);
+        $this->ensureActorCanTargetSuperAdmin($user);
+
+        DB::transaction(function () use ($user) {
+            $user->restore();
+            $user->update(['is_active' => true]);
+        });
+
+        return redirect()->route('users.index')->with('success', 'Utilisateur restauré.');
     }
 
     public function toggle(User $user): RedirectResponse
@@ -142,12 +179,14 @@ class UserController extends Controller
         $this->authorize('reinitialiser-mot-de-passe-utilisateur', $user);
         $this->ensureActorCanTargetSuperAdmin($user);
 
+        $temporaryPassword = Str::password(12);
+
         $user->update([
-            'password' => Hash::make('password'),
+            'password' => Hash::make($temporaryPassword),
             'password_must_change' => true,
         ]);
 
-        return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : password');
+        return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : '.$temporaryPassword);
     }
 
     /**

@@ -11,21 +11,21 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Enfants associés</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $parent->students->count() }}</p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Suivi de vos enfants dans l'école.</p>
-                </div>
-                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                </x-card>
+                <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Notifications</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ auth()->user()->unreadNotifications->count() }}</p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Messages non lus.</p>
-                </div>
-                <div class="rounded-lg bg-white dark:bg-slate-800 p-5 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                </x-card>
+                <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Derniers éléments</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $parent->students->sum('notes_count') }}</p>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Total des notes disponibles.</p>
-                </div>
+                </x-card>
             </div>
 
             <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 overflow-hidden">

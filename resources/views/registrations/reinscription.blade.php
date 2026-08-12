@@ -32,7 +32,13 @@
                 </form>
             </div>
 
-            @if ($searchedMatricule && ! $student)
+            @if ($archived)
+                <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900 p-4 text-sm text-amber-800 dark:text-amber-200">
+                    L'élève portant le matricule « {{ $searchedMatricule }} » est archivé. Restaurez d'abord son dossier depuis la
+                    <a href="{{ route('students.index', ['status' => 'archived', 'search' => $searchedMatricule]) }}" class="font-semibold underline hover:no-underline">liste des élèves archivés</a>
+                    avant de le réinscrire.
+                </div>
+            @elseif ($searchedMatricule && ! $student)
                 <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900 p-4 text-sm text-amber-800 dark:text-amber-200">
                     Aucun élève trouvé pour le matricule « {{ $searchedMatricule }} ».
                 </div>
@@ -52,6 +58,7 @@
                     $reenrollFormData = [
                         'feeLibrary' => $feeLibrary,
                         'canEditFees' => $canEditFees,
+                        'submitting' => false,
                         'classroomId' => (string) old('classroom_id', $defaultClassroomId ?? ''),
                         'registrationFee' => (float) old('registration_fee_paid', 0),
                         'monthlyFee' => (float) old('monthly_fee', $lastRegistration?->monthly_fee ?? 0),
@@ -87,7 +94,7 @@
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('registrations.reinscription.store') }}" class="mt-6 space-y-5">
+                    <form method="POST" action="{{ route('registrations.reinscription.store') }}" class="mt-6 space-y-5" x-on:submit="submitting = true">
                         @csrf
                         <input type="hidden" name="user_id" value="{{ $student->id }}">
 
@@ -150,6 +157,10 @@
                                             </template>
                                         </span>
                                     </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="options[internat]" value="1" @checked($defaultOptions['internat'] ?? false) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Internat</span>
+                                    </label>
                                 </div>
                                 <p class="mt-3 text-sm font-medium text-gray-700 dark:text-gray-200">
                                     Total mensuel estimé :
@@ -159,8 +170,9 @@
                         </div>
 
                         <div class="flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-                                Confirmer la réinscription
+                            <button type="submit" :disabled="submitting" :class="submitting ? 'opacity-60 cursor-not-allowed' : ''" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                                <span x-show="!submitting">Confirmer la réinscription</span>
+                                <span x-show="submitting" x-cloak>Enregistrement…</span>
                             </button>
                             <a href="{{ route('dashboard') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
                         </div>

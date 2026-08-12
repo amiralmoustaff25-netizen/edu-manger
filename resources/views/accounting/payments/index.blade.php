@@ -98,9 +98,9 @@
                                             @if($payment->isCancelled())
                                                 <x-badge color="red">Annulé</x-badge>
                                             @elseif($payment->status === 'complet')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Complet</span>
+                                                <x-badge color="green">Complet</x-badge>
                                             @else
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Partiel</span>
+                                                <x-badge color="amber">Partiel</x-badge>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

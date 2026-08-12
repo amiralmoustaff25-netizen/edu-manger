@@ -25,11 +25,11 @@
 
             {{-- Actions rapides : chaque action mène à son objectif en 1 clic --}}
             <div class="flex flex-wrap gap-2">
-                @hasanyrole('super-admin|admin')
+                @can('modifier-eleve', $student)
                     <a href="{{ route('students.edit', $student) }}" class="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
                         ✏️ Modifier
                     </a>
-                @endhasanyrole
+                @endcan
                 @can('enregistrer-paiement')
                     <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
                         💳 Paiement
@@ -42,7 +42,7 @@
                     📚 Notes
                 </a>
                 @can('creer-inscription')
-                    <a href="{{ route('registrations.create') }}" class="inline-flex items-center gap-1.5 rounded-md bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
+                    <a href="{{ route('registrations.reinscription', ['matricule' => $student->matricule]) }}" class="inline-flex items-center gap-1.5 rounded-md bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
                         🔁 Réinscription
                     </a>
                 @endcan
@@ -340,6 +340,51 @@
                                 <tr>
                                     <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun paiement trouvé.</td>
                                 </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if($student->emergency_contact_name || $student->emergency_contact_phone || $student->medical_notes || $student->allergies)
+                <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact d'urgence & informations médicales</h3>
+                    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Contact d'urgence</p>
+                            <p class="mt-1 text-gray-800 dark:text-gray-200">{{ $student->emergency_contact_name ?? '—' }} @if($student->emergency_contact_phone) ({{ $student->emergency_contact_phone }}) @endif</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Allergies</p>
+                            <p class="mt-1 text-gray-800 dark:text-gray-200">{{ $student->allergies ?? '—' }}</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Informations médicales</p>
+                            <p class="mt-1 text-gray-800 dark:text-gray-200">{{ $student->medical_notes ?? '—' }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Historique de classe -->
+            <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Historique de classe</h3>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Année</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Classe</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                            @forelse($student->classHistories as $history)
+                                <tr>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $history->schoolYear->year_string ?? $history->annee_scolaire ?? 'N/A' }}</td>
+                                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $history->classroom->name ?? 'N/A' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="2" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Aucun changement de classe enregistré.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

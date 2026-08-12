@@ -124,8 +124,11 @@ class RegistrationControllerTest extends TestCase
 
         $response = $this->post(route('registrations.store'), $this->registrationPayload());
 
-        // store() uses firstOrFail() which throws 404 when no active year exists
-        $response->assertNotFound();
+        // Régression M4-Inscriptions : store() renvoyait auparavant une 404 brute
+        // (firstOrFail() non catché) au lieu d'un message convivial.
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('error');
+        $this->assertDatabaseCount('registrations', 0);
     }
 
     /** @test */

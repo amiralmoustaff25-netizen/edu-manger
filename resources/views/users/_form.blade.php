@@ -13,7 +13,7 @@
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
                 <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
-                <input id="nom" name="nom" value="{{ old('nom', $user->prenom ? explode(' ', $user->name)[0] : $user->name) }}" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <input id="nom" name="nom" value="{{ old('nom', $user->nom) }}" type="text" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <x-input-error :messages="$errors->get('nom')" class="mt-2" />
             </div>
 
@@ -40,6 +40,18 @@
                 <x-input-error :messages="$errors->get('role')" class="mt-2" />
             </div>
 
+            <div>
+                <label for="telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Téléphone</label>
+                <input id="telephone" name="telephone" value="{{ old('telephone', $user->telephone) }}" type="text" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <x-input-error :messages="$errors->get('telephone')" class="mt-2" />
+            </div>
+
+            <div x-show="!['professeur', 'eleve', 'parent'].includes(selectedRole)" x-transition>
+                <label for="contract_started_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Début de contrat</label>
+                <input id="contract_started_at" name="contract_started_at" value="{{ old('contract_started_at', optional($user->contract_started_at)->format('Y-m-d')) }}" type="date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <x-input-error :messages="$errors->get('contract_started_at')" class="mt-2" />
+            </div>
+
             <div class="md:col-span-2">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $user->is_active ?? true)) class="rounded border-gray-300 dark:border-slate-600 text-indigo-600 shadow-sm focus:ring-indigo-500">
@@ -49,9 +61,10 @@
         </div>
     </div>
 
-    <!-- Note : le rôle professeur ne peut pas être attribué ici. La création et la fiche complète
-         d'un professeur (statut, diplômes, filiation, affectations...) se gèrent exclusivement
-         via le module Professeurs, qui garde le compte Utilisateurs synchronisé. -->
+    <!-- Note : les rôles professeur/élève/parent ne peuvent pas être attribués ici. La création
+         et la fiche complète (statut/diplômes pour un professeur, inscription pour un élève,
+         filiation pour un parent) se gèrent exclusivement via leur module dédié, qui garde le
+         compte Utilisateurs synchronisé. -->
     <div x-show="selectedRole === 'professeur'" x-transition class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-700">
         <p class="text-sm text-indigo-800 dark:text-indigo-300">
             Ce compte est un compte professeur. Modifiez sa fiche complète (statut, diplômes, affectations pédagogiques...) depuis le module
@@ -60,9 +73,25 @@
         </p>
     </div>
 
+    <div x-show="selectedRole === 'eleve'" x-transition class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-700">
+        <p class="text-sm text-indigo-800 dark:text-indigo-300">
+            Ce compte est un compte élève. Gérez son inscription, sa classe et son statut depuis le module
+            <a href="{{ route('students.index') }}" class="font-semibold underline hover:no-underline">Élèves</a>.
+            Seuls le nom, l'email et l'activation du compte peuvent être modifiés ici.
+        </p>
+    </div>
+
+    <div x-show="selectedRole === 'parent'" x-transition class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-700">
+        <p class="text-sm text-indigo-800 dark:text-indigo-300">
+            Ce compte est un compte parent. Gérez ses enfants liés depuis le module
+            <a href="{{ route('parents.index') }}" class="font-semibold underline hover:no-underline">Parents</a>.
+            Seuls le nom, l'email et l'activation du compte peuvent être modifiés ici.
+        </p>
+    </div>
+
     @if(! $user->exists)
         <div class="rounded-md bg-indigo-50 dark:bg-indigo-900/50 p-4 text-sm text-indigo-800 dark:text-indigo-300">
-            <p>Le matricule sera généré automatiquement et le mot de passe temporaire sera <strong>password</strong>.</p>
+            <p>Le matricule et un mot de passe temporaire seront générés automatiquement et affichés après la création du compte.</p>
         </div>
     @endif
 
