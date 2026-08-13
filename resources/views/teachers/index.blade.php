@@ -78,8 +78,8 @@
                                 <tr>
                                     <td class="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-700 dark:text-gray-300">{{ $teacher->matricule }}</td>
                                     <td class="px-4 py-3">
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $teacher->user->name }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $teacher->user->display_email ?? $teacher->user->email }}</p>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $teacher->user?->name ?? '—' }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $teacher->user?->display_email ?? $teacher->user?->email ?? '—' }}</p>
                                     </td>
                                     <td class="px-4 py-3 dark:text-gray-200">
                                         @if($teacher->trashed())
@@ -104,7 +104,7 @@
                                                     <a href="{{ route('teachers.edit', $teacher) }}" class="rounded-md border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">Modifier</a>
                                                 @endcan
                                                 @can('supprimer-professeur')
-                                                    <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le professeur', message: 'Le compte de {{ addslashes($teacher->user->name) }} sera désactivé et archivé. Impossible si des affectations pédagogiques actives existent.', confirmLabel: 'Archiver' })">
+                                                    <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver le professeur', message: 'Le compte de {{ addslashes((string) ($teacher->user?->name ?? '—')) }} sera désactivé et archivé. Impossible si des affectations pédagogiques actives existent.', confirmLabel: 'Archiver' })">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="rounded-md border border-red-200 dark:border-red-800 px-3 py-1.5 text-xs font-semibold text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30">Archiver</button>

@@ -37,7 +37,7 @@
                                         @foreach($teachers as $teacher)
                                             <tr>
                                                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ optional($matieres->get($teacher->pivot->matiere_id))->nom ?? '—' }}</td>
-                                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $teacher->user->name ?? '—' }}</td>
+                                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $teacher->user?->name ?? '—' }}</td>
                                                 <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-gray-100">{{ $teacher->pivot->volume_horaire_hebdo }}h</td>
                                             </tr>
                                         @endforeach
