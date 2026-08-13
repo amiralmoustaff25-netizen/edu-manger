@@ -25,7 +25,7 @@
 
         <!-- Fixed top: logo -->
         <div class="flex items-center justify-center h-16 bg-indigo-600 dark:bg-indigo-700 flex-shrink-0">
-            <a href="{{ route('dashboard') }}" class="flex items-center space-x-2">
+            <a href="{{ route('dashboard') }}" x-on:click="sidebarOpen = false" class="flex items-center space-x-2">
                 <x-application-logo class="block h-8 w-auto fill-current text-white" />
                 <span class="text-white font-bold text-xl">EduManager</span>
             </a>
@@ -51,7 +51,7 @@
              navigation PJAX — id dédié pour cela. -->
         @auth
             <div id="sidebar-profile-link" class="flex-shrink-0 border-t border-gray-200 dark:border-slate-700 p-2">
-                <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ request()->routeIs('profile.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
+                <a href="{{ route('profile.show') }}" x-on:click="sidebarOpen = false" class="flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ request()->routeIs('profile.*') ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
                     <svg class="h-6 w-6 flex-shrink-0 {{ request()->routeIs('profile.*') ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>

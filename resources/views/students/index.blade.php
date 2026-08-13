@@ -35,8 +35,78 @@
                 </form>
             </div>
 
+            <!-- Élèves : cartes empilées sur mobile, tableau à partir de md -->
+            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden md:hidden divide-y divide-gray-200 dark:divide-slate-700">
+                @forelse ($students as $student)
+                    <div class="p-4 flex items-start gap-3">
+                        <img src="{{ $student->profile_photo_url }}"
+                             alt="{{ $student->name }}"
+                             class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ $student->name }}</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ $student->matricule }} · {{ $student->latestRegistration?->classroom?->name ?? 'Non assigné' }}</p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    @if($student->trashed())
+                                        <x-badge color="red">Archivé</x-badge>
+                                    @elseif(!$student->is_active)
+                                        <x-badge color="red">Inactif</x-badge>
+                                    @elseif($student->latestRegistration?->status === 'pending')
+                                        <x-badge color="amber">En attente</x-badge>
+                                    @else
+                                        <x-badge color="green">Actif</x-badge>
+                                    @endif
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                                Inscrit le {{ $student->latestRegistration?->registration_date?->format('d/m/Y') ?? '—' }}
+                            </p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                @if($student->trashed())
+                                    @can('supprimer-eleve', $student)
+                                        <form action="{{ route('students.restore', $student->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50 transition-colors">
+                                                Restaurer
+                                            </button>
+                                        </form>
+                                    @endcan
+                                @else
+                                    <a href="{{ route('students.show', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors">
+                                        Voir
+                                    </a>
+                                    @can('enregistrer-paiement')
+                                        <a href="{{ route('payments.create', ['matricule' => $student->matricule]) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 transition-colors">
+                                            Payer
+                                        </a>
+                                    @endcan
+                                    @can('modifier-eleve', $student)
+                                        <a href="{{ route('students.edit', $student) }}" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50 transition-colors">
+                                            Modifier
+                                        </a>
+                                    @endcan
+                                    @can('supprimer-eleve', $student)
+                                        <form action="{{ route('students.destroy', $student) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Archiver l’élève', message: 'Le dossier de {{ addslashes($student->name) }} sera archivé. Les données historiques seront conservées.', confirmLabel: 'Archiver' })">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex whitespace-nowrap items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors">
+                                                Archiver
+                                            </button>
+                                        </form>
+                                    @endcan
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-gray-500 dark:text-gray-400">Aucun élève trouvé.</div>
+                @endforelse
+            </div>
+
             <!-- Tableau des élèves -->
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div class="hidden md:block bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full align-middle [&_th]:align-middle [&_td]:align-middle [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap divide-y divide-gray-200 dark:divide-slate-700">
                     <thead class="bg-gray-50 dark:bg-slate-700">
