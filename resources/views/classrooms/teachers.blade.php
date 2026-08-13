@@ -26,7 +26,7 @@
                                 <select name="teacher_id" id="teacher_id" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                     <option value="">-- Sélectionner un professeur --</option>
                                     @foreach($teachers as $teacher)
-                                        <option value="{{ $teacher->id }}">{{ $teacher->user->name }}</option>
+                                        <option value="{{ $teacher->id }}">{{ $teacher->user?->name ?? '—' }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -71,7 +71,7 @@
                                     @foreach($classroom->teachers as $teacher)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                {{ $teacher->user->name }}
+                                                {{ $teacher->user?->name ?? '—' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                                                 {{ $teacher->pivot->matiere_id ? \App\Models\Matiere::find($teacher->pivot->matiere_id)->nom : 'Non spécifiée' }}
@@ -80,7 +80,7 @@
                                                 {{ $teacher->pivot->volume_horaire_hebdo }}h/semaine
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <form action="{{ route('classrooms.detach-teacher', [$classroom, $teacher]) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Retirer le professeur', message: 'Retirer {{ addslashes((string) $teacher->user->name) }} de la classe {{ addslashes((string) $classroom->name) }} ?', confirmLabel: 'Retirer' })">
+                                                <form action="{{ route('classrooms.detach-teacher', [$classroom, $teacher]) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Retirer le professeur', message: 'Retirer {{ addslashes((string) ($teacher->user?->name ?? '—')) }} de la classe {{ addslashes((string) $classroom->name) }} ?', confirmLabel: 'Retirer' })">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">

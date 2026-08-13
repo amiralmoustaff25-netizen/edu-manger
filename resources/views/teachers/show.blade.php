@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Fiche professeur</h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Détails de {{ $teacher->user->name }}.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Détails de {{ $teacher->user?->name ?? '—' }}.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('teachers.index') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700">
@@ -25,9 +25,9 @@
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Identité</h3>
                     <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-300">
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Matricule :</span> {{ $teacher->matricule }}</p>
-                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Nom :</span> {{ $teacher->user->name }}</p>
-                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Email :</span> {{ $teacher->user->email }}</p>
-                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Téléphone :</span> {{ $teacher->user->telephone ?? 'Non renseigné' }}</p>
+                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Nom :</span> {{ $teacher->user?->name ?? '—' }}</p>
+                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Email :</span> {{ $teacher->user?->email ?? '—' }}</p>
+                        <p><span class="font-semibold text-gray-800 dark:text-gray-200">Téléphone :</span> {{ $teacher->user?->telephone ?? 'Non renseigné' }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Date de naissance :</span> {{ $teacher->date_naissance?->format('d/m/Y') }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Lieu de naissance :</span> {{ $teacher->lieu_naissance }}</p>
                         <p><span class="font-semibold text-gray-800 dark:text-gray-200">Sexe :</span> {{ ucfirst($teacher->sexe) }}</p>

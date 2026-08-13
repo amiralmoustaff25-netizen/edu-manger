@@ -32,8 +32,8 @@
             @foreach($teachers as $teacher)
                 <tr>
                     <td>{{ $teacher->matricule }}</td>
-                    <td>{{ $teacher->user->name }}</td>
-                    <td>{{ $teacher->user->email }}</td>
+                    <td>{{ $teacher->user?->name ?? '—' }}</td>
+                    <td>{{ $teacher->user?->email ?? '—' }}</td>
                     <td>{{ ucfirst($teacher->statut) }}</td>
                     <td>{{ $teacher->anciennete() }}</td>
                     <td class="text-right">{{ $teacher->volume_horaire_actuel }}</td>
