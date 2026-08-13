@@ -232,8 +232,8 @@
                     </svg>
                     {{ __('Changement de mot de passe') }}
                 </h3>
-                <button onclick="document.getElementById('modal-password').classList.add('hidden')" 
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button onclick="document.getElementById('modal-password').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="{{ __('Fermer') }}">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -245,10 +245,10 @@
                 @method('put')
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Ancien mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="current_password" required
+                    <input type="password" name="current_password" id="current_password" required
                            class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
                     @error('current_password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -256,10 +256,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Nouveau mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password" required
+                    <input type="password" name="password" id="new_password" required
                            class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -267,10 +267,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Confirmer le mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password_confirmation" required
+                    <input type="password" name="password_confirmation" id="password_confirmation" required
                            class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
 
@@ -300,7 +300,7 @@
                     {{ __('Supprimer mon compte') }}
                 </h3>
                 <button onclick="document.getElementById('modal-delete-account').classList.add('hidden')"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="{{ __('Fermer') }}">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -316,10 +316,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="delete_account_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Mot de passe actuel') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password" required
+                    <input type="password" name="password" id="delete_account_password" required
                            class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-red-500 focus:ring-red-500">
                     @error('password', 'userDeletion')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

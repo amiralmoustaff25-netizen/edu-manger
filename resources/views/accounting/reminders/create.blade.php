@@ -31,10 +31,10 @@
 
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label for="registration_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Élève
                                 </label>
-                                <select name="registration_id" required
+                                <select name="registration_id" id="registration_id" required
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Sélectionner un élève...</option>
                                     @foreach($registrations as $registration)
@@ -47,20 +47,20 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Message du rappel
                                 </label>
-                                <textarea name="message" rows="4" required
+                                <textarea name="message" id="message" rows="4" required
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     placeholder="Entrez le message du rappel...">{{ old('message') }}</textarea>
                                 <x-input-error :messages="$errors->get('message')" class="mt-2" />
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label for="scheduled_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Date et heure d'envoi
                                 </label>
-                                <input type="datetime-local" name="scheduled_at" required
+                                <input type="datetime-local" name="scheduled_at" id="scheduled_at" required
                                     value="{{ old('scheduled_at') }}"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     min="{{ now()->addHour()->format('Y-m-d\TH:i') }}">

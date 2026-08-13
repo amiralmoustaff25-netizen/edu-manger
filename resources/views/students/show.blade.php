@@ -240,33 +240,33 @@
                         <form action="{{ route('discounts.store', $currentRegistration) }}" method="POST" class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                             @csrf
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom de la dérogation</label>
-                                <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Ex: Bourse familiale">
+                                <label for="discount_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom de la dérogation</label>
+                                <input type="text" name="name" id="discount_name" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Ex: Bourse familiale">
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-                                    <select name="type" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="discount_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                                    <select name="type" id="discount_type" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="percentage">Pourcentage (%)</option>
                                         <option value="fixed">Montant fixe (FCFA)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valeur</label>
-                                    <input type="number" name="value" min="0" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="discount_value" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valeur</label>
+                                    <input type="number" name="value" id="discount_value" min="0" step="0.01" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valide à partir de</label>
-                                <input type="date" name="valid_from" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="discount_valid_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valide à partir de</label>
+                                <input type="date" name="valid_from" id="discount_valid_from" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valide jusqu'au</label>
-                                <input type="date" name="valid_until" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <label for="discount_valid_until" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Valide jusqu'au</label>
+                                <input type="date" name="valid_until" id="discount_valid_until" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Motif (obligatoire, pour traçabilité)</label>
-                                <textarea name="reason" required rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                                <label for="discount_reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Motif (obligatoire, pour traçabilité)</label>
+                                <textarea name="reason" id="discount_reason" required rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                             </div>
                             <div class="md:col-span-2">
                                 <x-primary-button type="submit">Accorder la dérogation</x-primary-button>
@@ -474,8 +474,8 @@
                     <form action="{{ route('students.documents.store', $student) }}" method="POST" enctype="multipart/form-data" class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 items-end">
                         @csrf
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de document</label>
-                            <select name="type" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="document_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type de document</label>
+                            <select name="type" id="document_type" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach(\App\Support\StudentDocumentType::LABELS as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
@@ -483,8 +483,8 @@
                             <x-input-error :messages="$errors->get('type')" class="mt-2" />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fichier (PDF, JPG ou PNG, 5 Mo max)</label>
-                            <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300">
+                            <label for="document_file" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fichier (PDF, JPG ou PNG, 5 Mo max)</label>
+                            <input type="file" name="file" id="document_file" accept=".pdf,.jpg,.jpeg,.png" required class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300">
                             <x-input-error :messages="$errors->get('file')" class="mt-2" />
                         </div>
                         <div class="md:col-span-3">

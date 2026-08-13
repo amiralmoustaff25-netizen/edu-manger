@@ -17,11 +17,11 @@
             <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('announcements.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher..."
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Rechercher..." aria-label="Rechercher une annonce"
                             class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <div>
-                        <select name="status" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select name="status" aria-label="Filtrer par statut" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Tous les statuts</option>
                             @foreach(['draft' => 'Brouillon', 'scheduled' => 'Programmée', 'published' => 'Publiée', 'archived' => 'Archivée'] as $value => $label)
                                 <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
@@ -29,7 +29,7 @@
                         </select>
                     </div>
                     <div>
-                        <select name="type" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select name="type" aria-label="Filtrer par type" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Tous les types</option>
                             @foreach(['information' => 'Information', 'important' => 'Important', 'urgent' => 'Urgent', 'reminder' => 'Rappel', 'announcement' => 'Annonce'] as $value => $label)
                                 <option value="{{ $value }}" @selected(request('type') === $value)>{{ $label }}</option>
@@ -37,7 +37,7 @@
                         </select>
                     </div>
                     <div>
-                        <select name="role" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select name="role" aria-label="Filtrer par rôle" class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Tous les rôles</option>
                             @foreach($roles ?? [] as $role)
                                 <option value="{{ $role }}" @selected(request('role') === $role)>{{ ucfirst($role) }}</option>

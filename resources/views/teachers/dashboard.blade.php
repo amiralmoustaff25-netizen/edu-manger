@@ -143,7 +143,7 @@
                                                 </p>
                                             </div>
                                         </div>
-                                        <a href="{{ route('professeur.classes.show', $detail['classroom']) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                                        <a href="{{ route('professeur.classes.show', $detail['classroom']) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300" aria-label="{{ __('Voir la classe') }} {{ $detail['classroom']->name }}">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                         </a>
                                     </div>

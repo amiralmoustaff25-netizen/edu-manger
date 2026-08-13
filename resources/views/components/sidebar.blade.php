@@ -68,7 +68,7 @@
             <div class="px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex">
-                        <button @click="sidebarOpen = !sidebarOpen" class="px-4 border-r border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 lg:hidden">
+                        <button @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen.toString()" class="px-4 border-r border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 focus:outline-none focus:text-gray-700 dark:focus:text-gray-300 lg:hidden" aria-label="{{ __('Ouvrir le menu de navigation') }}">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -77,7 +77,7 @@
 
                     <div class="flex items-center">
                         @can('voir-notifications')
-                        <div x-data="notificationBell()" x-init="init()" class="relative mr-2" @click.away="open = false">
+                        <div x-data="notificationBell()" x-init="init()" class="relative mr-2" @click.away="open = false" x-on:keydown.escape.window="open = false">
                             <button @click="open = !open" class="relative p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-slate-700 transition-colors duration-200">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -126,7 +126,7 @@
                         @endcan
 
                         <!-- Dark Mode Toggle -->
-                        <button @click="dark = !dark" class="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-slate-700 transition-colors duration-200 mr-4">
+                        <button @click="dark = !dark" class="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-slate-700 transition-colors duration-200 mr-4" :aria-label="dark ? '{{ __('Activer le mode clair') }}' : '{{ __('Activer le mode sombre') }}'">
                             <svg x-show="!dark" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                             </svg>
