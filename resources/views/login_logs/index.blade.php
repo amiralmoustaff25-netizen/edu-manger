@@ -35,24 +35,37 @@
                             <label for="login-log-date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date</label>
                             <input type="date" name="date" id="login-log-date" value="{{ request('date') }}" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
                         </div>
+                        <div class="flex-1 min-w-[150px]">
+                            <label for="login-log-role" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Rôle</label>
+                            <select name="role" id="login-log-role" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
+                                <option value="">Tous</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ $role }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">Filtrer</button>
                         <a href="{{ route('login-logs.index') }}" class="bg-gray-200 dark:bg-slate-600 hover:bg-gray-300 dark:hover:bg-slate-500 text-gray-700 dark:text-gray-200 px-6 py-2 rounded transition">Réinitialiser</a>
                     </form>
                 </div>
 
                 <!-- Statistiques rapides -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
                     <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ App\Models\LoginLog::count() }}</div>
+                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $stats['total'] }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Total connexions</div>
                     </div>
                     <div class="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ App\Models\LoginLog::successful()->count() }}</div>
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $stats['success'] }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Réussies</div>
                     </div>
                     <div class="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ App\Models\LoginLog::failed()->count() }}</div>
+                        <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $stats['failed'] }}</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Échouées</div>
+                    </div>
+                    <div class="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ $stats['today'] }}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Aujourd'hui</div>
                     </div>
                 </div>
 
@@ -63,10 +76,11 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date/Heure</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Utilisateur</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Matricule</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rôle</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">IP</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Appareil</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User Agent</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -78,12 +92,20 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                                     {{ $log->user->name ?? '-' }}
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $log->email ?? ($log->user ? $log->user->email : '-') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $log->email ?? ($log->user ? $log->user->email : '-') }}
+                                    {{ $log->matricule ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ $log->role ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     {{ $log->ip_address ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ $log->browser ?? '-' }} · {{ $log->platform ?? '-' }}
+                                    <div class="text-xs text-gray-400 dark:text-gray-500 capitalize">{{ $log->device_type ?? '' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($log->status === 'success')
@@ -91,9 +113,6 @@
                                     @else
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">Échouée</span>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                                    {{ $log->user_agent ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     @can('voir-detail-log-connexion', $log)

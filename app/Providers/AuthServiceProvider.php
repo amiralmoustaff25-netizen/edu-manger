@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Attendance;
+use App\Models\AuditLog;
 use App\Models\ChapterCompletion;
 use App\Models\Classroom;
 use App\Models\ClassroomFee;
@@ -16,6 +17,7 @@ use App\Models\ProgramAnnual;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Policies\AttendancePolicy;
+use App\Policies\AuditLogPolicy;
 use App\Policies\ChapterCompletionPolicy;
 use App\Policies\ClassroomFeePolicy;
 use App\Policies\ClassroomPolicy;
@@ -39,6 +41,7 @@ class AuthServiceProvider extends ServiceProvider
         User::class => UserPolicy::class,
         Payment::class => PaymentPolicy::class,
         LoginLog::class => LoginLogPolicy::class,
+        AuditLog::class => AuditLogPolicy::class,
         ParentModel::class => ParentPolicy::class,
         ProgramAnnual::class => ProgramAnnualPolicy::class,
         ChapterCompletion::class => ChapterCompletionPolicy::class,
