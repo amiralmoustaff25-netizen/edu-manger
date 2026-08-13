@@ -15,6 +15,17 @@
                         </a>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">Le type de frais n'a pas pu être mis à jour :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form action="{{ route('fee-types.update', $feeType) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -22,16 +33,18 @@
                         <div class="space-y-6 max-w-2xl">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
-                                <input type="text" name="name" id="name" value="{{ $feeType->name }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <input type="text" name="name" id="name" value="{{ old('name', $feeType->name) }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('name')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                                <textarea name="description" id="description" rows="3" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ $feeType->description }}</textarea>
+                                <textarea name="description" id="description" rows="3" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description', $feeType->description) }}</textarea>
+                                <x-input-error :messages="$errors->get('description')" class="mt-2" />
                             </div>
 
                             <div class="flex items-center">
-                                <input type="checkbox" name="is_recurring" id="is_recurring" {{ $feeType->is_recurring ? 'checked' : '' }} class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <input type="checkbox" name="is_recurring" id="is_recurring" {{ old('is_recurring', $feeType->is_recurring) ? 'checked' : '' }} class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <label for="is_recurring" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                                     Ce type de frais est récurrent (mensuel, trimestriel, etc.)
                                 </label>

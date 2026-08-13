@@ -61,6 +61,7 @@
                         'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-900/80 dark:text-emerald-100 dark:ring-emerald-700': toast.type === 'success',
                         'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-900/80 dark:text-red-100 dark:ring-red-700': toast.type === 'error',
                         'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/80 dark:text-amber-100 dark:ring-amber-700': toast.type === 'warning',
+                        'bg-sky-50 text-sky-800 ring-1 ring-sky-200 dark:bg-sky-900/80 dark:text-sky-100 dark:ring-sky-700': toast.type === 'info',
                     }"
                 >
                     <span x-text="toast.message" class="flex-1"></span>
@@ -92,6 +93,9 @@
                 @endif
                 @if(session('warning'))
                     window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 2, type: 'warning', message: @json(session('warning')) } }));
+                @endif
+                @if(session('info'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 3, type: 'info', message: @json(session('info')) } }));
                 @endif
             });
         </script>

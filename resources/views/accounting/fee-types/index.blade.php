@@ -13,9 +13,45 @@
                         <a href="{{ route('accounting.dashboard') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                             ← Retour au Dashboard
                         </a>
-                        <a href="{{ route('fee-types.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                            + Nouveau Type de Frais
-                        </a>
+                        <x-drawer title="Nouveau type de frais" trigger-label="+ Nouveau Type de Frais" :open="$errors->any()">
+                            @if ($errors->any())
+                                <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                                    <p class="font-semibold">Le type de frais n'a pas pu être enregistré :</p>
+                                    <ul class="mt-2 list-disc pl-5">
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <form action="{{ route('fee-types.store') }}" method="POST" class="space-y-6">
+                                @csrf
+
+                                <div>
+                                    <label for="drawer-fee-type-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+                                    <input type="text" name="name" id="drawer-fee-type-name" value="{{ old('name') }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                                </div>
+
+                                <div>
+                                    <label for="drawer-fee-type-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                    <textarea name="description" id="drawer-fee-type-description" rows="3" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description') }}</textarea>
+                                    <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                                </div>
+
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="is_recurring" id="drawer-fee-type-is_recurring" {{ old('is_recurring') ? 'checked' : '' }} class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="drawer-fee-type-is_recurring" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                        Ce type de frais est récurrent (mensuel, trimestriel, etc.)
+                                    </label>
+                                </div>
+
+                                <div class="flex justify-end gap-2 border-t border-gray-200 pt-4 dark:border-slate-700">
+                                    <x-primary-button type="submit">Créer le type de frais</x-primary-button>
+                                </div>
+                            </form>
+                        </x-drawer>
                     </div>
 
                     <!-- Tableau des types de frais -->
@@ -47,7 +83,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="{{ route('fee-types.edit', $feeType) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2">Modifier</a>
-                                            <form action="{{ route('fee-types.destroy', $feeType) }}" method="POST" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce type de frais ?');">
+                                            <form action="{{ route('fee-types.destroy', $feeType) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer ce type de frais', message: 'Cette action est irréversible et supprimera aussi les frais de classe associés. Confirmez-vous la suppression ?', confirmLabel: 'Supprimer' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Supprimer</button>
