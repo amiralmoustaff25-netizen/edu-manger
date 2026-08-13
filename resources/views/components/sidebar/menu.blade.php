@@ -94,7 +94,7 @@ $visibleItems = $filterVisible($items);
                  @if ($level === 0) x-on:sidebar-accordion.window="if ($event.detail !== '{{ $accordionKey }}') open = false" @endif>
                 <div class="w-full flex items-center justify-between gap-2">
                     @if (!empty($item['route']))
-                        <a href="{{ route($item['route']) }}" class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
+                        <a href="{{ route($item['route']) }}" x-on:click="sidebarOpen = false" class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}">
                             @if ($showIcon && !empty($item['icon']))
                                 <svg class="mr-4 flex-shrink-0 h-7 w-7 overflow-visible {{ $isOpen ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 hover:text-gray-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />

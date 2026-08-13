@@ -64,8 +64,55 @@
                         </div>
                     </form>
 
+                    <!-- Paiements : cartes empilées sur mobile -->
+                    <div class="md:hidden divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        @forelse($payments as $payment)
+                            <div class="p-4 bg-white dark:bg-gray-800">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <p class="font-medium text-gray-900 dark:text-white truncate">{{ $payment->registration->user?->name ?? '—' }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ $payment->registration->classroom?->name ?? 'Non assigné' }} · {{ $payment->receipt_number }}</p>
+                                    </div>
+                                    @if($payment->isCancelled())
+                                        <x-badge color="red">Annulé</x-badge>
+                                    @elseif($payment->status === 'complet')
+                                        <x-badge color="green">Complet</x-badge>
+                                    @else
+                                        <x-badge color="amber">Partiel</x-badge>
+                                    @endif
+                                </div>
+                                <div class="mt-2 flex items-center justify-between text-sm">
+                                    <span class="font-semibold text-gray-900 dark:text-white">{{ number_format($payment->amount, 0, ',', ' ') }} FCFA</span>
+                                    <span class="text-gray-500 dark:text-gray-400">{{ $payment->month }} · {{ $payment->payment_date->format('d/m/Y') }}</span>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-3 text-sm">
+                                    <a href="{{ route('payments.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Voir</a>
+                                    @unless($payment->isCancelled())
+                                        <a href="{{ route('payments.edit', $payment) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">Modifier</a>
+                                        @if($payment->isValidated())
+                                            @can('cancel', $payment)
+                                                <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                                    x-on:click="$dispatch('open-cancel-payment', { action: '{{ route('payments.cancel', $payment) }}', receipt: '{{ addslashes($payment->receipt_number) }}' })">
+                                                    Annuler
+                                                </button>
+                                            @endcan
+                                        @else
+                                            <form action="{{ route('payments.destroy', $payment) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera supprimé et pourra modifier le solde financier de l’inscription.', confirmLabel: 'Supprimer' })">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Supprimer</button>
+                                            </form>
+                                        @endif
+                                    @endunless
+                                </div>
+                            </div>
+                        @empty
+                            <div class="p-8 text-center text-gray-500 dark:text-gray-400">Aucun paiement trouvé</div>
+                        @endforelse
+                    </div>
+
                     <!-- Tableau des paiements -->
-                    <div class="overflow-x-auto">
+                    <div class="hidden md:block overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
@@ -86,7 +133,7 @@
                                             {{ $payment->receipt_number }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                            {{ $payment->registration->user->name }}
+                                            {{ $payment->registration->user?->name ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             {{ $payment->registration->classroom?->name ?? 'Non assigné' }}
