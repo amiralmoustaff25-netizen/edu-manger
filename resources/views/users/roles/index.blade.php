@@ -33,7 +33,7 @@
                         <input id="search" name="search" value="{{ $search }}" type="text" placeholder="Ex : PROF-260015" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Rechercher</button>
+                        <x-primary-button type="submit">Rechercher</x-primary-button>
                         <a href="{{ route('users.roles.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Réinitialiser</a>
                     </div>
                 </form>

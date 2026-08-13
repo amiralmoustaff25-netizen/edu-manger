@@ -134,8 +134,8 @@
 </div>
 
 <div class="mt-6 flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+    <x-primary-button type="submit">
         {{ $teacher->exists ? 'Enregistrer les modifications' : 'Créer le professeur' }}
-    </button>
+    </x-primary-button>
     <a href="{{ route('teachers.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
 </div>

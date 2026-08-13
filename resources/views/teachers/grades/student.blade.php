@@ -103,7 +103,7 @@
 
                         <div class="mt-6 flex justify-between items-center">
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Les notes non saisies seront ignorées.') }}</p>
-                            <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">{{ __('Enregistrer les notes') }}</button>
+                            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm">{{ __('Enregistrer les notes') }}</button>
                         </div>
                     </form>
                 </div>
