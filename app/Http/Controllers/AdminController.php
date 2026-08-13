@@ -9,7 +9,10 @@ class AdminController extends Controller
 {
     public function index(Request $request): View
     {
-        $this->authorize('voir-dashboard');
+        // SEC-02 : 'voir-dashboard' est accordée à tous les rôles pour le tableau
+        // de bord général — ce hub /admin doit rester réservé à l'administration
+        // (auparavant garanti uniquement par le middleware de route, retiré depuis).
+        $this->authorize('acceder-panneau-administration');
 
         $user = $request->user();
         $isSuperAdmin = $user->hasRole('super-admin');

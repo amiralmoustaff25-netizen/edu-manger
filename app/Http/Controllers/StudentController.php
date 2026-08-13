@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use Intervention\Image\ImageManagerStatic as Image;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentController extends Controller
 {
@@ -75,6 +75,10 @@ class StudentController extends Controller
 
     /**
      * Process and store student photo.
+     *
+     * SEC-03 : délègue à StudentPhotoService (disque privé `local`,
+     * même logique que l'inscription) plutôt que de dupliquer un
+     * stockage sur le disque public.
      */
     private function processStudentPhoto($photo, User $user): ?string
     {
@@ -84,30 +88,25 @@ class StudentController extends Controller
 
         // Delete old photo if exists
         if ($user->profile_photo_path) {
-            Storage::disk('public')->delete($user->profile_photo_path);
+            Storage::disk('local')->delete($user->profile_photo_path);
         }
 
-        $filename = $user->matricule . '_' . time() . '.jpg';
-        $path = 'photos/eleves/' . $filename;
+        return app(\App\Services\StudentPhotoService::class)->store($photo, $user->matricule);
+    }
 
-        try {
-            if (extension_loaded('imagick')) {
-                Image::configure(['driver' => 'imagick']);
-            }
+    /**
+     * SEC-03 : sert la photo d'un élève depuis le disque privé, en
+     * réutilisant la même règle d'accès que la fiche élève (voirDetailEleve),
+     * plutôt que de l'exposer par une URL publique non authentifiée.
+     */
+    public function photo(User $student): StreamedResponse
+    {
+        $this->authorize('voir-detail-eleve', $student);
 
-            $image = Image::make($photo)
-                ->fit(150, 150)
-                ->encode('jpg', 90);
+        abort_unless($student->profile_photo_path, 404);
+        abort_unless(Storage::disk('local')->exists($student->profile_photo_path), 404);
 
-            Storage::disk('public')->put($path, $image);
-        } catch (\Throwable $e) {
-            $ext = $photo->getClientOriginalExtension() ?: 'jpg';
-            $filename = $user->matricule . '_' . time() . '.' . $ext;
-            $path = 'photos/eleves/' . $filename;
-            Storage::disk('public')->putFileAs('photos/eleves', $photo, $filename);
-        }
-
-        return $path;
+        return Storage::disk('local')->response($student->profile_photo_path);
     }
 
     public function show(User $student, FeeService $feeService): View
@@ -195,7 +194,7 @@ class StudentController extends Controller
             if (!empty($validated['supprimer_photo'])) {
                 Gate::authorize('remove-photo-eleve');
                 if ($student->profile_photo_path) {
-                    Storage::disk('public')->delete($student->profile_photo_path);
+                    Storage::disk('local')->delete($student->profile_photo_path);
                 }
                 $updateData['profile_photo_path'] = null;
             }

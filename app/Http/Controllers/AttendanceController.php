@@ -162,6 +162,8 @@ class AttendanceController extends Controller
 
     public function overview(Request $request)
     {
+        $this->authorize('viewAny', Attendance::class);
+
         $classrooms = Classroom::with('schoolYear')->orderBy('name')->get();
         $selectedClassroom = $request->integer('classroom_id') ?: null;
 

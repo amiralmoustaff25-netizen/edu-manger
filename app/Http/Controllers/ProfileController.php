@@ -52,14 +52,17 @@ class ProfileController extends Controller
         }
 
         // Gérer l'upload de la photo de profil
+        // SEC-03 : disque privé, comme pour les photos d'élèves gérées par
+        // StudentController — jamais `public` pour une photo de personne
+        // identifiée, servie uniquement via la route contrôlée students.photo.
         if ($request->hasFile('profile_photo')) {
             // Supprimer l'ancienne photo si elle existe
             if ($user->profile_photo_path) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_photo_path);
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($user->profile_photo_path);
             }
 
             // Stocker la nouvelle photo
-            $path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $path = $request->file('profile_photo')->store('profile-photos', 'local');
             $user->profile_photo_path = $path;
         }
 

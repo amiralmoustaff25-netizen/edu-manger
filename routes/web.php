@@ -137,6 +137,12 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('cahier-textes/dashboard', [CahierTexteDashboardController::class, 'index'])->name('cahier-textes.dashboard.index');
         Route::get('cahier-textes/dashboard/{program}/progress', [CahierTexteDashboardController::class, 'progress'])->name('cahier-textes.dashboard.progress');
         Route::get('cahier-textes/dashboard/{program}/timeline', [CahierTexteDashboardController::class, 'timeline'])->name('cahier-textes.dashboard.timeline');
+
+        // SEC-03 : photo d'élève servie depuis un disque privé. Volontairement hors
+        // du groupe permission:voir-detail-eleve ci-dessus : un élève doit pouvoir
+        // voir sa PROPRE photo sans détenir cette permission — StudentController::photo()
+        // applique déjà la même règle d'accès (UserPolicy::voirDetailEleve).
+        Route::get('/students/{student}/photo', [StudentController::class, 'photo'])->name('students.photo');
     });
 
     // ✅ CORRIGÉ : plus de doublon
@@ -254,7 +260,15 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
     });
 
-    Route::middleware(['role:super-admin|admin'])->group(function () {
+    // SEC-02 : ce groupe était auparavant verrouillé par le middleware de rôle
+    // `role:super-admin|admin`, qui court-circuitait les permissions Spatie
+    // granulaires (attribuables via l'écran "Rôles & permissions") pour tous
+    // les modules ci-dessous : une permission accordée à un rôle métier
+    // (ex. "Vie scolaire") restait sans effet. Chaque contrôleur/Policy
+    // impliqué applique désormais son propre contrôle de permission fine
+    // (vérifié findings par findings avant ce retrait — cf. audit SEC-02) ;
+    // ce groupe ne fait donc plus que porter le préfixe commun de routes.
+    Route::group([], function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
         Route::post('/notes/validate', [GradeController::class, 'validateNotes'])->name('notes.validate');

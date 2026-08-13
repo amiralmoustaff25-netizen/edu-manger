@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTeacherRequest;
 use App\Http\Requests\UpdateTeacherRequest;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Support\UserRoles;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -129,6 +130,10 @@ class TeacherController extends Controller
             ]);
         });
 
+        // SEC-04 : la création/modification/suppression d'un compte professeur
+        // n'était pas journalisée (contrairement au paiement/aux notes).
+        app(AuditLogService::class)->log('created', Teacher::class, $teacher->id, null, ['matricule' => $teacher->matricule]);
+
         return redirect()->route('teachers.index')
             ->with('success', 'Professeur créé avec succès. Matricule : '.$teacher->matricule.'.')
             ->with('temp_password', $temporaryPassword)
@@ -223,6 +228,8 @@ class TeacherController extends Controller
             $teacher->update($teacherData);
         });
 
+        app(AuditLogService::class)->log('updated', Teacher::class, $teacher->id, null, ['matricule' => $teacher->matricule]);
+
         return redirect()->route('teachers.show', $teacher)->with('success', 'Professeur mis à jour avec succès.');
     }
 
@@ -242,6 +249,8 @@ class TeacherController extends Controller
             $teacher->delete();
         });
 
+        app(AuditLogService::class)->log('archived', Teacher::class, $teacher->id, null, ['matricule' => $teacher->matricule]);
+
         return redirect()->route('teachers.index')->with('success', 'Professeur désactivé et archivé.');
     }
 
@@ -260,6 +269,8 @@ class TeacherController extends Controller
                 $user->update(['is_active' => true]);
             }
         });
+
+        app(AuditLogService::class)->log('restored', Teacher::class, $teacher->id, null, ['matricule' => $teacher->matricule]);
 
         return redirect()->route('teachers.index')->with('success', 'Professeur restauré.');
     }
