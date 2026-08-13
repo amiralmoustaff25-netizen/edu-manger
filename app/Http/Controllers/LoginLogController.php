@@ -34,10 +34,23 @@ class LoginLogController extends Controller
             $query->whereDate('login_at', $request->date);
         }
 
+        // Filtrer par rôle (snapshot au moment de la connexion, voir LogSuccessfulLogin)
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
         $logs = $query->orderBy('login_at', 'desc')->paginate(50)->withQueryString();
         $users = User::orderBy('name')->get(['id', 'name', 'email']);
+        $roles = LoginLog::query()->whereNotNull('role')->distinct()->orderBy('role')->pluck('role');
 
-        return view('login_logs.index', compact('logs', 'users'));
+        $stats = [
+            'total' => LoginLog::count(),
+            'success' => LoginLog::successful()->count(),
+            'failed' => LoginLog::failed()->count(),
+            'today' => LoginLog::whereDate('login_at', today())->count(),
+        ];
+
+        return view('login_logs.index', compact('logs', 'users', 'roles', 'stats'));
     }
 
     public function show(LoginLog $loginLog)

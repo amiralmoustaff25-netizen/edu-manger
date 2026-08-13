@@ -6,7 +6,9 @@ use App\Http\Requests\StoreSchoolYearRequest;
 use App\Models\Classroom;
 use App\Models\Registration;
 use App\Models\SchoolYear;
+use App\Services\AdminSecurityCodeService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class SchoolYearController extends Controller
@@ -58,9 +60,14 @@ class SchoolYearController extends Controller
             ->with('success', 'L\'année scolaire '.$schoolYear->year_string.' est maintenant active.');
     }
 
-    public function destroy(SchoolYear $schoolYear): RedirectResponse
+    public function destroy(Request $request, SchoolYear $schoolYear, AdminSecurityCodeService $securityCode): RedirectResponse
     {
         $this->authorize('supprimer-annee-scolaire', $schoolYear);
+
+        // Action critique listée au cahier des charges sécurité : exige le code
+        // de sécurité administrateur (distinct du mot de passe) une fois que
+        // l'auteur en a défini un — voir AdminSecurityCodeService::ensureVerified().
+        $securityCode->ensureVerified($request->user(), $request->input('security_code'));
 
         if ($schoolYear->is_active) {
             return redirect()

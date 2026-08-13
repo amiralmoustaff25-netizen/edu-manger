@@ -145,6 +145,10 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Logs & Audit ---
             'voir-logs-connexion',
             'voir-detail-log-connexion',
+            'voir-journal-audit',
+            'voir-detail-journal-audit',
+            'gerer-sessions-actives',
+            'gerer-code-securite-admin',
 
             // --- Notifications & Communications ---
             'voir-notifications',
@@ -248,6 +252,12 @@ class RoleAndPermissionSeeder extends Seeder
         // --- Admin : tout sauf super-admin, validation/suppression de paiements, finances et rapports ---
         $excludedForAdmin = [
             'tout-faire',
+            // Gestion des sessions actives (déconnexion forcée d'un autre utilisateur) et
+            // code de sécurité admin : volontairement réservés au Super Admin (cf. cahier
+            // des charges sécurité), pas ouverts à l'admin comme le reste des logs/audit.
+            'gerer-sessions-actives',
+            'gerer-code-securite-admin',
+            'gerer-double-authentification',
             'valider-paiement-partiel',
             'supprimer-paiement',
             'annuler-paiement',

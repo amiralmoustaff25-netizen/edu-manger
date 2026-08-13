@@ -3,7 +3,12 @@
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Api\StudentController as ApiStudentController;
+use App\Http\Controllers\AdminSecurityCodeController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\Auth\TwoFactorAuthenticationController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\BulletinController;
 use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
@@ -40,7 +45,7 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
-Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
+Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
@@ -323,6 +328,26 @@ Route::middleware(['auth', 'verified', 'password.changed'])->group(function () {
         // Routes pour les logs de connexion
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');
         Route::get('/login-logs/{loginLog}', [LoginLogController::class, 'show'])->name('login-logs.show');
+
+        // Journal d'audit (traçabilité des actions sensibles — voir AuditLogService)
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/audit-logs/{auditLog}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+
+        // Sessions actives (utilisateurs connectés en temps réel, déconnexion forcée)
+        Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
+        Route::delete('/sessions/{sessionId}', [SessionController::class, 'destroy'])->name('sessions.destroy');
+
+        // Code de sécurité Super Admin (indépendant du mot de passe de connexion,
+        // requis pour certaines actions critiques — voir VerifySecurityCode)
+        Route::get('/admin/security-code', [AdminSecurityCodeController::class, 'edit'])->name('admin.security-code.edit');
+        Route::put('/admin/security-code', [AdminSecurityCodeController::class, 'update'])->name('admin.security-code.update');
+
+        // Double authentification (TOTP) — auto-inscription/désactivation par son
+        // propriétaire. La vérification à la connexion vit dans routes/auth.php
+        // (TwoFactorChallengeController), hors de ce groupe protégé par 'two-factor'.
+        Route::get('/two-factor', [TwoFactorAuthenticationController::class, 'show'])->name('two-factor.show');
+        Route::post('/two-factor', [TwoFactorAuthenticationController::class, 'confirm'])->name('two-factor.confirm');
+        Route::delete('/two-factor', [TwoFactorAuthenticationController::class, 'destroy'])->name('two-factor.destroy');
 
         Route::resource('teachers', TeacherController::class);
         Route::post('/teachers/{id}/restore', [TeacherController::class, 'restore'])->name('teachers.restore');

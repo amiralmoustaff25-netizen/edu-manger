@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateParentRequest;
 use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\User;
+use App\Services\AdminSecurityCodeService;
 use App\Services\AuditLogService;
 use App\Services\FeeService;
 use Illuminate\Http\RedirectResponse;
@@ -275,9 +276,14 @@ class ParentController extends Controller
     /**
      * Supprimer définitivement un parent
      */
-    public function destroy(ParentModel $parent): RedirectResponse
+    public function destroy(Request $request, ParentModel $parent, AdminSecurityCodeService $securityCode): RedirectResponse
     {
         $this->authorize('supprimer-parent', $parent);
+
+        // Action critique listée au cahier des charges sécurité ("suppression
+        // définitive") : exige le code de sécurité administrateur une fois que
+        // l'auteur en a défini un — voir AdminSecurityCodeService::ensureVerified().
+        $securityCode->ensureVerified($request->user(), $request->input('security_code'));
 
         // SEC-04 : forceDelete() est une suppression physique irréversible — elle
         // doit être journalisée dans le même audit trail que les autres actions

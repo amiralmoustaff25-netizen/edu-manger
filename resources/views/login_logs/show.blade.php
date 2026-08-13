@@ -23,13 +23,35 @@
                         </div>
 
                         <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Matricule / Rôle</p>
+                            <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $loginLog->matricule ?? '-' }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $loginLog->role ?? '-' }}</p>
+                        </div>
+
+                        <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Adresse IP</p>
                             <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $loginLog->ip_address }}</p>
                         </div>
 
                         <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Date et heure</p>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Connexion</p>
                             <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $loginLog->login_at->format('d/m/Y H:i:s') }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Déconnexion</p>
+                            <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $loginLog->logout_at?->format('d/m/Y H:i:s') ?? 'Session en cours ou non fermée explicitement' }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Durée de session</p>
+                            <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">
+                                @if($loginLog->duration_in_seconds !== null)
+                                    {{ gmdate('H:i:s', $loginLog->duration_in_seconds) }}
+                                @else
+                                    -
+                                @endif
+                            </p>
                         </div>
 
                         <div>
@@ -41,6 +63,11 @@
                                     <span class="px-3 py-1 bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300 rounded-full text-sm font-medium">Échec</span>
                                 @endif
                             </p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Navigateur / OS / Appareil</p>
+                            <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ $loginLog->browser ?? '-' }} · {{ $loginLog->platform ?? '-' }} · <span class="capitalize">{{ $loginLog->device_type ?? '-' }}</span></p>
                         </div>
 
                         <div class="md:col-span-2">

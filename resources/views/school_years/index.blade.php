@@ -97,9 +97,13 @@
                                     @endif
 
                                     @if(!$year->is_active)
-                                        <form action="{{ route('school-years.destroy', $year->id) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer l’année scolaire', message: 'Cette opération peut supprimer les inscriptions et données associées à cette année. Vérifiez qu’elle n’est pas utilisée avant de confirmer.', confirmLabel: 'Supprimer définitivement' })">
+                                        <form action="{{ route('school-years.destroy', $year->id) }}" method="POST" class="inline-flex items-center gap-2" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer l’année scolaire', message: 'Cette opération peut supprimer les inscriptions et données associées à cette année. Vérifiez qu’elle n’est pas utilisée avant de confirmer.', confirmLabel: 'Supprimer définitivement' })">
                                             @csrf
                                             @method('DELETE')
+                                            @error('security_code')
+                                                <span class="text-xs text-red-600 dark:text-red-400">{{ $message }}</span>
+                                            @enderror
+                                            <input type="password" name="security_code" placeholder="Code de sécurité" autocomplete="off" class="w-32 rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 text-xs" title="Requis uniquement si vous avez défini un code de sécurité administrateur">
                                             <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium">Supprimer</button>
                                         </form>
                                     @endif
