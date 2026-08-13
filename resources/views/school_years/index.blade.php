@@ -14,16 +14,16 @@
                     <form action="{{ route('school-years.store') }}" method="POST" class="flex flex-wrap gap-3 items-end">
                         @csrf
                         <div class="flex-1 min-w-[200px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Année (ex: 2026-2027)</label>
-                            <input type="text" name="year_string" placeholder="2026-2027" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <label for="year_string" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Année (ex: 2026-2027)</label>
+                            <input type="text" name="year_string" id="year_string" placeholder="2026-2027" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                         </div>
                         <div class="flex-1 min-w-[150px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de début</label>
-                            <input type="date" name="start_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label for="start_date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de début</label>
+                            <input type="date" name="start_date" id="start_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div class="flex-1 min-w-[150px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de fin</label>
-                            <input type="date" name="end_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label for="end_date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de fin</label>
+                            <input type="date" name="end_date" id="end_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div class="flex items-center">
                             <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">

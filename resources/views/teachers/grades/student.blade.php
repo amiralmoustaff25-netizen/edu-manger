@@ -21,12 +21,12 @@
 
                 <form action="{{ route('professeur.notes.eleve') }}" method="GET" class="flex flex-wrap items-end gap-4">
                     <div class="flex-1 min-w-[200px]">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Matricule de l\'élève') }}</label>
-                        <input type="text" name="matricule" value="{{ old('matricule', request('matricule')) }}" autofocus placeholder="Ex. EL-26-0001" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="matricule" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Matricule de l\'élève') }}</label>
+                        <input type="text" name="matricule" id="matricule" value="{{ old('matricule', request('matricule')) }}" autofocus placeholder="Ex. EL-26-0001" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <div class="w-52">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
-                        <select name="periode" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="periode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
+                        <select name="periode" id="periode" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="trimestre_1" @selected($periode === 'trimestre_1')>{{ __('Trimestre 1') }}</option>
                             <option value="trimestre_2" @selected($periode === 'trimestre_2')>{{ __('Trimestre 2') }}</option>
                             <option value="trimestre_3" @selected($periode === 'trimestre_3')>{{ __('Trimestre 3') }}</option>

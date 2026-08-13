@@ -41,7 +41,7 @@
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rechercher un élève par matricule</h3>
                         <div class="flex gap-4">
                             <div class="flex-1 relative">
-                                <input type="text" id="matricule" placeholder="Entrez le matricule..."
+                                <input type="text" id="matricule" placeholder="Entrez le matricule..." aria-label="Matricule de l'élève"
                                     value="{{ $oldMatricule }}"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-10"
                                     onkeydown="if (event.key === 'Enter') { event.preventDefault(); searchStudent(); }"
@@ -143,7 +143,7 @@
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Détails du paiement</h3>
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant reçu (FCFA)</label>
+                                        <label for="amount_paid" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant reçu (FCFA)</label>
                                         <input type="number" name="amount_paid" id="amount_paid" required min="0" step="0.01"
                                             value="{{ old('amount_paid') }}"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -152,13 +152,13 @@
                                     </div>
 
                                     <div id="change-section" class="hidden">
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monnaie à rendre (FCFA)</label>
+                                        <label for="change-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monnaie à rendre (FCFA)</label>
                                         <input type="text" id="change-amount" readonly
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm bg-gray-100 dark:bg-gray-600">
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
+                                        <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
                                         <select name="payment_method" id="payment_method" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                             <option value="espèces" @selected(old('payment_method') === 'espèces')>Espèces</option>
@@ -171,7 +171,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de paiement</label>
+                                        <label for="payment_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de paiement</label>
                                         <select name="payment_type" id="payment_type" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                             <option value="mensualité" @selected(old('payment_type') === 'mensualité')>Mensualité</option>
@@ -184,7 +184,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois concerné</label>
+                                        <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois concerné</label>
                                         <select name="month" id="month" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                             @foreach(config('edu.school_months') as $m)
@@ -195,21 +195,21 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de paiement</label>
+                                        <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de paiement</label>
                                         <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', now()->format('Y-m-d')) }}" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence (optionnel)</label>
+                                        <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence (optionnel)</label>
                                         <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <x-input-error :messages="$errors->get('reference')" class="mt-2" />
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commentaire (optionnel)</label>
+                                        <label for="comment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commentaire (optionnel)</label>
                                         <textarea name="comment" id="comment" rows="2"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('comment') }}</textarea>
                                         <x-input-error :messages="$errors->get('comment')" class="mt-2" />

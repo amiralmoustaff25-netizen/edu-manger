@@ -25,7 +25,7 @@
 
                     <form action="{{ route('professeur.notes.index') }}" method="GET" class="flex items-center space-x-4">
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Classe') }}</label>
+                            <label for="classroomSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Classe') }}</label>
                             <select name="classroom_id" id="classroomSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">{{ __('Sélectionner une classe') }}</option>
                                 @foreach($classrooms as $classroom)
@@ -36,7 +36,7 @@
                             </select>
                         </div>
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Matière') }}</label>
+                            <label for="matiereSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Matière') }}</label>
                             <select name="matiere_id" id="matiereSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">{{ __('Sélectionner une matière') }}</option>
                                 @if(request('classroom_id'))
@@ -89,16 +89,16 @@
                         <div class="p-6">
                             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Type d\'évaluation') }}</label>
-                                    <select name="type_evaluation" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="typeEvaluationSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Type d\'évaluation') }}</label>
+                                    <select name="type_evaluation" id="typeEvaluationSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         @foreach(\App\Support\EvaluationTypeScope::allowedFor($selectedClassroom->cycle) as $type)
                                             <option value="{{ $type }}">{{ __(\App\Support\EvaluationTypeScope::LABELS[$type]) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
-                                    <select name="periode" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="periodeSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
+                                    <select name="periode" id="periodeSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="trimestre_1">{{ __('Trimestre 1') }}</option>
                                         <option value="trimestre_2">{{ __('Trimestre 2') }}</option>
                                         <option value="trimestre_3">{{ __('Trimestre 3') }}</option>

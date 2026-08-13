@@ -173,19 +173,19 @@
 
                             <!-- Matricule (lecture seule) -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label for="matricule-readonly" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     {{ __('Matricule') }}
                                 </label>
-                                <input type="text" value="{{ $user->matricule }}" disabled
+                                <input type="text" id="matricule-readonly" value="{{ $user->matricule }}" disabled
                                        class="w-full rounded-lg border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                             </div>
 
                             <!-- Classe (lecture seule) -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label for="classroom-readonly" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     {{ __('Classe') }}
                                 </label>
-                                <input type="text" value="{{ $classroom->name ?? __('Non assignée') }}" disabled
+                                <input type="text" id="classroom-readonly" value="{{ $classroom->name ?? __('Non assignée') }}" disabled
                                        class="w-full rounded-lg border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                             </div>
 

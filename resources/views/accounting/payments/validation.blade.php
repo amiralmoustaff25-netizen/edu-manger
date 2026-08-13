@@ -76,7 +76,7 @@
                                     <div class="mt-4 flex gap-2 justify-end">
                                         <form action="{{ route('payments.reject', $payment) }}" method="POST" class="flex gap-2" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
                                             @csrf
-                                            <input type="text" name="reason" placeholder="Motif du rejet..." required
+                                            <input type="text" name="reason" placeholder="Motif du rejet..." aria-label="Motif du rejet" required
                                                 class="px-3 py-2 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                             <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
                                                 Rejeter

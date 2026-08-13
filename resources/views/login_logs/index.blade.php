@@ -13,16 +13,16 @@
                 <div class="mb-6 bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
                     <form action="{{ route('login-logs.index') }}" method="GET" class="flex flex-wrap gap-3 items-end">
                         <div class="flex-1 min-w-[150px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Statut</label>
-                            <select name="status" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <label for="login-log-status" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Statut</label>
+                            <select name="status" id="login-log-status" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
                                 <option value="">Tous</option>
                                 <option value="success" {{ request('status') === 'success' ? 'selected' : '' }}>Réussies</option>
                                 <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Échouées</option>
                             </select>
                         </div>
                         <div class="flex-1 min-w-[200px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Utilisateur</label>
-                            <select name="user_id" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <label for="login-log-user" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Utilisateur</label>
+                            <select name="user_id" id="login-log-user" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
                                 <option value="">Tous</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -32,8 +32,8 @@
                             </select>
                         </div>
                         <div class="flex-1 min-w-[150px]">
-                            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                            <input type="date" name="date" value="{{ request('date') }}" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <label for="login-log-date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date</label>
+                            <input type="date" name="date" id="login-log-date" value="{{ request('date') }}" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500">
                         </div>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">Filtrer</button>
                         <a href="{{ route('login-logs.index') }}" class="bg-gray-200 dark:bg-slate-600 hover:bg-gray-300 dark:hover:bg-slate-500 text-gray-700 dark:text-gray-200 px-6 py-2 rounded transition">Réinitialiser</a>

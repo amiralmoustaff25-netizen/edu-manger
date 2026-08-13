@@ -30,8 +30,8 @@
                             <span class="rounded-md border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 px-3 py-1.5 text-sm font-medium text-gray-800">{{ $program->classroom?->name ?? '—' }}</span>
                             <span class="text-sm text-gray-700 dark:text-gray-300">Matière :</span>
                             <span class="rounded-md border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 px-3 py-1.5 text-sm font-medium text-gray-800">{{ $program->subject?->nom ?? '—' }}</span>
-                            <label class="text-sm text-gray-700 dark:text-gray-300">Date</label>
-                            <input type="date" x-model="date" class="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 rounded p-2">
+                            <label for="cahier-textes-date" class="text-sm text-gray-700 dark:text-gray-300">Date</label>
+                            <input type="date" id="cahier-textes-date" x-model="date" class="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 rounded p-2">
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -51,7 +51,7 @@
                         <tbody>
                             @forelse ($program->chapters ?? [] as $chapter)
                                 <tr class="odd:bg-white even:bg-gray-50 dark:odd:bg-slate-800 dark:even:bg-slate-700/50 text-gray-800 dark:text-gray-200">
-                                    <td class="px-4 py-3"><input type="checkbox" value="{{ $chapter->id }}" :checked="completedToday[{{ $chapter->id }}]" @click="toggleChapter({{ $chapter->id }})"></td>
+                                    <td class="px-4 py-3"><input type="checkbox" value="{{ $chapter->id }}" aria-label="Marquer comme fait aujourd'hui : {{ $chapter->titre }}" :checked="completedToday[{{ $chapter->id }}]" @click="toggleChapter({{ $chapter->id }})"></td>
                                     <td class="px-4 py-3">{{ $chapter->titre }}</td>
                                     <td class="px-4 py-3">{{ $chapter->type }}</td>
                                     <td class="px-4 py-3">{{ $chapter->titre }}</td>
@@ -62,7 +62,7 @@
                                               :class="completedToday[{{ $chapter->id }}] ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300'"
                                               x-text="completedToday[{{ $chapter->id }}] ? 'Fait aujourd\'hui' : 'À faire'"></span>
                                     </td>
-                                    <td class="px-4 py-3"><input type="text" class="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 rounded p-1" @blur="saveRemark({{ $chapter->id }}, $event.target.value)"></td>
+                                    <td class="px-4 py-3"><input type="text" aria-label="Remarque : {{ $chapter->titre }}" class="border dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 rounded p-1" @blur="saveRemark({{ $chapter->id }}, $event.target.value)"></td>
                                 </tr>
                             @empty
                                 <tr>

@@ -15,14 +15,15 @@
                                name="search"
                                value="{{ request('search') }}"
                                placeholder="Rechercher par nom, matricule..."
+                               aria-label="Rechercher un élève"
                                class="flex-1 min-w-[12rem] border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
-                        <select name="classroom_id" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
+                        <select name="classroom_id" aria-label="Filtrer par classe" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
                             <option value="">Toutes les classes</option>
                             @foreach($classrooms as $classroom)
                                 <option value="{{ $classroom->id }}" {{ request('classroom_id') == $classroom->id ? 'selected' : '' }}>{{ $classroom->name }}</option>
                             @endforeach
                         </select>
-                        <select name="status" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
+                        <select name="status" aria-label="Filtrer par statut" class="border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-gray-100">
                             <option value="">Tous statuts</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actif</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>En attente</option>

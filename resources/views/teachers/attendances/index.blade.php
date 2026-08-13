@@ -26,8 +26,8 @@
 
                     <form action="{{ route('professeur.attendances.index') }}" method="GET" class="flex items-center space-x-4">
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Classe') }}</label>
-                            <select name="classroom_id" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="attendance-classroom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Classe') }}</label>
+                            <select name="classroom_id" id="attendance-classroom" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">{{ __('Sélectionner une classe') }}</option>
                                 @foreach($classrooms as $classroom)
                                     <option value="{{ $classroom->id }}" {{ request('classroom_id') == $classroom->id ? 'selected' : '' }}>
@@ -37,8 +37,8 @@
                             </select>
                         </div>
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Date') }}</label>
-                            <input type="date" name="date" value="{{ $selectedDate }}" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <label for="attendance-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Date') }}</label>
+                            <input type="date" name="date" id="attendance-date" value="{{ $selectedDate }}" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div class="pt-6">
                             <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium">

@@ -106,6 +106,7 @@ $visibleItems = $filterVisible($items);
                         <button
                             type="button"
                             @click="{{ $toggleClick }}"
+                            :aria-expanded="open.toString()"
                             class="w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-left rounded-md {{ $isOpen ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700' }}"
                         >
                             @if ($showIcon && !empty($item['icon']))
@@ -120,6 +121,7 @@ $visibleItems = $filterVisible($items);
                     <button
                         type="button"
                         @click="{{ $toggleClick }}"
+                        :aria-expanded="open.toString()"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
                         aria-label="{{ $isOpen ? __('Réduire le menu') : __('Ouvrir le menu') }}"
                     >
