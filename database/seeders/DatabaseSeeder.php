@@ -15,6 +15,15 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // SEC-01 : ce seeder crée un jeu de données de démonstration avec des
+        // mots de passe prévisibles — il ne doit jamais être exécuté sur un
+        // environnement de production.
+        if (app()->environment('production')) {
+            $this->command?->error('DatabaseSeeder ne peut pas être exécuté en production (jeu de données de démonstration).');
+
+            return;
+        }
+
         $this->call(RoleAndPermissionSeeder::class);
         $this->call(FeeTypeSeeder::class);
         $this->call(TeacherSeeder::class);
@@ -24,7 +33,7 @@ class DatabaseSeeder extends Seeder
             ['is_active' => true]
         );
 
-        $superAdmin = $this->user('20260325', 'Moustapha Diop', 'moustaff25@gmail.com', 'super-admin');
+        $superAdmin = $this->user('20260325', 'Super Admin Demo', 'super-admin@edumanager.sn', 'super-admin');
         $this->user('ADM-260001', 'Admin École', 'admin@edumanager.sn', 'admin');
         $manager = $this->user('MCO-260001', 'Manager Comptable', 'manager.comptable@edumanager.sn', 'manager-comptable');
         $this->user('CPT-260001', 'Comptable', 'comptable@edumanager.sn', 'comptable');

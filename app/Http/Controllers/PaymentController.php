@@ -471,6 +471,10 @@ class PaymentController extends Controller
 
         $payment->validatePayment(auth()->id());
 
+        // SEC-04 : la validation/le rejet d'un paiement partiel n'était pas
+        // journalisé, contrairement à l'annulation (cancelPayment) déjà tracée.
+        app(PaymentService::class)->logAction('validated_partial', Payment::class, $payment->id, null, $payment->toArray(), 'Paiement partiel validé');
+
         $this->notifyPaymentReceived($payment, $payment->registration);
 
         $this->activateRegistrationIfNeeded($payment->registration);
@@ -495,6 +499,8 @@ class PaymentController extends Controller
         $payment->validated_by = auth()->id();
         $payment->validated_at = now();
         $payment->save();
+
+        app(PaymentService::class)->logAction('rejected_partial', Payment::class, $payment->id, null, $payment->toArray(), 'Paiement partiel rejeté : '.$request->string('reason')->toString());
 
         return back()->with('success', 'Paiement rejeté.');
     }

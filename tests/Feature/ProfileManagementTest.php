@@ -29,7 +29,7 @@ test('a profile photo can be uploaded and replaces the previous one', function (
     // UploadedFile::fake()->image() nécessite l'extension GD (absente de cet
     // environnement) : on construit un vrai fichier PNG 1x1 minimal à la place,
     // pour exercer la validation MIME réelle sans dépendre de GD.
-    Storage::fake('public');
+    Storage::fake('local');
     $user = User::factory()->create(['role' => 'admin']);
     $user->assignRole('admin');
 
@@ -46,7 +46,9 @@ test('a profile photo can be uploaded and replaces the previous one', function (
 
     $path = $user->refresh()->profile_photo_path;
     expect($path)->not->toBeNull();
-    Storage::disk('public')->assertExists($path);
+    // SEC-03 : la photo de profil est désormais stockée sur le disque privé
+    // `local`, jamais `public`, et servie uniquement via une route contrôlée.
+    Storage::disk('local')->assertExists($path);
 });
 
 test('an eleve cannot edit their profile but can view it', function () {

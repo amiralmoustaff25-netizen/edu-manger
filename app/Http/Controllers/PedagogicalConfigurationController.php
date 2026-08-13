@@ -17,6 +17,19 @@ use Illuminate\Support\Str;
 
 class PedagogicalConfigurationController extends Controller
 {
+    public function __construct()
+    {
+        // SEC-02 : aucune de ces actions n'avait de contrôle d'autorisation
+        // propre — seul le middleware de route (role:super-admin|admin,
+        // retiré depuis) les protégeait, rendant impossible toute délégation
+        // fine via Spatie. Un seul point de contrôle pour tout le contrôleur.
+        $this->middleware(function ($request, $next) {
+            $this->authorize('gerer-configuration-pedagogique');
+
+            return $next($request);
+        });
+    }
+
     public function index(Request $request)
     {
         $schoolYears = SchoolYear::orderByDesc('year_string')->get();

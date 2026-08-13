@@ -22,6 +22,13 @@ class UserPermissionService
             $requestedEffectiveCollection = collect($requestedEffectivePermissions)->unique()->values();
 
             $user->syncRoles($requestedRoleCollection->toArray());
+
+            // SEC-05 : ce chemin (écran "Attribution des rôles et accès") modifiait
+            // les rôles Spatie sans jamais resynchroniser la colonne legacy
+            // `users.role`, laissant les deux sources de vérité diverger
+            // silencieusement dès la première utilisation de cet écran.
+            $user->syncPrimaryRoleColumn();
+
             $user->load('roles.permissions');
 
             $this->syncDirectPermissionsAndRevokes($user, $requestedRoleCollection, $requestedEffectiveCollection, $changedBy);

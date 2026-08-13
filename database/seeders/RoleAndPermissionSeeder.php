@@ -171,6 +171,18 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-tableau-bord-cahier-textes',
             'voir-historique-cahier-textes',
 
+            // --- Configuration pédagogique (SEC-02 : ces routes n'avaient aucune
+            // permission dédiée et n'étaient protégées que par le rôle au niveau route) ---
+            'gerer-configuration-pedagogique',
+
+            // --- Panneau d'administration (SEC-02 : voir-dashboard est partagé par
+            // tous les rôles pour le tableau de bord général ; le hub /admin, lui,
+            // doit rester réservé à l'administration) ---
+            'acceder-panneau-administration',
+
+            // --- Présences (SEC-02 : idem pour la vue d'ensemble /attendances) ---
+            'voir-presences',
+
             // --- Super-Admin ---
             'tout-faire',
         ];
@@ -426,8 +438,16 @@ class RoleAndPermissionSeeder extends Seeder
         // =================================================================
         // 5. CRÉATION DU SUPER-ADMIN PAR DÉFAUT (si aucun n'existe)
         // =================================================================
-
-        if (! app()->runningUnitTests() && ! User::role('super-admin')->exists()) {
+        // SEC-01 : un compte à identifiants prévisibles (email fixe, mot de
+        // passe "password" en dur, visibles dans le code source public) ne
+        // doit JAMAIS être créé automatiquement en production — un
+        // attaquant connaissant ce pattern pourrait prendre le contrôle de
+        // l'application avant l'équipe légitime. Cette création automatique
+        // reste utile en local/testing (bootstrap rapide, fixtures de
+        // test) ; en production, utiliser la commande dédiée
+        // `php artisan admin:create-super-admin`, qui génère un mot de
+        // passe aléatoire affiché une seule fois.
+        if (app()->environment('local') && ! User::role('super-admin')->exists()) {
             $superAdminUser = User::create([
                 'name' => 'Super Admin',
                 'email' => 'admin@edu-manager.local',
@@ -440,6 +460,11 @@ class RoleAndPermissionSeeder extends Seeder
             ]);
 
             $superAdminUser->assignRole('super-admin');
+        } elseif (! app()->environment(['local', 'testing']) && ! User::role('super-admin')->exists() && isset($this->command)) {
+            // Ce message n'est pas affiché en 'testing' (pas de sortie console dans les tests).
+            $this->command?->warn(
+                'Aucun compte super-admin trouvé. En production, créez-en un avec : php artisan admin:create-super-admin'
+            );
         }
 
         // Re-cacher les permissions

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Services\SuperAdminProtectionService;
 use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
@@ -100,6 +101,10 @@ class UserController extends Controller
             return $user;
         });
 
+        // SEC-04 : la création/modification/suppression d'un compte utilisateur
+        // n'était pas journalisée (contrairement au paiement/aux notes).
+        app(AuditLogService::class)->log('created', User::class, $user->id, null, ['matricule' => $user->matricule, 'role' => $role]);
+
         return redirect()
             ->route('users.index')
             ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.'.')
@@ -127,11 +132,15 @@ class UserController extends Controller
         $role = $validated['role'];
         unset($validated['role']);
 
+        $oldValues = $user->only(array_keys($validated));
+
         DB::transaction(function () use ($user, $validated, $role) {
             $user->update($validated);
             $user->syncRoles([$role]);
             $user->syncPrimaryRoleColumn();
         });
+
+        app(AuditLogService::class)->log('updated', User::class, $user->id, $oldValues, $validated + ['role' => $role]);
 
         return redirect()->route('users.index')->with('success', 'Utilisateur modifié avec succès.');
     }
@@ -157,6 +166,8 @@ class UserController extends Controller
         $user->update(['is_active' => false]);
         $user->delete();
 
+        app(AuditLogService::class)->log('archived', User::class, $user->id, null, ['matricule' => $user->matricule]);
+
         return redirect()->route('users.index')->with('success', 'Utilisateur désactivé et archivé.');
     }
 
@@ -172,6 +183,8 @@ class UserController extends Controller
             $user->update(['is_active' => true]);
         });
 
+        app(AuditLogService::class)->log('restored', User::class, $user->id, null, ['matricule' => $user->matricule]);
+
         return redirect()->route('users.index')->with('success', 'Utilisateur restauré.');
     }
 
@@ -184,7 +197,10 @@ class UserController extends Controller
             return back()->withErrors(['user' => 'Vous ne pouvez pas désactiver votre propre compte.']);
         }
 
+        $wasActive = $user->is_active;
         $user->update(['is_active' => ! $user->is_active]);
+
+        app(AuditLogService::class)->log('toggled_active', User::class, $user->id, ['is_active' => $wasActive], ['is_active' => $user->is_active]);
 
         return back()->with('success', $user->is_active ? 'Utilisateur activé.' : 'Utilisateur désactivé.');
     }
@@ -200,6 +216,10 @@ class UserController extends Controller
             'password' => Hash::make($temporaryPassword),
             'password_must_change' => true,
         ]);
+
+        // SEC-04 : auparavant seulement un Log::info non structuré — désormais
+        // dans le même journal d'audit consultable via l'écran Logs de connexion.
+        app(AuditLogService::class)->log('password_reset_by_admin', User::class, $user->id, null, null, 'Mot de passe réinitialisé par '.auth()->user()?->name);
 
         return back()
             ->with('success', 'Mot de passe réinitialisé.')

@@ -16,6 +16,13 @@ class AttendancePolicy
         return null;
     }
 
+    // SEC-02 : la vue d'ensemble /attendances n'avait aucun contrôle propre,
+    // uniquement le middleware de route (role:super-admin|admin, retiré depuis).
+    public function viewAny(User $user): bool
+    {
+        return $user->can('voir-presences');
+    }
+
     public function view(User $user, Attendance $attendance): bool
     {
         // Un professeur peut voir une présence s'il enseigne dans la classe

@@ -30,7 +30,10 @@ return [
             'children' => [
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
                 ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
-                ['label' => 'Présences', 'route' => 'attendances.overview', 'permission' => 'voir-programmes'],
+                // MET-10 : ce lien utilisait par erreur 'voir-programmes' (copié depuis
+                // l'entrée au-dessus), permission sans rapport avec la route réelle
+                // désormais protégée par 'voir-presences' (cf. SEC-02/AttendancePolicy).
+                ['label' => 'Présences', 'route' => 'attendances.overview', 'permission' => 'voir-presences'],
                 [
                     'label' => 'Configuration pédagogique',
                     'route' => 'pedagogical-configuration.index',

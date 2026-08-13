@@ -405,8 +405,12 @@ class User extends Authenticatable
      */
     public function getProfilePhotoUrlAttribute(): string
     {
-        if ($this->profile_photo_path) {
-            return \Illuminate\Support\Facades\Storage::disk('public')->url($this->profile_photo_path);
+        // SEC-03 : la photo est stockée sur le disque privé `local` et servie
+        // via une route contrôlée (StudentController::photo()) qui revérifie
+        // la permission d'accès au dossier de l'élève, plutôt que par une URL
+        // publique directe.
+        if ($this->profile_photo_path && $this->exists) {
+            return route('students.photo', $this->getKey());
         }
 
         // Default avatar: initials

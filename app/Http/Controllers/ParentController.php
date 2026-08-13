@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateParentRequest;
 use App\Models\Note;
 use App\Models\ParentModel;
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Services\FeeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -278,6 +279,11 @@ class ParentController extends Controller
     {
         $this->authorize('supprimer-parent', $parent);
 
+        // SEC-04 : forceDelete() est une suppression physique irréversible — elle
+        // doit être journalisée dans le même audit trail que les autres actions
+        // sensibles (pas seulement dans les logs applicatifs non structurés).
+        $parentSnapshot = ['matricule_parent' => $parent->matricule_parent, 'nom' => $parent->nom, 'prenom' => $parent->prenom, 'email' => $parent->email];
+
         DB::transaction(function () use ($parent) {
             $parent->students()->detach();
 
@@ -287,6 +293,8 @@ class ParentController extends Controller
 
             $parent->forceDelete();
         });
+
+        app(AuditLogService::class)->log('force_deleted', ParentModel::class, $parent->id, $parentSnapshot, null, 'Suppression définitive et irréversible du dossier parent.');
 
         Log::info('Parent supprimé définitivement', [
             'parent_id' => $parent->id,
