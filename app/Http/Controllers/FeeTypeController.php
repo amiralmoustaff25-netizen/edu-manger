@@ -69,6 +69,15 @@ class FeeTypeController extends Controller
     {
         $this->authorize('supprimer-type-frais', $feeType);
 
+        // ARC-02 : la FK classroom_fees.fee_type_id est en cascade au niveau
+        // base — sans ce contrôle applicatif, supprimer un type de frais
+        // effacerait silencieusement toute la grille tarifaire (et les
+        // factures) qui en dépendent, pour toutes les classes/années.
+        if ($feeType->classroomFees()->withTrashed()->exists() || $feeType->invoiceItems()->exists()) {
+            return redirect()->route('fee-types.index')
+                ->withErrors(['fee_type' => 'Impossible de supprimer ce type de frais : il est utilisé par une grille tarifaire ou une facture existante.']);
+        }
+
         $feeType->delete();
 
         return redirect()->route('fee-types.index')

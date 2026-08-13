@@ -22,3 +22,18 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Base de donnees SQLite locale (donnees personnelles reelles - jamais versionnees, cf. ARC-01)
+*.sqlite
+*.sqlite-journal
+/edu_manager
+/database/database.sqlite
+
+# Sorties de debogage / tests capturees pendant le developpement (cf. ARC-06)
+/feature_tests*.txt
+/output.txt
+/test-errors.txt
+/toggle_test*.txt
+/route-list.json
+/routes.txt
+/extract.ps1

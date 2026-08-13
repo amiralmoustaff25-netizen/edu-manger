@@ -151,7 +151,10 @@ class Payment extends Model
      */
     public function scopeForYear($query, int $year)
     {
-        return $query->whereYear('created_at', $year);
+        // BDD-12 : la date métier du paiement est `payment_date`, pas la date
+        // d'enregistrement en base (`created_at`), qui peut diverger si un
+        // paiement est saisi après coup.
+        return $query->whereYear('payment_date', $year);
     }
 
     /**
