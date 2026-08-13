@@ -5,9 +5,35 @@ document.addEventListener('alpine:init', () => {
         init() {
             window.addEventListener('click', this.handleClick.bind(this));
             window.addEventListener('submit', this.handleSubmit.bind(this));
-            window.addEventListener('popstate', () => {
-                this.loadPage(window.location.href, false);
+            window.addEventListener('popstate', (event) => {
+                this.loadPage(window.location.href, false, event.state?.scrollY ?? 0);
             });
+
+            // Sème l'entrée d'historique initiale avec sa position de scroll (0 au chargement
+            // normal), pour que le tout premier "retour arrière" ait un état cohérent à lire
+            // plutôt qu'un history.state nul.
+            if (!history.state) {
+                history.replaceState({ scrollY: this.scrollContainer().scrollTop }, '', window.location.href);
+            }
+        },
+
+        // Le conteneur qui défile réellement n'est PAS <body>/window : le layout
+        // (components/sidebar.blade.php) est une colonne flex en hauteur fixe
+        // (h-screen, overflow-hidden), et c'est <main class="flex-1 overflow-auto">
+        // qui porte le scroll. window.scrollY/scrollTo() y sont un no-op silencieux
+        // (constaté en testant en conditions réelles, pas visible à la seule lecture
+        // du code) — toujours passer par cet élément pour toute lecture/écriture de
+        // position de scroll.
+        scrollContainer() {
+            return document.querySelector('main') || document.scrollingElement || document.documentElement;
+        },
+
+        // Mémorise, dans l'entrée d'historique qu'on s'apprête à quitter, la position de scroll
+        // actuelle — pour qu'un futur "retour arrière" restaure fidèlement où était l'utilisateur,
+        // au lieu de laisser la page suivante s'afficher au scroll de la page précédente (aucune
+        // navigation réelle n'ayant lieu, le navigateur ne gère jamais ça tout seul en PJAX).
+        rememberScrollBeforeLeaving() {
+            history.replaceState({ ...(history.state || {}), scrollY: this.scrollContainer().scrollTop }, '', window.location.href);
         },
 
         handleClick(event) {
@@ -89,12 +115,16 @@ document.addEventListener('alpine:init', () => {
             this.submitForm(form);
         },
 
-        async loadPage(url, push = true) {
+        async loadPage(url, push = true, scrollTo = 0) {
+            if (push) {
+                this.rememberScrollBeforeLeaving();
+            }
+
             const fallback = () => { window.location.href = url; };
             try {
                 this.loading = true;
                 const response = await fetch(url, { headers: this.pjaxHeaders() });
-                await this.applyResponse(response, url, push, fallback);
+                await this.applyResponse(response, url, push, fallback, scrollTo);
             } catch (error) {
                 console.error('PJAX error:', error);
                 fallback();
@@ -123,6 +153,8 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            this.rememberScrollBeforeLeaving();
+
             try {
                 this.loading = true;
                 const response = await fetch(action.href, {
@@ -131,7 +163,7 @@ document.addEventListener('alpine:init', () => {
                     body: new FormData(form),
                 });
 
-                await this.applyResponse(response, action.href, true, fallback);
+                await this.applyResponse(response, action.href, true, fallback, 0);
             } catch (error) {
                 console.error('PJAX submit error:', error);
                 fallback();
@@ -152,7 +184,7 @@ document.addEventListener('alpine:init', () => {
         // Logique de rendu partagée entre navigation (loadPage) et soumission (submitForm).
         // `fallback` est fourni par l'appelant car le repli correct diffère selon le contexte
         // (voir submitForm ci-dessus) : jamais de window.location.href codé en dur ici.
-        async applyResponse(response, requestedUrl, push, fallback) {
+        async applyResponse(response, requestedUrl, push, fallback, scrollTo = 0) {
             if (!response.ok) {
                 fallback();
                 return;
@@ -205,9 +237,18 @@ document.addEventListener('alpine:init', () => {
             // autre page — trompeur et source de confusion.
             const finalUrl = response.url || requestedUrl;
             if (push) {
-                history.pushState({}, '', finalUrl);
-            } else if (finalUrl !== requestedUrl) {
-                history.replaceState({}, '', finalUrl);
+                // Nouvelle entrée d'historique : comportement d'une navigation normale, on
+                // repart du haut de page. Sa propre position de scroll sera mémorisée plus
+                // tard, au moment de la quitter (voir rememberScrollBeforeLeaving).
+                history.pushState({ scrollY: 0 }, '', finalUrl);
+                main.scrollTop = 0;
+            } else {
+                if (finalUrl !== requestedUrl) {
+                    history.replaceState({ scrollY: scrollTo }, '', finalUrl);
+                }
+                // Retour arrière/avant : restaure la position exacte où était l'utilisateur,
+                // plutôt que de laisser la page réapparaître au scroll de la page quittée.
+                main.scrollTop = scrollTo;
             }
 
             this.executePageScripts(doc);
