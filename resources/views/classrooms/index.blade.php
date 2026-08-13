@@ -11,7 +11,7 @@
                 
                 <div class="flex justify-between items-center mb-6">
                     @if (session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                        <div class="mb-4 bg-green-100 dark:bg-green-900/20 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded relative" role="alert">
                             <span class="block sm:inline">{{ session('success') }}</span>
                         </div>
                     @endif
@@ -22,12 +22,12 @@
                 </div>
 
                 @if($classrooms->isEmpty())
-                    <p class="text-gray-500 text-center py-4">Aucune classe n'a été créée pour le moment.</p>
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">Aucune classe n'a été créée pour le moment.</p>
                 @else
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="border-b border-gray-700 text-gray-400">
+                                <tr class="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
                                     <th class="py-3 px-4">ID</th>
                                     <th class="py-3 px-4">Nom de la classe</th>
                                     <th class="py-3 px-4">Cycle</th>
@@ -39,15 +39,15 @@
                             </thead>
                             <tbody>
                                 @foreach($classrooms as $classroom)
-                                    <tr class="border-b border-gray-700 hover:bg-gray-700/50">
+                                    <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                         <td class="py-3 px-4">{{ $classroom->id }}</td>
                                         <td class="py-3 px-4 font-semibold">{{ $classroom->name }}</td>
                                         <td class="py-3 px-4">
-                                            <span class="px-2 py-1 text-xs rounded bg-gray-700 text-gray-300 capitalize">
+                                            <span class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 capitalize">
                                                 {{ $classroom->cycle }}
                                             </span>
                                         </td>
-                                        <td class="py-3 px-4 text-gray-300">
+                                        <td class="py-3 px-4 text-gray-700 dark:text-gray-300">
                                             {{ $classroom->teacher->name ?? 'Aucun' }}
                                         </td>
                                         <td class="py-3 px-4 text-center font-semibold">
@@ -77,7 +77,7 @@
                                                 </form>
                                             </div>
                                             <div class="mt-1 flex items-center gap-1 text-xs">
-                                                <span class="text-gray-500">Bulletins :</span>
+                                                <span class="text-gray-500 dark:text-gray-400">Bulletins :</span>
                                                 @foreach(['trimestre_1' => 'T1', 'trimestre_2' => 'T2', 'trimestre_3' => 'T3'] as $period => $label)
                                                     <a href="{{ route('bulletins.class-pdf', [$classroom->id, $period]) }}" target="_blank" class="px-2 py-0.5 rounded bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30">{{ $label }}</a>
                                                 @endforeach
