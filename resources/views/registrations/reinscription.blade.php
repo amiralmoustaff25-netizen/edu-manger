@@ -144,7 +144,7 @@
                                         <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">
                                             Cantine
                                             <template x-if="feeLibrary[classroomId]?.cantine">
-                                                <span class="text-gray-400">(+<span x-text="feeLibrary[classroomId].cantine.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
+                                                <span class="text-gray-400 dark:text-gray-500">(+<span x-text="feeLibrary[classroomId].cantine.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
                                             </template>
                                         </span>
                                     </label>
@@ -153,7 +153,7 @@
                                         <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">
                                             Transport
                                             <template x-if="feeLibrary[classroomId]?.transport">
-                                                <span class="text-gray-400">(+<span x-text="feeLibrary[classroomId].transport.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
+                                                <span class="text-gray-400 dark:text-gray-500">(+<span x-text="feeLibrary[classroomId].transport.toLocaleString('fr-FR')"></span> FCFA/mois)</span>
                                             </template>
                                         </span>
                                     </label>
