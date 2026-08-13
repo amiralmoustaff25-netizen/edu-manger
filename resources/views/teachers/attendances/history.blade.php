@@ -23,7 +23,7 @@
                     <input id="date" name="date" type="date" value="{{ request('date') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
                 </div>
                 <div class="flex items-end gap-3">
-                    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Filtrer</button>
+                    <x-primary-button type="submit">Filtrer</x-primary-button>
                     <a href="{{ route('professeur.attendances.history') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-700">Réinitialiser</a>
                 </div>
             </form>

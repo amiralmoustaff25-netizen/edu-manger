@@ -26,9 +26,9 @@
                         <input type="text" id="matricule" name="matricule" value="{{ $searchedMatricule }}" placeholder="Ex. ELE-26-000123" required
                                class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
-                    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                    <x-primary-button type="submit">
                         Rechercher
-                    </button>
+                    </x-primary-button>
                 </form>
             </div>
 
@@ -170,10 +170,10 @@
                         </div>
 
                         <div class="flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                            <button type="submit" :disabled="submitting" :class="submitting ? 'opacity-60 cursor-not-allowed' : ''" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                            <x-primary-button type="submit" ::disabled="submitting" ::class="submitting ? 'opacity-60 cursor-not-allowed' : ''">
                                 <span x-show="!submitting">Confirmer la réinscription</span>
                                 <span x-show="submitting" x-cloak>Enregistrement…</span>
-                            </button>
+                            </x-primary-button>
                             <a href="{{ route('dashboard') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
                         </div>
                     </form>

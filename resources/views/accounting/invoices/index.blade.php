@@ -45,7 +45,7 @@
                             <a href="{{ route('invoices.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                                 Réinitialiser
                             </a>
-                            <a href="{{ route('invoices.create') }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <a href="{{ route('invoices.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                                 + Nouvelle Facture
                             </a>
                         </div>

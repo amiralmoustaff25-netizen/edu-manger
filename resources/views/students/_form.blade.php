@@ -335,7 +335,7 @@
     @endif
 
     <div class="lg:col-span-2 mt-6 flex items-center gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-        <button type="submit" x-on:click="submitting = true" :disabled="submitting" :class="submitting ? 'opacity-60 cursor-not-allowed' : ''" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+        <x-primary-button type="submit" x-on:click="submitting = true" ::disabled="submitting" ::class="submitting ? 'opacity-60 cursor-not-allowed' : ''">
             <span x-show="!submitting">
                 @if($student->exists)
                     Enregistrer les modifications
@@ -347,7 +347,7 @@
                 @endif
             </span>
             <span x-show="submitting" x-cloak>Enregistrement…</span>
-        </button>
+        </x-primary-button>
         <a href="{{ $student->exists ? route('students.show', $student) : route('students.index') }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Annuler</a>
     </div>
 </div>

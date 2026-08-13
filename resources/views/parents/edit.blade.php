@@ -72,9 +72,9 @@
                         <a href="{{ route('parents.show', $parent) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700">
                             Annuler
                         </a>
-                        <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                        <x-primary-button type="submit">
                             Enregistrer les modifications
-                        </button>
+                        </x-primary-button>
                     </div>
                 </form>
             </div>

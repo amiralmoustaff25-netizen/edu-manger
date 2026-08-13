@@ -147,7 +147,7 @@
                                 <div class="text-sm text-gray-500 dark:text-gray-400">
                                     {{ __('Les notes non saisies seront ignorées') }}
                                 </div>
-                                <button type="submit" class="flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium">
+                                <button type="submit" class="flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-sm">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     {{ __('Enregistrer les résultats') }}
                                 </button>
