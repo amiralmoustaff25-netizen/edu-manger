@@ -42,6 +42,7 @@
                     <div class="p-4 flex items-start gap-3">
                         <img src="{{ $student->profile_photo_url }}"
                              alt="{{ $student->name }}"
+                             loading="lazy"
                              class="w-12 h-12 rounded-full object-cover flex-shrink-0">
                         <div class="min-w-0 flex-1">
                             <div class="flex items-start justify-between gap-2">
@@ -125,8 +126,9 @@
                         @forelse ($students as $student)
                             <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <img src="{{ $student->profile_photo_url }}" 
-                                         alt="{{ $student->name }}" 
+                                    <img src="{{ $student->profile_photo_url }}"
+                                         alt="{{ $student->name }}"
+                                         loading="lazy"
                                          class="w-10 h-10 rounded-full object-cover">
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ $student->matricule }}</td>
