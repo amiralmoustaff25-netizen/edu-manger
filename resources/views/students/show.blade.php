@@ -219,7 +219,7 @@
                                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $discount->appliedBy?->name ?? '—' }}</td>
                                         @can('gerer-derogations-tarifaires')
                                             <td class="px-4 py-3 text-right">
-                                                <form action="{{ route('discounts.destroy', $discount) }}" method="POST" onsubmit="return confirm('Supprimer cette dérogation ?');">
+                                                <form action="{{ route('discounts.destroy', $discount) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer cette dérogation', message: 'Cette action est irréversible. Confirmez-vous la suppression de cette dérogation tarifaire ?', confirmLabel: 'Supprimer' })">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Supprimer</button>

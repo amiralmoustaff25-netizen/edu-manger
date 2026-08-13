@@ -15,7 +15,29 @@
                         </a>
                     </div>
 
-                    <form action="{{ route('invoices.store') }}" method="POST" x-data="{ items: [{ fee_type_id: '', description: '', quantity: 1, unit_price: 0 }] }">
+                    @php
+                        $initialItems = old('items')
+                            ? collect(old('items'))->map(fn ($item) => [
+                                'fee_type_id' => $item['fee_type_id'] ?? '',
+                                'description' => $item['description'] ?? '',
+                                'quantity' => $item['quantity'] ?? 1,
+                                'unit_price' => $item['unit_price'] ?? 0,
+                            ])->values()->all()
+                            : [['fee_type_id' => '', 'description' => '', 'quantity' => 1, 'unit_price' => 0]];
+                    @endphp
+
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">La facture n'a pas pu être enregistrée :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('invoices.store') }}" method="POST" x-data="{ items: @js($initialItems) }">
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -24,14 +46,16 @@
                                 <select name="registration_id" id="registration_id" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Sélectionner un élève</option>
                                     @foreach($registrations as $registration)
-                                        <option value="{{ $registration->id }}">{{ $registration->user->name }} - {{ $registration->classroom?->name ?? 'Sans classe' }}</option>
+                                        <option value="{{ $registration->id }}" @selected((string) old('registration_id') === (string) $registration->id)>{{ $registration->user->name }} - {{ $registration->classroom?->name ?? 'Sans classe' }}</option>
                                     @endforeach
                                 </select>
+                                <x-input-error :messages="$errors->get('registration_id')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date d'échéance</label>
-                                <input type="date" name="due_date" id="due_date" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <input type="date" name="due_date" id="due_date" value="{{ old('due_date') }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
                             </div>
                         </div>
 

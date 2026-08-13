@@ -15,6 +15,17 @@
                         </a>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">Le rappel n'a pas pu être créé :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form action="{{ route('reminders.store') }}" method="POST">
                         @csrf
 
@@ -27,11 +38,12 @@
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Sélectionner un élève...</option>
                                     @foreach($registrations as $registration)
-                                        <option value="{{ $registration->id }}">
+                                        <option value="{{ $registration->id }}" @selected((string) old('registration_id') === (string) $registration->id)>
                                             {{ $registration->user->name }} - {{ $registration->classroom->name ?? 'Non assigné' }}
                                         </option>
                                     @endforeach
                                 </select>
+                                <x-input-error :messages="$errors->get('registration_id')" class="mt-2" />
                             </div>
 
                             <div>
@@ -40,7 +52,8 @@
                                 </label>
                                 <textarea name="message" rows="4" required
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    placeholder="Entrez le message du rappel..."></textarea>
+                                    placeholder="Entrez le message du rappel...">{{ old('message') }}</textarea>
+                                <x-input-error :messages="$errors->get('message')" class="mt-2" />
                             </div>
 
                             <div>
@@ -48,8 +61,10 @@
                                     Date et heure d'envoi
                                 </label>
                                 <input type="datetime-local" name="scheduled_at" required
+                                    value="{{ old('scheduled_at') }}"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     min="{{ now()->addHour()->format('Y-m-d\TH:i') }}">
+                                <x-input-error :messages="$errors->get('scheduled_at')" class="mt-2" />
                             </div>
 
                             <div class="flex gap-2">

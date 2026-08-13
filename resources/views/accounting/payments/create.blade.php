@@ -5,6 +5,16 @@
         </h2>
     </x-slot>
 
+    @php
+        // Si la soumission précédente a échoué, retrouve le matricule à partir de
+        // registration_id (seul lien disponible : le champ "matricule" n'est pas
+        // lui-même posté, il ne sert qu'à déclencher la recherche) pour relancer
+        // automatiquement la recherche et révéler le formulaire pré-rempli.
+        $oldMatricule = old('registration_id')
+            ? optional(optional(\App\Models\Registration::find(old('registration_id')))->user)->matricule
+            : request('matricule');
+    @endphp
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -15,13 +25,24 @@
                         </a>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">Le paiement n'a pas pu être enregistré :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <!-- Recherche par matricule -->
                     <div class="mb-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rechercher un élève par matricule</h3>
                         <div class="flex gap-4">
                             <div class="flex-1 relative">
                                 <input type="text" id="matricule" placeholder="Entrez le matricule..."
-                                    value="{{ request('matricule') }}"
+                                    value="{{ $oldMatricule }}"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-10"
                                     onkeydown="if (event.key === 'Enter') { event.preventDefault(); searchStudent(); }"
                                     autofocus>
@@ -124,8 +145,10 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant reçu (FCFA)</label>
                                         <input type="number" name="amount_paid" id="amount_paid" required min="0" step="0.01"
+                                            value="{{ old('amount_paid') }}"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             oninput="calculateChange()">
+                                        <x-input-error :messages="$errors->get('amount_paid')" class="mt-2" />
                                     </div>
 
                                     <div id="change-section" class="hidden">
@@ -138,24 +161,26 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de paiement</label>
                                         <select name="payment_method" id="payment_method" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                            <option value="espèces">Espèces</option>
-                                            <option value="carte">Carte bancaire</option>
-                                            <option value="chèque">Chèque</option>
-                                            <option value="virement">Virement bancaire</option>
-                                            <option value="mobile">Mobile money</option>
+                                            <option value="espèces" @selected(old('payment_method') === 'espèces')>Espèces</option>
+                                            <option value="carte" @selected(old('payment_method') === 'carte')>Carte bancaire</option>
+                                            <option value="chèque" @selected(old('payment_method') === 'chèque')>Chèque</option>
+                                            <option value="virement" @selected(old('payment_method') === 'virement')>Virement bancaire</option>
+                                            <option value="mobile" @selected(old('payment_method') === 'mobile')>Mobile money</option>
                                         </select>
+                                        <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de paiement</label>
                                         <select name="payment_type" id="payment_type" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                            <option value="mensualité">Mensualité</option>
-                                            <option value="inscription">Inscription</option>
-                                            <option value="cantine">Cantine</option>
-                                            <option value="transport">Transport</option>
-                                            <option value="autre">Autre</option>
+                                            <option value="mensualité" @selected(old('payment_type') === 'mensualité')>Mensualité</option>
+                                            <option value="inscription" @selected(old('payment_type') === 'inscription')>Inscription</option>
+                                            <option value="cantine" @selected(old('payment_type') === 'cantine')>Cantine</option>
+                                            <option value="transport" @selected(old('payment_type') === 'transport')>Transport</option>
+                                            <option value="autre" @selected(old('payment_type') === 'autre')>Autre</option>
                                         </select>
+                                        <x-input-error :messages="$errors->get('payment_type')" class="mt-2" />
                                     </div>
 
                                     <div>
@@ -163,27 +188,31 @@
                                         <select name="month" id="month" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                             @foreach(config('edu.school_months') as $m)
-                                                <option value="{{ $m }}">{{ $m }}</option>
+                                                <option value="{{ $m }}" @selected(old('month') === $m)>{{ $m }}</option>
                                             @endforeach
                                         </select>
+                                        <x-input-error :messages="$errors->get('month')" class="mt-2" />
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de paiement</label>
-                                        <input type="date" name="payment_date" id="payment_date" value="{{ now()->format('Y-m-d') }}" required
+                                        <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', now()->format('Y-m-d')) }}" required
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Référence (optionnel)</label>
-                                        <input type="text" name="reference" id="reference"
+                                        <input type="text" name="reference" id="reference" value="{{ old('reference') }}"
                                             class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <x-input-error :messages="$errors->get('reference')" class="mt-2" />
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commentaire (optionnel)</label>
                                         <textarea name="comment" id="comment" rows="2"
-                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                                            class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('comment') }}</textarea>
+                                        <x-input-error :messages="$errors->get('comment')" class="mt-2" />
                                     </div>
                                 </div>
 

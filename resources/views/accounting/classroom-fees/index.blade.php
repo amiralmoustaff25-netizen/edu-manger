@@ -88,7 +88,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="{{ route('classroom-fees.edit', $classroomFee) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2">Modifier</a>
-                                            <form action="{{ route('classroom-fees.destroy', $classroomFee) }}" method="POST" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ces frais ?');">
+                                            <form action="{{ route('classroom-fees.destroy', $classroomFee) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer ces frais', message: 'Cette action est irréversible. Confirmez-vous la suppression de ces frais ?', confirmLabel: 'Supprimer' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Supprimer</button>

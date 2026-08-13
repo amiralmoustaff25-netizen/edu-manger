@@ -15,6 +15,17 @@
                         </a>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">La facture n'a pas pu être mise à jour :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form action="{{ route('invoices.update', $invoice) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -22,22 +33,25 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date d'échéance</label>
-                                <input type="date" name="due_date" id="due_date" value="{{ $invoice->due_date->format('Y-m-d') }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <input type="date" name="due_date" id="due_date" value="{{ old('due_date', $invoice->due_date->format('Y-m-d')) }}" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut</label>
                                 <select name="status" id="status" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="pending" {{ $invoice->status === 'pending' ? 'selected' : '' }}>En attente</option>
-                                    <option value="paid" {{ $invoice->status === 'paid' ? 'selected' : '' }}>Payée</option>
-                                    <option value="overdue" {{ $invoice->status === 'overdue' ? 'selected' : '' }}>En retard</option>
-                                    <option value="cancelled" {{ $invoice->status === 'cancelled' ? 'selected' : '' }}>Annulée</option>
+                                    <option value="pending" {{ old('status', $invoice->status) === 'pending' ? 'selected' : '' }}>En attente</option>
+                                    <option value="paid" {{ old('status', $invoice->status) === 'paid' ? 'selected' : '' }}>Payée</option>
+                                    <option value="overdue" {{ old('status', $invoice->status) === 'overdue' ? 'selected' : '' }}>En retard</option>
+                                    <option value="cancelled" {{ old('status', $invoice->status) === 'cancelled' ? 'selected' : '' }}>Annulée</option>
                                 </select>
+                                <x-input-error :messages="$errors->get('status')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="remaining_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reste à payer (FCFA)</label>
-                                <input type="number" name="remaining_balance" id="remaining_balance" value="{{ $invoice->remaining_balance }}" step="0.01" min="0" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <input type="number" name="remaining_balance" id="remaining_balance" value="{{ old('remaining_balance', $invoice->remaining_balance) }}" step="0.01" min="0" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('remaining_balance')" class="mt-2" />
                             </div>
                         </div>
 

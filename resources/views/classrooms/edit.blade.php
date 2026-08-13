@@ -10,15 +10,26 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 text-gray-900 dark:text-gray-100">
                 
                 <form action="{{ route('classrooms.update', $classroom->id) }}" method="POST">
-                    @csrf 
+                    @csrf
                     @method('PUT')
 
                     {{-- Logique pour séparer le niveau et la section du nom actuel --}}
-                    @php 
-                        $parts = explode(' ', $classroom->name); 
-                        $currentLevel = $parts[0]; 
-                        $currentSection = $parts[1] ?? ''; 
+                    @php
+                        $parts = explode(' ', $classroom->name);
+                        $currentLevel = old('level', $parts[0]);
+                        $currentSection = old('section', $parts[1] ?? '');
                     @endphp
+
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">La classe n'a pas pu être mise à jour :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     <div class="mb-4">
                         <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Niveau</label>
@@ -39,28 +50,32 @@
                                 @endforeach
                             </optgroup>
                         </select>
+                        <x-input-error :messages="$errors->get('level')" class="mt-2" />
                     </div>
-                    
+
                     <div class="mb-4">
                         <label for="teacher_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enseignant titulaire</label>
                         <select name="teacher_id" id="teacher_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">-- Aucun enseignant --</option>
                             @foreach(\App\Models\User::role('professeur')->get() as $teacher)
-                                <option value="{{ $teacher->id }}" {{ $classroom->teacher_id == $teacher->id ? 'selected' : '' }}>
+                                <option value="{{ $teacher->id }}" {{ (string) old('teacher_id', $classroom->teacher_id) === (string) $teacher->id ? 'selected' : '' }}>
                                     {{ $teacher->name }}
                                 </option>
                             @endforeach
                         </select>
+                        <x-input-error :messages="$errors->get('teacher_id')" class="mt-2" />
                     </div>
 
                     <div class="mb-4">
                         <label for="max_students" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre maximum d'élèves</label>
-                        <input type="number" name="max_students" id="max_students" value="{{ $classroom->max_students ?? 30 }}" min="1" max="60" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input type="number" name="max_students" id="max_students" value="{{ old('max_students', $classroom->max_students ?? 30) }}" min="1" max="60" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <x-input-error :messages="$errors->get('max_students')" class="mt-2" />
                     </div>
 
                     <div class="mb-6">
                         <label for="section" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
                         <input type="text" name="section" id="section" value="{{ $currentSection }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <x-input-error :messages="$errors->get('section')" class="mt-2" />
                     </div>
 
                     <div class="flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">

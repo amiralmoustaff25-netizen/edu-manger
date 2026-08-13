@@ -16,6 +16,17 @@
                         </a>
                     </div>
 
+                    @if ($errors->any())
+                        <div class="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">Le paiement n'a pas pu être mis à jour :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <!-- Formulaire de modification -->
                     <form action="{{ route('payments.update', $payment) }}" method="POST">
                         @csrf
@@ -24,63 +35,71 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant payé (FCFA)</label>
-                                <input type="number" name="amount" id="amount" value="{{ $payment->amount }}" required step="0.01" min="0"
+                                <input type="number" name="amount" id="amount" value="{{ old('amount', $payment->amount) }}" required step="0.01" min="0"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut</label>
                                 <select name="status" id="status" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="complet" {{ $payment->status === 'complet' ? 'selected' : '' }}>Complet</option>
-                                    <option value="partiel" {{ $payment->status === 'partiel' ? 'selected' : '' }}>Partiel</option>
+                                    <option value="complet" {{ old('status', $payment->status) === 'complet' ? 'selected' : '' }}>Complet</option>
+                                    <option value="partiel" {{ old('status', $payment->status) === 'partiel' ? 'selected' : '' }}>Partiel</option>
                                 </select>
+                                <x-input-error :messages="$errors->get('status')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="remaining_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reste à payer (FCFA)</label>
-                                <input type="number" name="remaining_balance" id="remaining_balance" value="{{ $payment->remaining_balance }}" step="0.01" min="0"
+                                <input type="number" name="remaining_balance" id="remaining_balance" value="{{ old('remaining_balance', $payment->remaining_balance) }}" step="0.01" min="0"
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('remaining_balance')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois</label>
                                 <select name="month" id="month" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     @foreach(config('edu.school_months') as $m)
-                                        <option value="{{ $m }}" {{ $payment->month === $m ? 'selected' : '' }}>{{ $m }}</option>
+                                        <option value="{{ $m }}" {{ old('month', $payment->month) === $m ? 'selected' : '' }}>{{ $m }}</option>
                                     @endforeach
                                 </select>
+                                <x-input-error :messages="$errors->get('month')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date de paiement</label>
-                                <input type="date" name="payment_date" id="payment_date" value="{{ $payment->payment_date->format('Y-m-d') }}" required
+                                <input type="date" name="payment_date" id="payment_date" value="{{ old('payment_date', $payment->payment_date->format('Y-m-d')) }}" required
                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Méthode de paiement</label>
                                 <select name="payment_method" id="payment_method" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="espèces" {{ $payment->payment_method === 'espèces' ? 'selected' : '' }}>Espèces</option>
-                                    <option value="virement" {{ $payment->payment_method === 'virement' ? 'selected' : '' }}>Virement</option>
-                                    <option value="chèque" {{ $payment->payment_method === 'chèque' ? 'selected' : '' }}>Chèque</option>
-                                    <option value="carte" {{ $payment->payment_method === 'carte' ? 'selected' : '' }}>Carte bancaire</option>
-                                    <option value="mobile" {{ $payment->payment_method === 'mobile' ? 'selected' : '' }}>Mobile money</option>
+                                    <option value="espèces" {{ old('payment_method', $payment->payment_method) === 'espèces' ? 'selected' : '' }}>Espèces</option>
+                                    <option value="virement" {{ old('payment_method', $payment->payment_method) === 'virement' ? 'selected' : '' }}>Virement</option>
+                                    <option value="chèque" {{ old('payment_method', $payment->payment_method) === 'chèque' ? 'selected' : '' }}>Chèque</option>
+                                    <option value="carte" {{ old('payment_method', $payment->payment_method) === 'carte' ? 'selected' : '' }}>Carte bancaire</option>
+                                    <option value="mobile" {{ old('payment_method', $payment->payment_method) === 'mobile' ? 'selected' : '' }}>Mobile money</option>
                                 </select>
+                                <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
                             </div>
 
                             <div>
                                 <label for="payment_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de paiement</label>
                                 <select name="payment_type" id="payment_type" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="inscription" {{ $payment->payment_type === 'inscription' ? 'selected' : '' }}>Inscription</option>
-                                    <option value="mensualité" {{ $payment->payment_type === 'mensualité' ? 'selected' : '' }}>Mensualité</option>
-                                    <option value="autre" {{ $payment->payment_type === 'autre' ? 'selected' : '' }}>Autre</option>
+                                    <option value="inscription" {{ old('payment_type', $payment->payment_type) === 'inscription' ? 'selected' : '' }}>Inscription</option>
+                                    <option value="mensualité" {{ old('payment_type', $payment->payment_type) === 'mensualité' ? 'selected' : '' }}>Mensualité</option>
+                                    <option value="autre" {{ old('payment_type', $payment->payment_type) === 'autre' ? 'selected' : '' }}>Autre</option>
                                 </select>
+                                <x-input-error :messages="$errors->get('payment_type')" class="mt-2" />
                             </div>
 
                             <div class="md:col-span-2">
                                 <label for="comment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commentaire</label>
                                 <textarea name="comment" id="comment" rows="3"
-                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ $payment->comment }}</textarea>
+                                    class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('comment', $payment->comment) }}</textarea>
+                                <x-input-error :messages="$errors->get('comment')" class="mt-2" />
                             </div>
                         </div>
 
