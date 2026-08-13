@@ -102,7 +102,9 @@ class UserController extends Controller
 
         return redirect()
             ->route('users.index')
-            ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.' | Mot de passe temporaire : '.$temporaryPassword);
+            ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.'.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
 
     public function edit(User $user): View
@@ -199,7 +201,10 @@ class UserController extends Controller
             'password_must_change' => true,
         ]);
 
-        return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : '.$temporaryPassword);
+        return back()
+            ->with('success', 'Mot de passe réinitialisé.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
 
 }

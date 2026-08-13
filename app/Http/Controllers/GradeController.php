@@ -142,10 +142,13 @@ class GradeController extends Controller
 
         if ($request->filled('matricule')) {
             // Allow searching by matricule regardless of role column, some fixtures set role via 'role' attribute
-            $student = User::where('matricule', $request->input('matricule'))
-                ->where('role', 'eleve')
-                ->orWhere(function ($q) use ($request) {
-                    $q->where('matricule', $request->input('matricule'))
+            $matricule = $request->input('matricule');
+            $student = User::where(function ($query) use ($matricule) {
+                $query->where('matricule', $matricule)
+                    ->where('role', 'eleve');
+            })
+                ->orWhere(function ($q) use ($matricule) {
+                    $q->where('matricule', $matricule)
                         ->whereHas('roles', function ($r) {
                             $r->where('name', 'eleve');
                         });

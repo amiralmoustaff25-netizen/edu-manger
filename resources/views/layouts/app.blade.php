@@ -124,6 +124,33 @@
             </div>
         </div>
 
+        @if (session('temp_password'))
+            <div class="fixed top-16 inset-x-0 z-[60] px-4 py-3 bg-amber-50 dark:bg-amber-900/80 border-b border-amber-200 dark:border-amber-700">
+                <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
+                        <span class="font-bold">Mot de passe temporaire :</span> {{ session('temp_password') }}
+                    </p>
+                    <span class="text-xs text-amber-700 dark:text-amber-200">Notez-le avant de quitter cette page.</span>
+                </div>
+            </div>
+        @endif
+
+        @if (session('temp_credentials'))
+            <div class="fixed top-16 inset-x-0 z-[60] px-4 py-3 bg-amber-50 dark:bg-amber-900/80 border-b border-amber-200 dark:border-amber-700">
+                <div class="max-w-7xl mx-auto space-y-1">
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
+                        <span class="font-bold">Mot de passe temporaire élève :</span> {{ session('temp_credentials')['student_password'] }}
+                    </p>
+                    @if (session('temp_credentials')['parent_password'])
+                        <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
+                            <span class="font-bold">Mot de passe temporaire parent ({{ session('temp_credentials')['parent_matricule'] }}) :</span> {{ session('temp_credentials')['parent_password'] }}
+                        </p>
+                    @endif
+                    <p class="text-xs text-amber-700 dark:text-amber-200">Notez-les avant de quitter cette page.</p>
+                </div>
+            </div>
+        @endif
+
         @stack('scripts')
     </body>
 </html>

@@ -21,6 +21,8 @@ class CahierTexteController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('voir-cahier-textes');
+
         if (! $request->filled('classroom_id') || ! $request->filled('subject_id')) {
             return redirect()->route('cahier-textes.select');
         }

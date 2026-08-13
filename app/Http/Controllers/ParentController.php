@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ParentController extends Controller
@@ -71,12 +72,13 @@ class ParentController extends Controller
     public function store(StoreParentRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $temporaryPassword = Str::password(12);
 
-        $parent = DB::transaction(function () use ($validated) {
+        $parent = DB::transaction(function () use ($validated, $temporaryPassword) {
             $user = User::create([
                 'name' => $validated['nom'].' '.$validated['prenom'],
                 'email' => $validated['email'],
-                'password' => Hash::make('password'),
+                'password' => Hash::make($temporaryPassword),
                 'matricule' => User::generateMatricule('parent'),
                 'is_active' => $validated['statut'] === 'actif',
                 'password_must_change' => true,
@@ -110,7 +112,9 @@ class ParentController extends Controller
 
         return redirect()
             ->route('parents.index')
-            ->with('success', 'Parent créé avec succès. Matricule : '.$parent->matricule_parent.' | Mot de passe temporaire : password');
+            ->with('success', 'Parent créé avec succès. Matricule : '.$parent->matricule_parent.'.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
 
     /**
@@ -368,8 +372,10 @@ class ParentController extends Controller
             return back()->withErrors(['user' => 'Aucun compte utilisateur associé à ce parent.']);
         }
 
+        $temporaryPassword = Str::password(12);
+
         $parent->user->update([
-            'password' => Hash::make('password'),
+            'password' => Hash::make($temporaryPassword),
             'password_must_change' => true,
         ]);
 
@@ -379,6 +385,9 @@ class ParentController extends Controller
             'reset_by' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Mot de passe réinitialisé. Nouveau mot de passe temporaire : password');
+        return back()
+            ->with('success', 'Mot de passe réinitialisé.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
 }
