@@ -130,7 +130,9 @@ class TeacherController extends Controller
         });
 
         return redirect()->route('teachers.index')
-            ->with('success', 'Professeur créé avec succès. Matricule : '.$teacher->matricule.' | Mot de passe temporaire : '.$temporaryPassword);
+            ->with('success', 'Professeur créé avec succès. Matricule : '.$teacher->matricule.'.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
 
     public function show(Teacher $teacher): View

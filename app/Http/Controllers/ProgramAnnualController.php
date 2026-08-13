@@ -205,8 +205,20 @@ class ProgramAnnualController extends Controller
         $header = array_map('trim', $rows[0] ?? []);
         $dataRows = array_slice($rows, 1);
 
+        $expectedHeader = ['Chapitre', 'Leçon', 'Sous-partie', 'Titre', 'Objectifs', 'Volume horaire'];
         if ($header === [] || $header === ['']) {
             return back()->withErrors(['file' => 'Le fichier importé est vide ou mal formé.']);
+        }
+
+        if ($header !== $expectedHeader) {
+            return back()->withErrors(['file' => 'L\'en-tête du fichier CSV est invalide. Colonnes attendues : '.implode(', ', $expectedHeader).'.']);
+        }
+
+        $headerCount = count($header);
+        foreach ($dataRows as $index => $row) {
+            if (count($row) !== $headerCount) {
+                return back()->withErrors(['file' => 'La ligne '.($index + 2).' du fichier ne contient pas le bon nombre de colonnes.']);
+            }
         }
 
         // Toutes les lignes doivent être importées ensemble : si l'une d'elles échoue,

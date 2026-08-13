@@ -211,6 +211,13 @@ class AnnouncementController extends Controller
 
         $data = $request->validate($rules);
 
+        if ($request->hasFile('attachment')) {
+            $this->ensureMimeTypeIsAllowed(
+                $request->file('attachment'),
+                ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            );
+        }
+
         $data['created_by'] = auth()->id();
         $data['target_roles'] = $data['target_roles'] ?? [];
         $data['target_user_ids'] = $data['target_user_ids'] ?? [];
@@ -250,5 +257,14 @@ class AnnouncementController extends Controller
 
         return redirect()->route('announcements.index')
             ->with('success', 'Notification publiée avec succès.');
+    }
+
+    private function ensureMimeTypeIsAllowed($file, array $allowedTypes): void
+    {
+        $detectedMime = $file->getMimeType();
+
+        if (! in_array($detectedMime, $allowedTypes, true)) {
+            abort(422, 'Le type de fichier détecté ('.$detectedMime.') n\'est pas autorisé.');
+        }
     }
 }

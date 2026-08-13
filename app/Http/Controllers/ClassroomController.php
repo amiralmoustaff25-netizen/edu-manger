@@ -96,6 +96,11 @@ class ClassroomController extends Controller
     public function destroy(Classroom $classroom)
     {
         Gate::authorize('delete', $classroom);
+
+        if ($classroom->registrations()->exists()) {
+            return back()->withErrors(['classroom' => 'Impossible de supprimer cette classe : des inscriptions y sont rattachées.']);
+        }
+
         $classroom->delete();
 
         return redirect()->route('classrooms.index')->with('success', 'La classe a été supprimée.');

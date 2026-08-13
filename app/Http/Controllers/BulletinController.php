@@ -33,11 +33,11 @@ class BulletinController extends Controller
         // Allow a parent who is linked to this student to view the bulletin.
         $isParentOfStudent = false;
         if ($user->hasRole('parent') && method_exists($user, 'parentProfile')) {
-            $parentProfile = $user->parentProfile();
+            $parentProfile = $user->parentProfile()->first();
             if ($parentProfile) {
-                $isParentOfStudent = $parentProfile->whereHas('students', function ($q) use ($student) {
-                    $q->where('users.id', $student->id);
-                })->exists();
+                $isParentOfStudent = $parentProfile->students()
+                    ->where('users.id', $student->id)
+                    ->exists();
             }
         }
 
@@ -61,7 +61,9 @@ class BulletinController extends Controller
      */
     public function generatePdf(Request $request, User $student, string $period = 'trimestre_1')
     {
-        abort_unless($request->user()->can('generer-bulletins'), 403);
+        $user = $request->user();
+        abort_unless($user->can('generer-bulletins'), 403);
+        $this->ensureTeacherAssignedToStudent($user, $student);
 
         try {
             $bulletin = $this->gradeService->getBulletinData($student, $period);
@@ -81,7 +83,9 @@ class BulletinController extends Controller
      */
     public function generateClassPdf(Request $request, Classroom $classroom, string $period = 'trimestre_1')
     {
-        abort_unless($request->user()->can('generer-bulletins'), 403);
+        $user = $request->user();
+        abort_unless($user->can('generer-bulletins'), 403);
+        $this->ensureTeacherAssignedToClassroom($user, $classroom);
 
         try {
             $bulletins = $this->gradeService->getClassBulletins($classroom, $period);
@@ -94,6 +98,37 @@ class BulletinController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    private function ensureTeacherAssignedToStudent(User $user, User $student): void
+    {
+        if (! $user->hasRole('professeur') || $user->hasAnyRole(['super-admin', 'admin'])) {
+            return;
+        }
+
+        $teacher = $user->teacher;
+        $classroomId = optional($student->latestRegistration)->classroom_id;
+
+        abort_unless(
+            $teacher && $classroomId && $teacher->classrooms()->where('classrooms.id', $classroomId)->exists(),
+            403,
+            'Vous n\'êtes pas affecté à la classe de cet élève.'
+        );
+    }
+
+    private function ensureTeacherAssignedToClassroom(User $user, Classroom $classroom): void
+    {
+        if (! $user->hasRole('professeur') || $user->hasAnyRole(['super-admin', 'admin'])) {
+            return;
+        }
+
+        $teacher = $user->teacher;
+
+        abort_unless(
+            $teacher && $teacher->classrooms()->where('classrooms.id', $classroom->id)->exists(),
+            403,
+            'Vous n\'êtes pas affecté à cette classe.'
+        );
     }
 
     /**

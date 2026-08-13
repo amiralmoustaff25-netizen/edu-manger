@@ -67,14 +67,22 @@ class RegistrationController extends Controller
                 ->withInput();
         }
 
-        $message = 'Inscription élève réussie. Matricule : '.$student->matricule.' | Mot de passe temporaire : '.$enrollmentService->studentTemporaryPassword;
+        $message = 'Inscription élève réussie. Matricule : '.$student->matricule.'.';
 
         $parentCredentials = $enrollmentService->getParentCredentials();
         if ($parentCredentials) {
-            $message .= ' | Compte parent — Matricule : '.$parentCredentials['matricule'].' | Email : '.$parentCredentials['email'].' | Mot de passe temporaire : '.$parentCredentials['password'];
+            $message .= ' | Compte parent — Matricule : '.$parentCredentials['matricule'].' | Email : '.$parentCredentials['email'].'.';
         }
 
-        return redirect()->route('dashboard')->with('success', $message);
+        return redirect()
+            ->route('dashboard')
+            ->with('success', $message)
+            ->with('temp_credentials', [
+                'student_password' => $enrollmentService->studentTemporaryPassword,
+                'parent_password' => $parentCredentials['password'] ?? null,
+                'parent_matricule' => $parentCredentials['matricule'] ?? null,
+            ])
+            ->with('warning', 'Ces identifiants temporaires sont affichés une seule fois. Notez-les avant de quitter la page.');
     }
 
     /**

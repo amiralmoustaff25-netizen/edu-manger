@@ -24,6 +24,8 @@ class StudentDocumentController extends Controller
             'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ]);
 
+        $this->ensureMimeTypeIsAllowed($request->file('file'), ['application/pdf', 'image/jpeg', 'image/png']);
+
         $file = $request->file('file');
         $directory = 'student-documents/'.$student->id;
 
@@ -85,5 +87,14 @@ class StudentDocumentController extends Controller
         $document->delete();
 
         return back()->with('success', 'Document supprimé.');
+    }
+
+    private function ensureMimeTypeIsAllowed($file, array $allowedTypes): void
+    {
+        $detectedMime = $file->getMimeType();
+
+        if (! in_array($detectedMime, $allowedTypes, true)) {
+            abort(422, 'Le type de fichier détecté ('.$detectedMime.') n\'est pas autorisé.');
+        }
     }
 }
