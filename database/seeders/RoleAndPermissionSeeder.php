@@ -53,6 +53,7 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Inscriptions (registrations) ---
             'voir-inscriptions',
             'creer-inscription',
+            'promouvoir-eleves',
 
             // --- Parents ---
             'voir-parents',
@@ -84,8 +85,11 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Années scolaires ---
             'voir-annees-scolaires',
             'creer-annee-scolaire',
+            'modifier-annee-scolaire',
             'supprimer-annee-scolaire',
             'activer-annee-scolaire',
+            'cloturer-annee-scolaire',
+            'deverrouiller-annee-scolaire',
 
             // --- Paiements ---
             'voir-paiements',
@@ -258,6 +262,10 @@ class RoleAndPermissionSeeder extends Seeder
             'gerer-sessions-actives',
             'gerer-code-securite-admin',
             'gerer-double-authentification',
+            // Réouverture exceptionnelle d'une année clôturée : strictement réservée au
+            // Super Admin, cf. le déverrouillage décrit dans le cahier des charges années
+            // scolaires (point 13, sécurité).
+            'deverrouiller-annee-scolaire',
             'valider-paiement-partiel',
             'supprimer-paiement',
             'annuler-paiement',

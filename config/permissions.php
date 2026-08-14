@@ -46,6 +46,7 @@ return [
 
         'voir-inscriptions' => 'Voir les inscriptions',
         'creer-inscription' => 'Créer une inscription',
+        'promouvoir-eleves' => 'Utiliser l\'assistant de promotion des élèves',
 
         'voir-parents' => 'Voir les parents',
         'creer-parent' => 'Créer un parent',
@@ -73,8 +74,11 @@ return [
 
         'voir-annees-scolaires' => 'Voir les années scolaires',
         'creer-annee-scolaire' => 'Créer une année scolaire',
+        'modifier-annee-scolaire' => 'Modifier une année scolaire',
         'supprimer-annee-scolaire' => 'Supprimer une année scolaire',
         'activer-annee-scolaire' => 'Activer une année scolaire',
+        'cloturer-annee-scolaire' => 'Démarrer/annuler la clôture d\'une année scolaire',
+        'deverrouiller-annee-scolaire' => 'Rouvrir exceptionnellement une année clôturée (Super Admin uniquement)',
 
         'voir-paiements' => 'Voir les paiements',
         'enregistrer-paiement' => 'Enregistrer un paiement',
@@ -157,12 +161,12 @@ return [
         'dashboard' => ['voir-dashboard', 'voir-profil', 'modifier-profil', 'supprimer-compte'],
         'users' => ['voir-utilisateurs', 'creer-utilisateur', 'modifier-utilisateur', 'supprimer-utilisateur', 'activer-desactiver-utilisateur', 'reinitialiser-mot-de-passe-utilisateur'],
         'students' => ['voir-eleves', 'voir-detail-eleve', 'modifier-eleve', 'supprimer-eleve', 'transferer-eleve', 'modifier-statut-eleve', 'upload-photo-eleve', 'gerer-documents-eleve'],
-        'registrations' => ['voir-inscriptions', 'creer-inscription'],
+        'registrations' => ['voir-inscriptions', 'creer-inscription', 'promouvoir-eleves'],
         'parents' => ['voir-parents', 'creer-parent', 'modifier-parent', 'voir-detail-parent', 'archiver-parent', 'restaurer-parent', 'supprimer-parent', 'associer-eleve-parent', 'dissocier-eleve-parent', 'reinitialiser-mot-de-passe-parent'],
         'family' => ['voir-ses-enfants', 'voir-ses-paiements-enfants', 'voir-ses-notes-enfants', 'voir-ses-bulletins-enfants', 'voir-ses-discipline-enfants', 'voir-emploi-du-temps', 'voir-messagerie', 'voir-calendrier-scolaire'],
         'classrooms' => ['voir-classes', 'creer-classe', 'modifier-classe', 'supprimer-classe', 'affecter-professeur', 'gerer-enseignants-classe'],
         'teachers' => ['voir-professeurs', 'creer-professeur', 'modifier-professeur', 'supprimer-professeur', 'voir-rib-professeur'],
-        'school-years' => ['voir-annees-scolaires', 'creer-annee-scolaire', 'supprimer-annee-scolaire', 'activer-annee-scolaire'],
+        'school-years' => ['voir-annees-scolaires', 'creer-annee-scolaire', 'modifier-annee-scolaire', 'supprimer-annee-scolaire', 'activer-annee-scolaire', 'cloturer-annee-scolaire', 'deverrouiller-annee-scolaire'],
         'payments' => ['voir-paiements', 'enregistrer-paiement', 'valider-paiement-partiel', 'annuler-paiement', 'modifier-paiement', 'supprimer-paiement', 'voir-comptabilite', 'voir-finances', 'voir-recouvrement'],
         'invoices' => ['voir-factures', 'creer-facture', 'modifier-facture', 'supprimer-facture'],
         'fees' => ['voir-types-frais', 'creer-type-frais', 'modifier-type-frais', 'supprimer-type-frais', 'voir-frais-classe', 'creer-frais-classe', 'modifier-frais-classe', 'supprimer-frais-classe', 'gerer-derogations-tarifaires'],

@@ -11,6 +11,7 @@ use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\SubjectConfiguration;
 use App\Models\Teacher;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -68,7 +69,7 @@ class PedagogicalConfigurationController extends Controller
         ]);
     }
 
-    public function storeAssignments(Request $request)
+    public function storeAssignments(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $data = $request->validate([
             'teacher_matricule' => ['required', 'string', 'exists:teachers,matricule'],
@@ -99,6 +100,8 @@ class PedagogicalConfigurationController extends Controller
             return back()->withInput()->withErrors($volumeErrors);
         }
 
+        $schoolYearGuard->assertNotLocked(SchoolYear::findOrFail($data['school_year_id']));
+
         $teacher = Teacher::where('matricule', $data['teacher_matricule'])->firstOrFail();
         $subjectNames = collect(explode(',', $data['new_subject_names'] ?? ''))->map(fn ($name) => trim($name))->filter()->unique();
         $subjectIds = collect($data['matiere_ids'] ?? []);
@@ -127,24 +130,29 @@ class PedagogicalConfigurationController extends Controller
         return redirect()->route('pedagogical-configuration.assignments', ['school_year_id' => $data['school_year_id']])->with('success', "$created affectation(s) pédagogique(s) créée(s).");
     }
 
-    public function toggleAssignment(PedagogicalAssignment $assignment)
+    public function toggleAssignment(PedagogicalAssignment $assignment, SchoolYearGuardService $schoolYearGuard)
     {
+        $schoolYearGuard->assertNotLocked($assignment->schoolYear);
+
         $isActive = ! $assignment->is_active;
         $assignment->update(['is_active' => $isActive, 'deactivated_at' => $isActive ? null : now(), 'deactivated_by' => $isActive ? null : auth()->id()]);
         return back()->with('success', 'Statut de l’affectation mis à jour.');
     }
 
-    public function storePeriod(Request $request)
+    public function storePeriod(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $data = $request->validate(['school_year_id' => ['required', 'exists:school_years,id'], 'name' => ['required', 'string', 'max:100'], 'starts_at' => ['required', 'date'], 'ends_at' => ['required', 'date', 'after_or_equal:starts_at'], 'grade_entry_starts_at' => ['nullable', 'date'], 'grade_entry_ends_at' => ['nullable', 'date', 'after_or_equal:grade_entry_starts_at']]);
+        $schoolYearGuard->assertNotLocked(SchoolYear::findOrFail($data['school_year_id']));
         $data['code'] = Str::slug($data['name'], '_');
         $data['position'] = AcademicPeriod::where('school_year_id', $data['school_year_id'])->max('position') + 1;
         AcademicPeriod::updateOrCreate(['school_year_id' => $data['school_year_id'], 'code' => $data['code']], $data);
         return back()->with('success', 'Période enregistrée.');
     }
 
-    public function togglePeriod(AcademicPeriod $period)
+    public function togglePeriod(AcademicPeriod $period, SchoolYearGuardService $schoolYearGuard)
     {
+        $schoolYearGuard->assertNotLocked($period->schoolYear);
+
         $isOpen = ! $period->grade_entry_open;
         $period->update(['grade_entry_open' => $isOpen, 'status' => $isOpen ? 'open' : 'closed']);
         return back()->with('success', 'Accès de saisie mis à jour.');
@@ -159,17 +167,20 @@ class PedagogicalConfigurationController extends Controller
         return back()->with('success', 'Type d’évaluation ajouté.');
     }
 
-    public function updateSettings(Request $request, SchoolYear $schoolYear)
+    public function updateSettings(Request $request, SchoolYear $schoolYear, SchoolYearGuardService $schoolYearGuard)
     {
+        $schoolYearGuard->assertNotLocked($schoolYear);
+
         $data = $request->validate(['organization_mode' => ['required', 'in:trimesters,semesters'], 'default_scale' => ['required', 'integer', 'in:10,20,40,100'], 'minimum_grade' => ['required', 'numeric', 'min:0'], 'allow_decimals' => ['nullable', 'boolean'], 'decimal_places' => ['required', 'integer', 'min:0', 'max:2'], 'allow_appreciations' => ['nullable', 'boolean'], 'allow_edit_after_submission' => ['nullable', 'boolean'], 'administrative_validation_required' => ['nullable', 'boolean'], 'lock_after_validation' => ['nullable', 'boolean']]);
         foreach (['allow_decimals', 'allow_appreciations', 'allow_edit_after_submission', 'administrative_validation_required', 'lock_after_validation'] as $key) { $data[$key] = $request->boolean($key); }
         GradeSetting::updateOrCreate(['school_year_id' => $schoolYear->id], $data);
         return back()->with('success', 'Règles de notes enregistrées.');
     }
 
-    public function storeSubjectConfiguration(Request $request)
+    public function storeSubjectConfiguration(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $data = $request->validate(['school_year_id' => ['required', 'exists:school_years,id'], 'matiere_id' => ['nullable', 'exists:matieres,id'], 'subject_name' => ['nullable', 'string', 'max:100'], 'cycle' => ['nullable', 'string'], 'coefficient' => ['required', 'numeric', 'min:0.1']]);
+        $schoolYearGuard->assertNotLocked(SchoolYear::findOrFail($data['school_year_id']));
         if (! $data['matiere_id'] && blank($data['subject_name'] ?? null)) {
             return back()->withErrors(['subject_name' => 'Sélectionnez une matière ou saisissez-en une nouvelle.']);
         }

@@ -291,7 +291,7 @@ class GradeController extends Controller
      * Valider (verrouiller) un lot de notes pour une classe / matière / évaluation / période.
      * Une fois validées, ces notes ne peuvent plus être modifiées par le professeur.
      */
-    public function validateNotes(Request $request)
+    public function validateNotes(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('validateNotes', Note::class);
 
@@ -301,6 +301,8 @@ class GradeController extends Controller
             'type_evaluation' => 'required|string',
             'periode' => 'required|string',
         ]);
+
+        $schoolYearGuard->assertNotLocked(Classroom::findOrFail($validated['classroom_id'])->schoolYear);
 
         $notes = Note::where($validated)->notValidated()->get();
 
@@ -316,7 +318,7 @@ class GradeController extends Controller
     /**
      * Rouvrir un lot de notes validées : action privilégiée réservée au super-admin.
      */
-    public function reopenNotes(Request $request)
+    public function reopenNotes(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('reopen', Note::class);
 
@@ -326,6 +328,8 @@ class GradeController extends Controller
             'type_evaluation' => 'required|string',
             'periode' => 'required|string',
         ]);
+
+        $schoolYearGuard->assertNotLocked(Classroom::findOrFail($validated['classroom_id'])->schoolYear);
 
         $notes = Note::where($validated)->validated()->get();
 
