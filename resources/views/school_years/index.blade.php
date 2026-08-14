@@ -11,32 +11,47 @@
 
                 <div class="mb-6 bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
                     <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-3">Créer une nouvelle année scolaire</h3>
+
+                    @if ($errors->any())
+                        <div class="mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-900/20 dark:text-red-200">
+                            <p class="font-semibold">L'année scolaire n'a pas pu être créée :</p>
+                            <ul class="mt-2 list-disc pl-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form action="{{ route('school-years.store') }}" method="POST" class="flex flex-wrap gap-3 items-end">
                         @csrf
                         <div class="flex-1 min-w-[200px]">
                             <label for="year_string" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Année (ex: 2026-2027)</label>
-                            <input type="text" name="year_string" id="year_string" placeholder="2026-2027" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <input type="text" name="year_string" id="year_string" value="{{ old('year_string') }}" placeholder="2026-2027" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <x-input-error :messages="$errors->get('year_string')" class="mt-1" />
                         </div>
                         <div class="flex-1 min-w-[150px]">
                             <label for="start_date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de début</label>
-                            <input type="date" name="start_date" id="start_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <input type="date" name="start_date" id="start_date" value="{{ old('start_date') }}" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->get('start_date')" class="mt-1" />
                         </div>
                         <div class="flex-1 min-w-[150px]">
                             <label for="end_date" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Date de fin</label>
-                            <input type="date" name="end_date" id="end_date" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <input type="date" name="end_date" id="end_date" value="{{ old('end_date') }}" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->get('end_date')" class="mt-1" />
                         </div>
                         <div class="flex-1 min-w-[220px]">
                             <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Dupliquer la configuration depuis</label>
                             <select name="duplicate_from_id" class="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Aucune (configuration vierge)</option>
                                 @foreach($schoolYears as $existingYear)
-                                    <option value="{{ $existingYear->id }}">{{ $existingYear->year_string }}</option>
+                                    <option value="{{ $existingYear->id }}" @selected(old('duplicate_from_id') == $existingYear->id)>{{ $existingYear->year_string }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="flex items-center">
                             <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <input type="checkbox" name="is_active" class="rounded text-blue-500">
+                                <input type="checkbox" name="is_active" value="1" @checked(old('is_active')) class="rounded text-blue-500">
                                 Activer immédiatement
                             </label>
                         </div>
