@@ -5,14 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\ChapterCompletion;
 use App\Models\Classroom;
 use App\Models\ProgramAnnual;
+use App\Services\SchoolYearContext;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CahierTexteDashboardController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SchoolYearContext $context): View
     {
-        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher']);
+        $viewingYear = $context->current();
+
+        // Scopé à l'année consultée : les programmes annuels ne sont jamais
+        // dupliqués d'une année à l'autre (repartent volontairement vierges à
+        // chaque nouvelle année scolaire), donc sans ce filtre ce tableau de
+        // bord mélangeait indéfiniment tous les programmes jamais créés.
+        $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher'])
+            ->when($viewingYear, fn ($query) => $query->forSchoolYear($viewingYear->id));
 
         if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
             $query->forTeacher($request->user()->id);
@@ -23,7 +31,9 @@ class CahierTexteDashboardController extends Controller
         }
 
         $programs = $query->latest()->get();
-        $classrooms = Classroom::orderBy('name')->get();
+        $classrooms = $viewingYear
+            ? Classroom::where('school_year_id', $viewingYear->id)->orderBy('name')->get()
+            : Classroom::orderBy('name')->get();
         $selectedClassroomId = $request->input('classroom_id');
 
         return view('cahier-textes.dashboard', compact('programs', 'classrooms', 'selectedClassroomId'));

@@ -76,6 +76,25 @@ test('it_shows_only_own_programs_for_teacher', function () {
     $response->assertStatus(200);
 });
 
+test('it_only_shows_programs_of_the_active_school_year_by_default', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $activeYear = \App\Models\SchoolYear::factory()->create(['is_active' => true]);
+    $oldYear = \App\Models\SchoolYear::factory()->create(['is_active' => false]);
+
+    $currentProgram = ProgramAnnual::factory()->create(['school_year_id' => $activeYear->id, 'status' => 'valide_surveillant']);
+    $staleProgram = ProgramAnnual::factory()->create(['school_year_id' => $oldYear->id, 'status' => 'valide_surveillant']);
+
+    $response = actingAs($admin)->get(route('cahier-textes.dashboard.index'));
+
+    $response->assertStatus(200);
+    $programs = $response->viewData('programs');
+
+    expect($programs->pluck('id'))->toContain($currentProgram->id);
+    expect($programs->pluck('id'))->not->toContain($staleProgram->id);
+});
+
 test('it_filters_the_dashboard_by_classroom', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
