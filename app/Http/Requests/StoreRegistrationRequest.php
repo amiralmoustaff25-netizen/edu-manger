@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\SchoolYear;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +16,7 @@ class StoreRegistrationRequest extends FormRequest
     public function rules(): array
     {
         $notTrashed = fn ($query) => $query->whereNull('deleted_at');
+        $activeYearId = SchoolYear::where('is_active', true)->value('id');
 
         return [
             'nom' => ['required', 'string', 'max:255'],
@@ -24,7 +26,16 @@ class StoreRegistrationRequest extends FormRequest
             'lieu_naissance' => ['required', 'string', 'max:255'],
             'sexe' => ['required', 'in:M,F'],
             'cycle' => ['required', 'in:primaire,college,lycee'],
-            'classroom_id' => ['required', 'exists:classrooms,id'],
+            // La classe doit appartenir à l'année scolaire active : sinon une
+            // inscription se retrouverait rattachée à une classe d'une autre année.
+            // Si aucune année n'est active, on laisse passer ce champ tel quel :
+            // le contrôleur renvoie déjà un message dédié plus clair dans ce cas.
+            'classroom_id' => [
+                'required',
+                $activeYearId
+                    ? Rule::exists('classrooms', 'id')->where('school_year_id', $activeYearId)
+                    : 'exists:classrooms,id',
+            ],
             'telephone' => ['nullable', 'string', 'max:20'],
             'nationalite' => ['nullable', 'string', 'max:255'],
             'adresse' => ['nullable', 'string'],

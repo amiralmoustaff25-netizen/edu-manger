@@ -154,7 +154,12 @@ class StudentController extends Controller
         return view('students.show', [
             'student' => $student,
             'currentRegistration' => $currentRegistration,
-            'classrooms' => Classroom::orderBy('name')->get(),
+            // Scopé à l'année de $currentRegistration : c'est la classe de CETTE
+            // inscription précise que le formulaire "Changer de classe" modifie
+            // (voir transfer()) — un mélange de toutes les années la corromprait.
+            'classrooms' => $currentRegistration
+                ? Classroom::where('school_year_id', $currentRegistration->school_year_id)->orderBy('name')->get()
+                : Classroom::orderBy('name')->get(),
             'totalPaid' => $financialSituation['paid'],
             'remainingBalance' => $financialSituation['remaining'],
             'financialSituation' => $financialSituation,
@@ -169,9 +174,16 @@ class StudentController extends Controller
 
         $student->load(['parents', 'latestRegistration']);
 
+        // Scopé à l'année de l'inscription modifiée (et non à toutes les années
+        // confondues) : ce formulaire modifie classroom_id sur cette inscription
+        // précise, un mélange de classes d'autres années permettrait de la
+        // rattacher par erreur à une classe qui n'appartient pas à son année.
+        $registrationYearId = $student->latestRegistration?->school_year_id
+            ?? SchoolYear::where('is_active', true)->value('id');
+
         return view('students.edit', [
             'student' => $student,
-            'classrooms' => Classroom::all(),
+            'classrooms' => Classroom::where('school_year_id', $registrationYearId)->orderBy('name')->get(),
             'parents' => ParentModel::actifs()->get(),
             'activeYear' => SchoolYear::where('is_active', true)->first(),
         ]);

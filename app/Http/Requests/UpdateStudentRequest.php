@@ -20,6 +20,11 @@ class UpdateStudentRequest extends FormRequest
 
     public function rules(): array
     {
+        // La classe doit appartenir à la même année scolaire que l'inscription
+        // modifiée (voir StudentController::update()) : sinon classroom_id et
+        // school_year_id de l'inscription divergeraient silencieusement.
+        $registrationYearId = $this->route('student')->latestRegistration?->school_year_id;
+
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
@@ -28,7 +33,12 @@ class UpdateStudentRequest extends FormRequest
             'lieu_naissance' => ['required', 'string', 'max:255'],
             'sexe' => ['required', Rule::in(['M', 'F'])],
             'cycle' => ['required', Rule::in(['primaire', 'college', 'lycee'])],
-            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'classroom_id' => [
+                'required',
+                $registrationYearId
+                    ? Rule::exists('classrooms', 'id')->where('school_year_id', $registrationYearId)
+                    : 'exists:classrooms,id',
+            ],
             'parents' => ['sometimes', 'array'],
             'parents.*.parent_id' => ['nullable', 'exists:parents,id'],
             'parents.*.lien_parente' => ['nullable', 'string', 'max:255'],

@@ -8,6 +8,7 @@ use App\Models\FeeType;
 use App\Models\SchoolYear;
 use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ClassroomFeeController extends Controller
@@ -55,7 +56,12 @@ class ClassroomFeeController extends Controller
         $this->authorize('creer-frais-classe');
 
         $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
+            'classroom_id' => [
+                'required',
+                // La classe doit appartenir à l'année scolaire choisie : sinon le
+                // tarif se retrouverait rattaché à une classe d'une autre année.
+                Rule::exists('classrooms', 'id')->where('school_year_id', $request->input('school_year_id')),
+            ],
             'fee_type_id' => 'required|exists:fee_types,id',
             'school_year_id' => 'required|exists:school_years,id',
             'amount' => 'required|numeric|min:0',
@@ -103,7 +109,10 @@ class ClassroomFeeController extends Controller
         $schoolYearGuard->assertNotLocked($classroomFee->schoolYear);
 
         $validated = $request->validate([
-            'classroom_id' => 'required|exists:classrooms,id',
+            'classroom_id' => [
+                'required',
+                Rule::exists('classrooms', 'id')->where('school_year_id', $request->input('school_year_id')),
+            ],
             'fee_type_id' => 'required|exists:fee_types,id',
             'school_year_id' => 'required|exists:school_years,id',
             'amount' => 'required|numeric|min:0',
