@@ -25,7 +25,9 @@ use App\Http\Controllers\PedagogicalConfigurationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\SchoolYearContextController;
 use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolYearController;
@@ -46,6 +48,13 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group(function () {
+    // Sous-étape F (sélecteur d'année transverse) : persiste en session l'année consultée,
+    // indépendamment de l'année active — voir SchoolYearContext.
+    Route::post('/context/school-year', [SchoolYearContextController::class, 'update'])->name('context.school-year.update');
+
+    // La logique de tableau de bord (redirection par rôle, stats, alertes) vit désormais
+    // dans DashboardController::index() (refactor postérieur à cette branche) — le contenu
+    // est identique à l'ancienne closure inline, rien n'est perdu par ce choix.
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
@@ -273,6 +282,8 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
     // impliqué applique désormais son propre contrôle de permission fine
     // (vérifié findings par findings avant ce retrait — cf. audit SEC-02) ;
     // ce groupe ne fait donc plus que porter le préfixe commun de routes.
+    // Cette branche avait déjà identifié le même problème mais ne l'avait corrigé
+    // que pour les routes users.* ; le retrait complet ci-dessus couvre aussi ce cas.
     Route::group([], function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/attendances', [AttendanceController::class, 'overview'])->name('attendances.overview');
@@ -309,6 +320,8 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
         Route::get('/registrations/reinscription', [RegistrationController::class, 'reenrollSearch'])->name('registrations.reinscription');
         Route::post('/registrations/reinscription', [RegistrationController::class, 'storeReenrollment'])->name('registrations.reinscription.store');
+        Route::get('/promotion', [PromotionController::class, 'index'])->name('promotion.index');
+        Route::post('/promotion', [PromotionController::class, 'store'])->name('promotion.store');
 
         // Routes pour la gestion des parents (admin)
         // NB : le portail parent (prefix /parents, role:parent) est déclaré plus haut,
@@ -322,8 +335,13 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::post('/parents/{id}/restore', [ParentController::class, 'restore'])->name('parents.restore');
 
         // Gestion des années scolaires
-        Route::resource('school-years', SchoolYearController::class)->only(['index', 'store', 'destroy']);
+        Route::resource('school-years', SchoolYearController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
         Route::post('school-years/{schoolYear}/activate', [SchoolYearController::class, 'activate'])->name('school-years.activate');
+        Route::get('school-years/{schoolYear}/closure-checklist', [SchoolYearController::class, 'closureChecklist'])->name('school-years.closure-checklist');
+        Route::post('school-years/{schoolYear}/start-closing', [SchoolYearController::class, 'startClosing'])->name('school-years.start-closing');
+        Route::post('school-years/{schoolYear}/cancel-closing', [SchoolYearController::class, 'cancelClosing'])->name('school-years.cancel-closing');
+        Route::get('school-years/{schoolYear}/reopen', [SchoolYearController::class, 'showReopenForm'])->name('school-years.reopen.show');
+        Route::post('school-years/{schoolYear}/reopen', [SchoolYearController::class, 'reopen'])->name('school-years.reopen');
 
         // Routes pour les logs de connexion
         Route::get('/login-logs', [LoginLogController::class, 'index'])->name('login-logs.index');

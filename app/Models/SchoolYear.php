@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\SchoolYearStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SchoolYear extends Model
 {
@@ -17,13 +21,17 @@ class SchoolYear extends Model
         'start_date',
         'end_date',
         'is_active',
-        'status', // 'upcoming', 'active', 'completed'
+        'status', // voir App\Support\SchoolYearStatus
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'is_active' => 'boolean',
+        'closing_started_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'archived_at' => 'datetime',
+        'reopened_at' => 'datetime',
     ];
 
     public function classrooms(): HasMany
@@ -51,6 +59,11 @@ class SchoolYear extends Model
         return $this->hasOne(GradeSetting::class);
     }
 
+    public function reopenedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reopened_by');
+    }
+
     /**
      * Scope pour l'année active
      */
@@ -59,20 +72,24 @@ class SchoolYear extends Model
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope pour les années à venir
-     */
-    public function scopeUpcoming($query)
+    public function scopePreparation($query)
     {
-        return $query->where('status', 'upcoming');
+        return $query->where('status', SchoolYearStatus::PREPARATION);
     }
 
-    /**
-     * Scope pour les années terminées
-     */
-    public function scopeCompleted($query)
+    public function scopeClosing($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', SchoolYearStatus::CLOSING);
+    }
+
+    public function scopeClosed($query)
+    {
+        return $query->where('status', SchoolYearStatus::CLOSED);
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('status', SchoolYearStatus::ARCHIVED);
     }
 
     /**
@@ -84,12 +101,93 @@ class SchoolYear extends Model
     }
 
     /**
-     * Activer cette année scolaire (désactive les autres)
+     * Fait transitionner l'année vers un nouveau statut du cycle de vie, en validant que la
+     * transition est autorisée (voir App\Support\SchoolYearStatus::TRANSITIONS). Centralise
+     * ce qui était auparavant dupliqué entre cette méthode, l'ancienne activate() et
+     * SchoolYearController::activate().
+     */
+    public function transitionTo(string $status): void
+    {
+        $from = $this->status;
+
+        if ($status === $from) {
+            return;
+        }
+
+        if (! SchoolYearStatus::canTransition($from, $status)) {
+            throw ValidationException::withMessages([
+                'status' => sprintf(
+                    'Transition invalide : impossible de passer de « %s » à « %s ».',
+                    SchoolYearStatus::label($from),
+                    SchoolYearStatus::label($status)
+                ),
+            ]);
+        }
+
+        DB::transaction(function () use ($status, $from) {
+            if ($status === SchoolYearStatus::ACTIVE && $from === SchoolYearStatus::CLOSED) {
+                // Réouverture exceptionnelle (closed -> active) : lève UNIQUEMENT le verrou
+                // d'écriture (isLocked() se base sur status, pas sur is_active). Ne touche
+                // jamais is_active ni l'année réellement en cours d'utilisation — rouvrir une
+                // vieille année clôturée pour corriger une erreur ne doit jamais couper le
+                // contexte opérationnel actuel de l'établissement (bug constaté et corrigé :
+                // la première version faisait passer l'année active en cours à 'closed' comme
+                // effet de bord, exactement ce qu'il ne faut jamais faire ici).
+                $this->reopened_at = now();
+                $this->reopened_by = auth()->id();
+            } elseif ($status === SchoolYearStatus::ACTIVE) {
+                // Activation normale (preparation -> active, ou annulation de clôture
+                // closing -> active) : devient le contexte actif de l'établissement, ferme
+                // automatiquement l'année qui l'était (pas d'assistant de clôture avec
+                // vérifications pour ce cas historique de bascule directe — cf. sous-étape
+                // B/C pour la vraie clôture assistée).
+                static::where('id', '!=', $this->id)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false, 'status' => SchoolYearStatus::CLOSED, 'closed_at' => now()]);
+
+                $this->is_active = true;
+            }
+
+            if ($status === SchoolYearStatus::CLOSING) {
+                $this->closing_started_at = now();
+            }
+
+            if ($status === SchoolYearStatus::CLOSED) {
+                $this->closed_at = now();
+            }
+
+            if ($status === SchoolYearStatus::ARCHIVED) {
+                $this->archived_at = now();
+            }
+
+            $this->status = $status;
+            $this->save();
+        });
+    }
+
+    /**
+     * Activer cette année scolaire (désactive les autres). Conservé pour compatibilité avec
+     * le code existant ; délègue désormais à transitionTo().
+     *
+     * Cas particulier : une année rouverte exceptionnellement a déjà status=ACTIVE (voir
+     * transitionTo()) mais is_active=false — transitionTo() no-op sur un statut inchangé,
+     * donc ce cas bascule is_active directement sans repasser par la machine à états.
      */
     public function activate(): void
     {
-        static::where('id', '!=', $this->id)->update(['is_active' => false, 'status' => 'completed']);
-        $this->update(['is_active' => true, 'status' => 'active']);
+        if ($this->status === SchoolYearStatus::ACTIVE && ! $this->is_active) {
+            DB::transaction(function () {
+                static::where('id', '!=', $this->id)
+                    ->where('is_active', true)
+                    ->update(['is_active' => false, 'status' => SchoolYearStatus::CLOSED, 'closed_at' => now()]);
+
+                $this->update(['is_active' => true]);
+            });
+
+            return;
+        }
+
+        $this->transitionTo(SchoolYearStatus::ACTIVE);
     }
 
     /**
@@ -115,12 +213,24 @@ class SchoolYear extends Model
     }
 
     /**
-     * Une année scolaire clôturée ('completed') est verrouillée : ses inscriptions,
-     * paiements et grilles tarifaires ne doivent plus être modifiés (voir SchoolYearGuardService).
+     * Vrai lorsque la date de fin est dépassée mais que l'année n'a jamais été
+     * transitionnée hors de 'active' — cas à signaler dans l'UI ("à clôturer"), distinct
+     * d'une année réellement clôturée/archivée. Rien ne fait cette transition automatiquement.
+     */
+    public function isPastEndDate(): bool
+    {
+        return $this->status === SchoolYearStatus::ACTIVE
+            && $this->end_date
+            && $this->end_date->lt(now());
+    }
+
+    /**
+     * Une année clôturée ou archivée est verrouillée : ses inscriptions, paiements et
+     * grilles tarifaires ne doivent plus être modifiés (voir SchoolYearGuardService).
      */
     public function isLocked(): bool
     {
-        return $this->status === 'completed';
+        return in_array($this->status, [SchoolYearStatus::CLOSED, SchoolYearStatus::ARCHIVED], true);
     }
 
     /**
@@ -141,7 +251,7 @@ class SchoolYear extends Model
 
             // Définir automatiquement le statut si non fourni
             if (empty($schoolYear->status)) {
-                $schoolYear->status = $schoolYear->is_active ? 'active' : 'upcoming';
+                $schoolYear->status = $schoolYear->is_active ? SchoolYearStatus::ACTIVE : SchoolYearStatus::PREPARATION;
             }
         });
     }

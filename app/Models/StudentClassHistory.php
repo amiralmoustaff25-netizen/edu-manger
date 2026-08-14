@@ -13,6 +13,8 @@ class StudentClassHistory extends Model
     // La migration crée 'student_class_history' (singulier) ; le nom de table deviné
     // par Eloquent à partir du nom de classe serait 'student_class_histories'
     // (pluriel de "history" = "histories") — sans ceci, aucune requête n'aboutit.
+    // Bug trouvé indépendamment des deux côtés de cette fusion, jamais remarqué avant
+    // que ce modèle soit enfin réellement utilisé (assistant de promotion).
     protected $table = 'student_class_history';
 
     protected $fillable = [

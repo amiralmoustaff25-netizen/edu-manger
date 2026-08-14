@@ -12,6 +12,7 @@ use App\Models\SchoolYear;
 use App\Models\StudentClassHistory;
 use App\Models\User;
 use App\Services\FeeService;
+use App\Services\SchoolYearContext;
 use App\Services\SchoolYearGuardService;
 use App\Services\StudentStatusService;
 use App\Support\StudentStatus;
@@ -25,9 +26,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SchoolYearContext $context): View
     {
         $this->authorize('voir-eleves');
+
+        $viewingYear = $context->current();
 
         $students = User::query()
             ->students()
@@ -35,6 +38,12 @@ class StudentController extends Controller
             // jamais rien retourner (même bug déjà corrigé pour Utilisateurs/Parents).
             ->withTrashed()
             ->with(['latestRegistration.classroom', 'latestRegistration.schoolYear'])
+            ->when($viewingYear, function ($query) use ($viewingYear) {
+                // Sans ce filtre, la liste mélangeait indéfiniment tous les comptes élèves
+                // jamais créés, quelle que soit l'année : le sélecteur d'année transverse
+                // n'aurait alors aucun effet visible ici.
+                $query->whereHas('registrations', fn ($query) => $query->where('school_year_id', $viewingYear->id));
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
 
@@ -69,8 +78,11 @@ class StudentController extends Controller
 
         return view('students.index', [
             'students' => $students,
-            'classrooms' => Classroom::orderBy('name')->get(),
+            'classrooms' => $viewingYear
+                ? Classroom::where('school_year_id', $viewingYear->id)->orderBy('name')->get()
+                : Classroom::orderBy('name')->get(),
             'filters' => $request->only(['search', 'classroom_id', 'status']),
+            'viewingYear' => $viewingYear,
         ]);
     }
 
