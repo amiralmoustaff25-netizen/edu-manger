@@ -20,12 +20,16 @@ class RegistrationController extends Controller
     {
         $this->authorize('creer-inscription');
 
-        $classrooms = Classroom::all();
         $activeYear = SchoolYear::where('is_active', true)->first();
 
         if (! $activeYear) {
             return back()->withErrors(['error' => 'Aucune année scolaire active.']);
         }
+
+        // Scopé à l'année active : les classes sont recréées à chaque année scolaire
+        // (Classroom.school_year_id), un mélange de toutes les années permettrait
+        // d'inscrire un élève dans une classe d'une année révolue.
+        $classrooms = Classroom::where('school_year_id', $activeYear->id)->orderBy('name')->get();
 
         // Bibliothèque des frais : source de vérité unique pour les montants
         // d'inscription/mensualité/cantine/transport, par classe, pour l'année active.
@@ -93,12 +97,13 @@ class RegistrationController extends Controller
     {
         $this->authorize('voir-inscriptions');
 
-        $classrooms = Classroom::all();
         $activeYear = SchoolYear::where('is_active', true)->first();
 
         if (! $activeYear) {
             return back()->withErrors(['error' => 'Aucune année scolaire active.']);
         }
+
+        $classrooms = Classroom::where('school_year_id', $activeYear->id)->orderBy('name')->get();
 
         $feeLibrary = $classrooms->mapWithKeys(
             fn (Classroom $classroom) => [$classroom->id => $feeService->getCurrentFeeAmounts($classroom->id, $activeYear->id)]

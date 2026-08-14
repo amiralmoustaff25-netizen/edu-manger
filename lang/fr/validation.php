@@ -205,6 +205,9 @@ return [
         'email' => "l'adresse e-mail",
         'password' => 'le mot de passe',
         'matricule' => 'le matricule',
+        'classroom_id' => 'la classe',
+        'school_year_id' => "l'année scolaire",
+        'registration_id' => "l'inscription",
     ],
 
 ];
