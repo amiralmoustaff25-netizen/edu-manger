@@ -349,6 +349,84 @@ test('monthly revenue on the dashboard excludes a same-calendar-month payment ma
     expect((float) $stats['yearly_revenue'])->toBe(15000.0);
 });
 
+test('the monthly revenue chart spans the active school year date range, not a fixed calendar year', function () {
+    // Année scolaire chevauchant deux années calendaires (octobre 2025 -> juillet 2026),
+    // comme c'est le cas dans la réalité — une boucle janvier->décembre d'une seule année
+    // calendaire manquerait les mois d'octobre à décembre 2025.
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    $schoolYear = SchoolYear::create([
+        'year_string' => '2025-2026',
+        'is_active' => true,
+        'status' => 'active',
+        'start_date' => '2025-10-01',
+        'end_date' => '2026-07-20',
+    ]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $schoolYear->id, 'cycle' => 'primaire']);
+    $student = User::factory()->create(['role' => 'eleve']);
+    $registration = Registration::create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $schoolYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => '2025-10-05',
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-26-000304',
+        'status' => 'active',
+    ]);
+
+    // Les deux paiements sont d'abord créés normalement (receipt_number auto-généré à
+    // partir de created_at="maintenant" pour les deux, donc sans collision), puis
+    // rétrodatés ensemble seulement après coup : rétrodater l'un avant de créer l'autre
+    // fausserait le comptage utilisé par la génération du numéro de reçu suivant.
+    $novemberPayment = Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 15000,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Novembre',
+        'payment_date' => '2025-11-15',
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $junePayment = Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 20000,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Juin',
+        'payment_date' => '2026-06-10',
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    \Illuminate\Support\Facades\DB::table('payments')->where('id', $novemberPayment->id)->update(['created_at' => '2025-11-15 10:00:00']);
+    \Illuminate\Support\Facades\DB::table('payments')->where('id', $junePayment->id)->update(['created_at' => '2026-06-10 10:00:00']);
+
+    $response = $this->actingAs($manager)->get(route('accounting.dashboard'));
+    $response->assertOk();
+    $monthlyRevenue = collect($response->viewData('monthlyRevenue'));
+
+    // 10 mois : octobre à décembre 2025, puis janvier à juillet 2026.
+    expect($monthlyRevenue)->toHaveCount(10);
+    expect($monthlyRevenue->first())->toMatchArray(['year' => 2025]);
+    expect($monthlyRevenue->last())->toMatchArray(['year' => 2026]);
+
+    $novemberLabel = \Illuminate\Support\Carbon::create(2025, 11, 1)->translatedFormat('F');
+    $juneLabel = \Illuminate\Support\Carbon::create(2026, 6, 1)->translatedFormat('F');
+
+    $novemberEntry = $monthlyRevenue->firstWhere(fn ($entry) => $entry['month'] === $novemberLabel && $entry['year'] === 2025);
+    $juneEntry = $monthlyRevenue->firstWhere(fn ($entry) => $entry['month'] === $juneLabel && $entry['year'] === 2026);
+
+    expect((float) $novemberEntry['amount'])->toBe(15000.0);
+    expect((float) $juneEntry['amount'])->toBe(20000.0);
+});
+
 test('parent dashboard remaining balance is not the naive sum of remaining_balance across payments', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');

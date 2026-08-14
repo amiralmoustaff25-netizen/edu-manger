@@ -61,16 +61,36 @@ class AccountingController extends Controller
             'pending_invoices' => $scopedToActiveYear(\App\Models\Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue']))->count(),
         ];
 
-        // Revenus par mois de l'année courante
+        // Revenus par mois de l'année scolaire active : une année scolaire (ex. octobre à
+        // juillet) chevauche deux années calendaires, donc une simple boucle janvier->décembre
+        // de l'année calendaire en cours en perdait une partie (les mois d'octobre à décembre
+        // de l'année calendaire précédente) et affichait des mois vides hors de la période
+        // réelle de l'année active (ex. janvier à septembre avant le début de l'année).
         $monthlyRevenue = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $monthlyRevenue[] = [
-                'month' => date('F', mktime(0, 0, 0, $i, 1)),
-                'amount' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
-                    ->whereMonth('created_at', $i)
-                    ->whereYear('created_at', now()->year)
-                    ->sum('amount'),
-            ];
+        if ($activeYear && $activeYear->start_date && $activeYear->end_date) {
+            $period = \Carbon\CarbonPeriod::create($activeYear->start_date->startOfMonth(), '1 month', $activeYear->end_date->startOfMonth());
+
+            foreach ($period as $monthStart) {
+                $monthlyRevenue[] = [
+                    'month' => $monthStart->translatedFormat('F'),
+                    'year' => $monthStart->year,
+                    'amount' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
+                        ->whereMonth('created_at', $monthStart->month)
+                        ->whereYear('created_at', $monthStart->year)
+                        ->sum('amount'),
+                ];
+            }
+        } else {
+            for ($i = 1; $i <= 12; $i++) {
+                $monthlyRevenue[] = [
+                    'month' => \Carbon\Carbon::create(now()->year, $i, 1)->translatedFormat('F'),
+                    'year' => now()->year,
+                    'amount' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
+                        ->whereMonth('created_at', $i)
+                        ->whereYear('created_at', now()->year)
+                        ->sum('amount'),
+                ];
+            }
         }
 
         // Paiements récents
@@ -79,10 +99,14 @@ class AccountingController extends Controller
             ->take(10)
             ->get();
 
-        // Paiements partiels en attente
-        $partialPayments = Payment::with(['registration.user', 'registration.classroom'])
-            ->where('status', 'partiel')
-            ->notCancelled()
+        // Paiements partiels en attente : scopé à l'année active, comme "Élèves avec
+        // impayés" juste en dessous — même nature de liste "à traiter maintenant", un
+        // paiement partiel d'une année déjà clôturée n'a plus rien à valider.
+        $partialPayments = $scopedToActiveYear(
+            Payment::with(['registration.user', 'registration.classroom'])
+                ->where('status', 'partiel')
+                ->notCancelled()
+        )
             ->latest()
             ->take(10)
             ->get();
