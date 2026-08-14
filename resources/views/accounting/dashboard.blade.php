@@ -69,11 +69,11 @@
 
                 <!-- Revenus mensuels -->
                 <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 ring-1 ring-gray-200 dark:ring-slate-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenus mensuels ({{ now()->year }})</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenus mensuels ({{ $activeYear->year_string ?? now()->year }})</h3>
                     <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         @foreach($monthlyRevenue as $revenue)
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">{{ substr($revenue['month'], 0, 3) }}</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">{{ mb_substr($revenue['month'], 0, 4) }} {{ substr($revenue['year'], -2) }}</p>
                                 <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ number_format($revenue['amount'], 0, ',', ' ') }}</p>
                             </div>
                         @endforeach
