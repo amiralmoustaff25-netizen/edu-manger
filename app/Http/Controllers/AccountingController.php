@@ -28,31 +28,37 @@ class AccountingController extends Controller
             fn (Registration $registration) => $feeService->getFinancialSituation($registration)['remaining']
         );
 
+        // Scopé à l'année active : tout ce tableau de bord représente la situation
+        // COURANTE de l'établissement, pas un cumul depuis la création de l'application —
+        // sans ce filtre, les encaissements d'une année révolue (même dans le même mois
+        // calendaire, ex. juste avant la clôture) continuaient d'apparaître dans "ce mois",
+        // "cette année" etc. après l'activation d'une nouvelle année scolaire.
+        $scopedToActiveYear = fn ($query) => $query->when(
+            $activeYear,
+            fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id))
+        );
+
         // Statistiques générales (les paiements annulés et rejetés sont exclus de tous les
         // totaux financiers). "Revenu" doit inclure l'argent réellement encaissé via les
         // paiements partiels, pas seulement les paiements complets : le champ amount d'un
         // paiement partiel est un montant réellement reçu, pas une projection.
         $stats = [
-            // Scopé à l'année active : sinon ce chiffre cumulait les paiements depuis la
-            // création de l'application, incohérent avec le reste du tableau de bord
-            // (impayés, solde restant dû) qui reflète déjà la situation courante.
-            'total_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
-                ->when($activeYear, fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id)))
+            'total_revenue' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
                 ->sum('amount'),
-            'monthly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
+            'monthly_revenue' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
-            'yearly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
+            'yearly_revenue' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
                 ->whereYear('created_at', now()->year)
                 ->sum('amount'),
-            'total_payments' => Payment::notCancelled()->count(),
-            'complete_payments' => Payment::where('status', 'complet')->notCancelled()->count(),
-            'partial_payments' => Payment::where('status', 'partiel')->notCancelled()->count(),
+            'total_payments' => $scopedToActiveYear(Payment::notCancelled())->count(),
+            'complete_payments' => $scopedToActiveYear(Payment::where('status', 'complet')->notCancelled())->count(),
+            'partial_payments' => $scopedToActiveYear(Payment::where('status', 'partiel')->notCancelled())->count(),
             'remaining_balance' => $remainingBalance,
-            'total_invoices' => \App\Models\Invoice::count(),
-            'paid_invoices' => \App\Models\Invoice::where('status', 'paid')->count(),
-            'pending_invoices' => \App\Models\Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue'])->count(),
+            'total_invoices' => $scopedToActiveYear(\App\Models\Invoice::query())->count(),
+            'paid_invoices' => $scopedToActiveYear(\App\Models\Invoice::where('status', 'paid'))->count(),
+            'pending_invoices' => $scopedToActiveYear(\App\Models\Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue']))->count(),
         ];
 
         // Revenus par mois de l'année courante
@@ -60,7 +66,7 @@ class AccountingController extends Controller
         for ($i = 1; $i <= 12; $i++) {
             $monthlyRevenue[] = [
                 'month' => date('F', mktime(0, 0, 0, $i, 1)),
-                'amount' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
+                'amount' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
                     ->whereMonth('created_at', $i)
                     ->whereYear('created_at', now()->year)
                     ->sum('amount'),

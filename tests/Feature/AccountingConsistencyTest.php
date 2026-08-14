@@ -294,6 +294,61 @@ test('total revenue on the dashboard only reflects the active school year, not a
     expect((float) $stats['total_revenue'])->toBe(15000.0);
 });
 
+test('monthly revenue on the dashboard excludes a same-calendar-month payment made under a closed school year', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    [, , , $registration] = createAccountingFixture();
+
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 15000,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    // Encaissement du même mois calendaire, mais sur l'inscription d'une année
+    // déjà clôturée (ex. dernier versement avant la clôture) : ne doit pas
+    // gonfler "l'encaissement de ce mois" une fois la nouvelle année active.
+    $oldYear = SchoolYear::create(['year_string' => '2024-2025', 'is_active' => false, 'status' => 'closed']);
+    $oldClassroom = Classroom::create(['name' => 'CE2 A', 'school_year_id' => $oldYear->id, 'cycle' => 'primaire']);
+    $oldStudent = User::factory()->create(['role' => 'eleve']);
+    $oldRegistration = Registration::create([
+        'user_id' => $oldStudent->id,
+        'classroom_id' => $oldClassroom->id,
+        'school_year_id' => $oldYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2024-2025',
+        'matricule' => 'EDU-25-000303',
+        'status' => 'active',
+    ]);
+    Payment::create([
+        'registration_id' => $oldRegistration->id,
+        'amount' => 99999,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('accounting.dashboard'));
+    $response->assertOk();
+    $stats = $response->viewData('stats');
+
+    expect((float) $stats['monthly_revenue'])->toBe(15000.0);
+    expect((float) $stats['yearly_revenue'])->toBe(15000.0);
+});
+
 test('parent dashboard remaining balance is not the naive sum of remaining_balance across payments', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
