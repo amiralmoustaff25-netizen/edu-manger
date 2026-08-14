@@ -11,6 +11,11 @@ class StoreSchoolYearRequest extends FormRequest
         return $this->user()->can('creer-annee-scolaire');
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['is_active' => $this->boolean('is_active')]);
+    }
+
     public function rules(): array
     {
         return [
