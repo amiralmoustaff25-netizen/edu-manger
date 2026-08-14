@@ -53,7 +53,9 @@
             @if ($student && ! $alreadyRegistered)
                 @php
                     $canEditFees = auth()->user()->hasAnyRole(['super-admin', 'manager-comptable']);
-                    $defaultClassroomId = $lastRegistration?->classroom_id;
+                    // MET-09 : préselectionner la classe supérieure configurée (promotion),
+                    // plutôt que de rester par défaut sur l'ancienne classe de l'élève.
+                    $defaultClassroomId = $lastRegistration?->classroom?->promotes_to_classroom_id ?? $lastRegistration?->classroom_id;
                     $defaultOptions = $lastRegistration?->options ?? [];
                     $reenrollFormData = [
                         'feeLibrary' => $feeLibrary,

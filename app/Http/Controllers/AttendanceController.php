@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Registration;
 use App\Models\Teacher;
 use App\Notifications\StudentAbsent;
+use App\Services\SchoolYearGuardService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class AttendanceController extends Controller
         ));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $validated = $request->validate([
             'classroom_id' => 'required|exists:classrooms,id',
@@ -87,6 +88,9 @@ class AttendanceController extends Controller
         if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {
             abort(403, 'Vous n\'êtes pas autorisé à enregistrer les absences pour cette classe.');
         }
+
+        // MET-03 : même verrou d'année clôturée que pour les notes/paiements.
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         // Empêcher la modification des absences passées (règle métier)
         if (Carbon::parse($validated['date'])->lt(today()->subDays(7))) {

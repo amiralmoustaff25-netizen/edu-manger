@@ -20,6 +20,7 @@ class Classroom extends Model
         'school_year_id',
         'teacher_id',
         'max_students',
+        'promotes_to_classroom_id',
     ];
 
     /**
@@ -64,5 +65,22 @@ class Classroom extends Model
     public function pedagogicalAssignments(): HasMany
     {
         return $this->hasMany(PedagogicalAssignment::class);
+    }
+
+    /**
+     * Classe vers laquelle les élèves de cette classe sont promus l'année
+     * suivante (ex. CM1 A -> CM2 A). Voir PromotionController.
+     */
+    public function promotesTo(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class, 'promotes_to_classroom_id');
+    }
+
+    /**
+     * Classes qui promeuvent explicitement vers celle-ci.
+     */
+    public function promotedFrom(): HasMany
+    {
+        return $this->hasMany(Classroom::class, 'promotes_to_classroom_id');
     }
 }

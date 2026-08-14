@@ -12,6 +12,7 @@ use App\Models\SchoolYear;
 use App\Models\StudentClassHistory;
 use App\Models\User;
 use App\Services\FeeService;
+use App\Services\SchoolYearGuardService;
 use App\Services\StudentStatusService;
 use App\Support\StudentStatus;
 use Illuminate\Http\RedirectResponse;
@@ -164,11 +165,19 @@ class StudentController extends Controller
         ]);
     }
 
-    public function update(UpdateStudentRequest $request, User $student): RedirectResponse
+    public function update(UpdateStudentRequest $request, User $student, SchoolYearGuardService $schoolYearGuard): RedirectResponse
     {
         $this->authorize('modifier-eleve', $student);
 
         abort_unless($student->isStudent(), 404);
+
+        // MET-01 : ce contrôleur ne vérifiait jamais si l'année scolaire de
+        // l'inscription modifiée était clôturée, contrairement aux modules
+        // financiers (paiements, frais). Un changement de classe/frais sur
+        // une année déjà clôturée corromprait silencieusement l'historique
+        // officiel utilisé pour les bulletins archivés et les statistiques
+        // d'effectifs passées.
+        $schoolYearGuard->assertNotLocked($student->latestRegistration?->schoolYear);
 
         $validated = $request->validated();
 
@@ -282,7 +291,7 @@ class StudentController extends Controller
             ->with('success', "Élève restauré. Utilisez « Réinscription » pour lui créer une nouvelle inscription active.");
     }
 
-    public function transfer(TransferStudentRequest $request, User $student)
+    public function transfer(TransferStudentRequest $request, User $student, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('transferer-eleve', $student);
 
@@ -291,6 +300,12 @@ class StudentController extends Controller
         $validated = $request->validated();
 
         $registration = Registration::where('user_id', $student->id)->findOrFail($validated['registration_id']);
+
+        // MET-01 : transfert possible pour N'IMPORTE QUELLE inscription du dossier
+        // (pas seulement celle de l'année active) — sans ce contrôle, un transfert
+        // sur une inscription d'une année clôturée corromprait l'historique de
+        // classe archivé pour cette année.
+        $schoolYearGuard->assertNotLocked($registration->schoolYear);
 
         // Historise la classe/année quittée avant le changement, sinon
         // StudentClassHistory ne serait jamais alimenté (voir aussi
