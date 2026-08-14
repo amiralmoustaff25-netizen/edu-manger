@@ -11,6 +11,7 @@ use App\Models\Teacher;
 use App\Models\User;
 use App\Http\Requests\StoreGradeRequest;
 use App\Services\AuditLogService;
+use App\Services\SchoolYearGuardService;
 use App\Support\EvaluationTypeScope;
 use Illuminate\Http\Request;
 
@@ -34,7 +35,7 @@ class GradeController extends Controller
         return view('teachers.grades.index', compact('classrooms', 'matieres'));
     }
 
-    public function store(StoreGradeRequest $request)
+    public function store(StoreGradeRequest $request, SchoolYearGuardService $schoolYearGuard)
     {
         $validated = $request->validated();
 
@@ -47,6 +48,11 @@ class GradeController extends Controller
 
         $classroom = Classroom::findOrFail($validated['classroom_id']);
         $matiere = Matiere::findOrFail($validated['matiere_id']);
+
+        // MET-03 : aucun verrou n'empêchait la saisie/modification de notes pour une
+        // classe d'une année scolaire déjà clôturée (seuls les modules financiers
+        // étaient protégés par ce garde-fou).
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
 
         // Le type d'évaluation autorisé dépend du cycle (le primaire n'a que la
         // composition) : le formulaire ne propose déjà que les bonnes options, mais
@@ -189,7 +195,7 @@ class GradeController extends Controller
     /**
      * Enregistrer les notes d'un seul élève, toutes matières confondues, pour une période donnée.
      */
-    public function storeForStudent(Request $request)
+    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -209,6 +215,10 @@ class GradeController extends Controller
         }
 
         $classroom = Classroom::findOrFail($validated['classroom_id']);
+
+        // MET-03 : voir store() ci-dessus — même verrou requis sur ce second point
+        // d'entrée de saisie (une matière à la fois, par élève, sur toutes matières).
+        $schoolYearGuard->assertNotLocked($classroom->schoolYear);
         $assignedMatiereIds = PedagogicalAssignment::where('teacher_id', $teacher->id)
             ->where('classroom_id', $classroom->id)
             ->where('is_active', true)
