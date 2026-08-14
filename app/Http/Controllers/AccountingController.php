@@ -33,7 +33,12 @@ class AccountingController extends Controller
         // paiements partiels, pas seulement les paiements complets : le champ amount d'un
         // paiement partiel est un montant réellement reçu, pas une projection.
         $stats = [
-            'total_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()->sum('amount'),
+            // Scopé à l'année active : sinon ce chiffre cumulait les paiements depuis la
+            // création de l'application, incohérent avec le reste du tableau de bord
+            // (impayés, solde restant dû) qui reflète déjà la situation courante.
+            'total_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
+                ->when($activeYear, fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id)))
+                ->sum('amount'),
             'monthly_revenue' => Payment::whereIn('status', ['complet', 'partiel'])->notCancelled()
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
@@ -79,7 +84,12 @@ class AccountingController extends Controller
         // Élèves avec impayés : solde recalculé via FeeService (frais réellement dus),
         // jamais via un total_due forfaitaire (ancien calcul "monthly_fee * 9" incohérent
         // avec les frais d'inscription, options et dérogations tarifaires).
+        // Scopé à l'année active : sans ça, un élève dont l'impayé d'une année révolue
+        // n'a jamais été soldé restait affiché indéfiniment, même après la clôture de
+        // cette année et l'activation d'une nouvelle — l'historique passe par le
+        // dossier élève / les rapports avancés, pas par ce tableau de bord courant.
         $studentsWithDebt = Registration::with(['user', 'classroom'])
+            ->when($activeYear, fn ($query) => $query->where('school_year_id', $activeYear->id))
             ->whereHas('payments', function ($query) {
                 $query->where('status', 'partiel')->notCancelled();
             })
