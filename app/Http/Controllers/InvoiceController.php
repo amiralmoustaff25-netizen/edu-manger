@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Registration;
+use App\Models\SchoolYear;
 use App\Models\FeeType;
+use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -48,16 +50,20 @@ class InvoiceController extends Controller
     {
         $this->authorize('creer-facture');
 
+        // Scopé à l'année active : les inscriptions d'une année révolue ne doivent pas
+        // pouvoir recevoir de nouvelle facture (voir aussi le verrou dans store()).
+        $activeYear = SchoolYear::where('is_active', true)->first();
         $registrations = Registration::with(['user', 'classroom'])
             ->where('status', 'active')
+            ->when($activeYear, fn ($query) => $query->where('school_year_id', $activeYear->id))
             ->get();
-        
+
         $feeTypes = FeeType::all();
 
         return view('accounting.invoices.create', compact('registrations', 'feeTypes'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('creer-facture');
 
@@ -71,10 +77,18 @@ class InvoiceController extends Controller
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        $registration = Registration::findOrFail($validated['registration_id']);
+        $registration = Registration::with('schoolYear')->findOrFail($validated['registration_id']);
 
-        // Génération du numéro de facture
-        $invoiceNumber = 'FAC-' . now()->year . '-' . str_pad(Invoice::whereYear('created_at', now()->year)->count() + 1, 4, '0', STR_PAD_LEFT);
+        $schoolYearGuard->assertNotLocked($registration->schoolYear);
+
+        // Génération du numéro de facture : verrouillage pessimiste pour éviter qu'une
+        // double soumission concurrente ne calcule le même numéro (même schéma que
+        // Payment::receipt_number, voir Payment::booted()).
+        $invoiceNumber = \Illuminate\Support\Facades\DB::transaction(function () {
+            $count = Invoice::whereYear('created_at', now()->year)->lockForUpdate()->count();
+
+            return 'FAC-' . now()->year . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+        });
 
         $totalAmount = collect($validated['items'])->sum(function ($item) {
             return $item['quantity'] * $item['unit_price'];
@@ -120,17 +134,21 @@ class InvoiceController extends Controller
         $this->authorize('modifier-facture', $invoice);
 
         $invoice->load(['registration.user', 'registration.classroom', 'items.feeType']);
+        $activeYear = SchoolYear::where('is_active', true)->first();
         $registrations = Registration::with(['user', 'classroom'])
             ->where('status', 'active')
+            ->when($activeYear, fn ($query) => $query->where('school_year_id', $activeYear->id))
             ->get();
         $feeTypes = FeeType::all();
 
         return view('accounting.invoices.edit', compact('invoice', 'registrations', 'feeTypes'));
     }
 
-    public function update(Request $request, Invoice $invoice)
+    public function update(Request $request, Invoice $invoice, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('modifier-facture', $invoice);
+
+        $schoolYearGuard->assertNotLocked($invoice->registration->schoolYear);
 
         $validated = $request->validate([
             'due_date' => 'required|date',
@@ -144,9 +162,11 @@ class InvoiceController extends Controller
             ->with('success', 'Facture modifiée avec succès.');
     }
 
-    public function destroy(Invoice $invoice)
+    public function destroy(Invoice $invoice, SchoolYearGuardService $schoolYearGuard)
     {
         $this->authorize('supprimer-facture', $invoice);
+
+        $schoolYearGuard->assertNotLocked($invoice->registration->schoolYear);
 
         $invoice->delete();
 
