@@ -121,7 +121,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Paiements partiels en attente</h3>
                             @can('valider-paiement-partiel')
-                                <a href="{{ route('payments.validation') }}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                                <a href="{{ route('payments.index', ['status' => 'partiel']) }}" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                                     Valider →
                                 </a>
                             @endcan
