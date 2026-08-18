@@ -22,8 +22,8 @@
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Rechercher un élève</h3>
                 <form method="GET" action="{{ route('registrations.reinscription') }}" class="flex flex-wrap items-end gap-3">
                     <div class="flex-1 min-w-[16rem]">
-                        <label for="matricule" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Matricule de l'élève</label>
-                        <input type="text" id="matricule" name="matricule" value="{{ $searchedMatricule }}" placeholder="Ex. ELE-26-000123" required
+                        <label for="matricule" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Matricule ou nom de l'élève</label>
+                        <input type="text" id="matricule" name="matricule" value="{{ $searchedMatricule }}" placeholder="Ex. ELE-26-0001 ou Diallo" required
                                class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <x-primary-button type="submit">
@@ -38,9 +38,21 @@
                     <a href="{{ route('students.index', ['status' => 'archived', 'search' => $searchedMatricule]) }}" class="font-semibold underline hover:no-underline">liste des élèves archivés</a>
                     avant de le réinscrire.
                 </div>
+            @elseif ($matches->isNotEmpty())
+                <div class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">Plusieurs élèves correspondent à « {{ $searchedMatricule }} », précisez :</h3>
+                    <ul class="divide-y divide-gray-200 dark:divide-slate-700">
+                        @foreach ($matches as $match)
+                            <li class="py-2 flex items-center justify-between">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $match->name }} {{ $match->prenom }} — <span class="font-mono">{{ $match->matricule }}</span></span>
+                                <a href="{{ route('registrations.reinscription', ['matricule' => $match->matricule]) }}" class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Sélectionner</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @elseif ($searchedMatricule && ! $student)
                 <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900 p-4 text-sm text-amber-800 dark:text-amber-200">
-                    Aucun élève trouvé pour le matricule « {{ $searchedMatricule }} ».
+                    Aucun élève trouvé pour « {{ $searchedMatricule }} ».
                 </div>
             @endif
 

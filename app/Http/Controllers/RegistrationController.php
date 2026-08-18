@@ -113,19 +113,55 @@ class RegistrationController extends Controller
         $lastRegistration = null;
         $alreadyRegistered = false;
         $archived = false;
+        $matches = collect();
         $searchedMatricule = $request->input('matricule');
 
         if ($request->filled('matricule')) {
+            $term = trim($searchedMatricule);
+            $eleveScope = fn ($query) => $query
+                ->where('role', 'eleve')
+                ->orWhereHas('roles', fn ($q) => $q->where('name', 'eleve'));
+
             // withTrashed() : un élève archivé ne doit pas afficher le même message
             // générique « aucun élève trouvé » qu'un matricule inconnu — il doit
             // d'abord être restauré (voir StudentController::restore()) avant de
             // pouvoir être réinscrit.
             $student = User::withTrashed()
-                ->where(function ($query) {
-                    $query->where('role', 'eleve')->orWhereHas('roles', fn ($q) => $q->where('name', 'eleve'));
-                })
-                ->where('matricule', $searchedMatricule)
+                ->where($eleveScope)
+                ->where('matricule', $term)
                 ->first();
+
+            if (! $student) {
+                // Le personnel a parfois en main le matricule imprimé sur le dossier
+                // d'inscription (Registration::matricule, ex. EDU-26-000003) plutôt que
+                // le matricule personnel de l'élève (ex. ELE-26-0001) : ce sont deux
+                // numérotations distinctes générées par StudentEnrollmentService. On
+                // retombe sur la première pour rester tolérant à la confusion courante.
+                $registrationMatch = Registration::where('matricule', $term)->first();
+
+                if ($registrationMatch) {
+                    $student = User::withTrashed()->find($registrationMatch->user_id);
+                }
+            }
+
+            if (! $student) {
+                // Recherche par nom/prénom, en complément du matricule (les deux
+                // numérotations ci-dessus restent prioritaires si elles correspondent).
+                $matches = User::withTrashed()
+                    ->where($eleveScope)
+                    ->where(function ($query) use ($term) {
+                        $query->where('name', 'like', "%{$term}%")
+                            ->orWhere('prenom', 'like', "%{$term}%");
+                    })
+                    ->orderBy('name')
+                    ->limit(20)
+                    ->get();
+
+                if ($matches->count() === 1) {
+                    $student = $matches->first();
+                    $matches = collect();
+                }
+            }
 
             if ($student && $student->trashed()) {
                 $archived = true;
@@ -146,6 +182,7 @@ class RegistrationController extends Controller
             'activeYear' => $activeYear,
             'classrooms' => $classrooms,
             'feeLibrary' => $feeLibrary,
+            'matches' => $matches,
             'student' => $student,
             'lastRegistration' => $lastRegistration,
             'alreadyRegistered' => $alreadyRegistered,
