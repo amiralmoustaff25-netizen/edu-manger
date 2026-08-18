@@ -248,8 +248,8 @@
                     <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Ancien mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="current_password" id="current_password" required
-                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-password-input name="current_password" id="current_password" required
+                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500" />
                     @error('current_password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -259,8 +259,8 @@
                     <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Nouveau mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password" id="new_password" required
-                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-password-input name="password" id="new_password" required
+                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500" />
                     @error('password')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -270,8 +270,8 @@
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Confirmer le mot de passe') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password_confirmation" id="password_confirmation" required
-                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500">
+                    <x-password-input name="password_confirmation" id="password_confirmation" required
+                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500" />
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4">
@@ -319,8 +319,8 @@
                     <label for="delete_account_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {{ __('Mot de passe actuel') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password" id="delete_account_password" required
-                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-red-500 focus:ring-red-500">
+                    <x-password-input name="password" id="delete_account_password" required
+                           class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-red-500 focus:ring-red-500" />
                     @error('password', 'userDeletion')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
