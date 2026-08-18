@@ -6,19 +6,6 @@
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comptes, rôles, accès et cycle de vie — professeurs et parents/tuteurs y compris (filtrer par rôle ci-dessous).</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                {{-- Professeur/parent exigent des champs dédiés (RIB, matières, enfants...) que
-                     ce formulaire générique ne capture pas : le formulaire spécialisé reste
-                     nécessaire, mais accessible ici plutôt que via une page de menu séparée. --}}
-                @can('create', \App\Models\Teacher::class)
-                    <a href="{{ route('teachers.create') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                        Ajouter un professeur
-                    </a>
-                @endcan
-                @can('creer-parent')
-                    <a href="{{ route('parents.create') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                        Ajouter un parent/tuteur
-                    </a>
-                @endcan
                 <a href="{{ route('users.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                     Ajouter un utilisateur
                 </a>
