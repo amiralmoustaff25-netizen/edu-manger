@@ -339,6 +339,12 @@ class AccountingController extends Controller
     {
         $this->authorize('voir-alertes-impayes');
 
+        // Mêmes correctifs que le tableau de bord (index()) : une page "à traiter
+        // maintenant" (impayés, factures en retard, relances) n'a rien à faire d'une
+        // année scolaire déjà clôturée, même si ses lignes techniquement "actives" en
+        // base (statut non mis à jour) traînent encore.
+        $activeYear = SchoolYear::where('is_active', true)->first();
+
         // Élèves avec impayés (paiements partiels, hors paiements annulés).
         // Le solde restant est recalculé via FeeService : la colonne `remaining_balance`
         // d'un paiement est un instantané au moment de CETTE transaction, elle ne peut
@@ -346,6 +352,7 @@ class AccountingController extends Controller
         $studentsWithPartialPayments = Payment::with(['registration.user', 'registration.classroom'])
             ->where('status', 'partiel')
             ->notCancelled()
+            ->when($activeYear, fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id)))
             ->latest()
             ->get()
             ->groupBy('registration_id')
@@ -371,12 +378,14 @@ class AccountingController extends Controller
             ->whereIn('status', ['sent', 'partial', 'overdue'])
             ->where('due_date', '<', now())
             ->where('remaining_balance', '>', 0)
+            ->when($activeYear, fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id)))
             ->latest()
             ->get();
 
         // Élèves sans paiement depuis 30 jours
         $studentsWithoutRecentPayments = Registration::with(['user', 'classroom', 'payments'])
             ->where('status', 'active')
+            ->when($activeYear, fn ($query) => $query->where('school_year_id', $activeYear->id))
             ->whereDoesntHave('payments', function ($query) {
                 $query->where('payment_date', '>=', now()->subDays(30));
             })
@@ -408,14 +417,24 @@ class AccountingController extends Controller
         // rejetés/annulés qui restent exclus.
         $revenueStatuses = ['complet', 'partiel'];
 
+        // Même correctif que le reste du tableau de bord Comptabilité (voir index()) :
+        // un paiement d'une inscription rattachée à une année scolaire déjà clôturée ne
+        // doit pas gonfler la trésorerie "courante", même s'il tombe dans le même mois
+        // calendaire qu'un mois de l'année active.
+        $activeYear = SchoolYear::where('is_active', true)->first();
+        $scopedToActiveYear = fn ($query) => $query->when(
+            $activeYear,
+            fn ($query) => $query->whereHas('registration', fn ($q) => $q->where('school_year_id', $activeYear->id))
+        );
+
         // Entrées du mois courant
-        $monthlyInflow = Payment::whereIn('status', $revenueStatuses)->notCancelled()
+        $monthlyInflow = $scopedToActiveYear(Payment::whereIn('status', $revenueStatuses)->notCancelled())
             ->whereMonth('payment_date', now()->month)
             ->whereYear('payment_date', now()->year)
             ->sum('amount');
 
         // Entrées du mois précédent
-        $previousMonthInflow = Payment::whereIn('status', $revenueStatuses)->notCancelled()
+        $previousMonthInflow = $scopedToActiveYear(Payment::whereIn('status', $revenueStatuses)->notCancelled())
             ->whereMonth('payment_date', now()->subMonth()->month)
             ->whereYear('payment_date', now()->subMonth()->year)
             ->sum('amount');
@@ -426,7 +445,7 @@ class AccountingController extends Controller
             $date = now()->subMonths($i);
             $monthlyEvolution[] = [
                 'month' => $date->format('M Y'),
-                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
+                'amount' => $scopedToActiveYear(Payment::whereIn('status', $revenueStatuses)->notCancelled())
                     ->whereMonth('payment_date', $date->month)
                     ->whereYear('payment_date', $date->year)
                     ->sum('amount'),
@@ -439,7 +458,7 @@ class AccountingController extends Controller
             $date = now()->setDay($i);
             $dailyCashFlow[] = [
                 'date' => $date->format('d/m'),
-                'amount' => Payment::whereIn('status', $revenueStatuses)->notCancelled()
+                'amount' => $scopedToActiveYear(Payment::whereIn('status', $revenueStatuses)->notCancelled())
                     ->whereDate('payment_date', $date)
                     ->sum('amount'),
             ];

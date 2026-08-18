@@ -427,6 +427,124 @@ test('the monthly revenue chart spans the active school year date range, not a f
     expect((float) $juneEntry['amount'])->toBe(20000.0);
 });
 
+test('the accounting alerts page only reflects the active school year, not stale years', function () {
+    // Même défaut que celui déjà corrigé sur le tableau de bord (studentsWithDebt,
+    // total_revenue...) : une page "à traiter maintenant" ne doit rien montrer d'une
+    // année scolaire déjà clôturée, même si le statut Registration::status n'a pas
+    // été mis à jour.
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    [, , , $registration] = createAccountingFixture();
+
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 10000,
+        'status' => 'partiel',
+        'remaining_balance' => 5000,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $oldYear = SchoolYear::create(['year_string' => '2024-2025', 'is_active' => false, 'status' => 'closed']);
+    $oldClassroom = Classroom::create(['name' => 'CE2 A', 'school_year_id' => $oldYear->id, 'cycle' => 'primaire']);
+    $oldStudent = User::factory()->create(['role' => 'eleve']);
+    $oldRegistration = Registration::create([
+        'user_id' => $oldStudent->id,
+        'classroom_id' => $oldClassroom->id,
+        'school_year_id' => $oldYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->subYear()->toDateString(),
+        'academic_year' => '2024-2025',
+        'matricule' => 'EDU-25-000305',
+        'status' => 'active',
+    ]);
+    Payment::create([
+        'registration_id' => $oldRegistration->id,
+        'amount' => 10000,
+        'status' => 'partiel',
+        'remaining_balance' => 5000,
+        'month' => 'Octobre',
+        'payment_date' => now()->subYear(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+    $oldInvoice = \App\Models\Invoice::create([
+        'registration_id' => $oldRegistration->id,
+        'invoice_number' => 'FAC-OLD-0001',
+        'total_amount' => 15000,
+        'remaining_balance' => 15000,
+        'due_date' => now()->subYear(),
+        'status' => 'overdue',
+        'issued_at' => now()->subYear(),
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('accounting.alerts'));
+    $response->assertOk();
+
+    $studentsWithPartialPayments = $response->viewData('studentsWithPartialPayments');
+    $overdueInvoices = $response->viewData('overdueInvoices');
+
+    expect($studentsWithPartialPayments->pluck('student.id'))->toContain($registration->user_id);
+    expect($studentsWithPartialPayments->pluck('student.id'))->not->toContain($oldStudent->id);
+    expect($overdueInvoices->pluck('id'))->not->toContain($oldInvoice->id);
+});
+
+test('cash flow monthly inflow excludes a same-calendar-month payment made under a closed school year', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    [, , , $registration] = createAccountingFixture();
+
+    Payment::create([
+        'registration_id' => $registration->id,
+        'amount' => 15000,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $oldYear = SchoolYear::create(['year_string' => '2024-2025', 'is_active' => false, 'status' => 'closed']);
+    $oldClassroom = Classroom::create(['name' => 'CE2 A', 'school_year_id' => $oldYear->id, 'cycle' => 'primaire']);
+    $oldStudent = User::factory()->create(['role' => 'eleve']);
+    $oldRegistration = Registration::create([
+        'user_id' => $oldStudent->id,
+        'classroom_id' => $oldClassroom->id,
+        'school_year_id' => $oldYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2024-2025',
+        'matricule' => 'EDU-25-000306',
+        'status' => 'active',
+    ]);
+    Payment::create([
+        'registration_id' => $oldRegistration->id,
+        'amount' => 99999,
+        'status' => 'complet',
+        'remaining_balance' => 0,
+        'month' => 'Octobre',
+        'payment_date' => now(),
+        'payment_method' => 'espèces',
+        'payment_type' => 'mensualité',
+        'validated_by' => $manager->id,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('accounting.cash-flow'));
+    $response->assertOk();
+
+    expect((float) $response->viewData('monthlyInflow'))->toBe(15000.0);
+});
+
 test('parent dashboard remaining balance is not the naive sum of remaining_balance across payments', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
