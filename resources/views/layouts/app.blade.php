@@ -44,7 +44,7 @@
              quand la navigation aboutit ailleurs que prévu (ex. redirection forcée). --}}
         <div
             x-data="{ toasts: [] }"
-            x-on:push-toast.window="toasts.push($event.detail); setTimeout(() => toasts = toasts.filter(t => t.id !== $event.detail.id), 4000)"
+            x-on:push-toast.window="toasts.push($event.detail); if (! $event.detail.persistent) { setTimeout(() => toasts = toasts.filter(t => t.id !== $event.detail.id), 4000) }"
             class="fixed top-4 right-4 z-[70] flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0"
         >
             <template x-for="toast in toasts" :key="toast.id">
@@ -64,7 +64,7 @@
                         'bg-sky-50 text-sky-800 ring-1 ring-sky-200 dark:bg-sky-900/80 dark:text-sky-100 dark:ring-sky-700': toast.type === 'info',
                     }"
                 >
-                    <span x-text="toast.message" class="flex-1"></span>
+                    <div class="flex-1 whitespace-pre-line" x-text="toast.message"></div>
                     <button type="button" @click="toasts = toasts.filter(x => x.id !== toast.id)" class="opacity-60 hover:opacity-100">&times;</button>
                 </div>
             </template>
@@ -97,6 +97,26 @@
                 @if(session('info'))
                     window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 3, type: 'info', message: @json(session('info')) } }));
                 @endif
+                {{--
+                    temp_password/temp_credentials : un mot de passe temporaire doit rester
+                    visible jusqu'à fermeture manuelle (persistent: true, pas d'auto-disparition
+                    à 4s comme les autres toasts) — l'utilisateur doit avoir le temps de le noter.
+                    Passait auparavant par une bannière HTML statique (@if(session(...))) rendue
+                    en dehors de <main> : invisible après une navigation PJAX, qui ne re-rend que
+                    <main>, contrairement à ce <script>, réexécuté à chaque navigation PJAX (voir
+                    resources/js/pjax.js:executePageScripts) — d'où le mot de passe jamais
+                    affiché en pratique malgré le message "notez-le avant de quitter la page".
+                --}}
+                @if(session('temp_password'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 4, type: 'warning', persistent: true, message: @json('Mot de passe temporaire : '.session('temp_password')."\nNotez-le avant de quitter cette page.") } }));
+                @endif
+                @if(session('temp_credentials'))
+                    window.dispatchEvent(new CustomEvent('push-toast', { detail: { id: Date.now() + 5, type: 'warning', persistent: true, message: @json(
+                        'Mot de passe temporaire élève : '.session('temp_credentials')['student_password']
+                        .(session('temp_credentials')['parent_password'] ? "\nMot de passe temporaire parent (".session('temp_credentials')['parent_matricule'].') : '.session('temp_credentials')['parent_password'] : '')
+                        ."\nNotez-les avant de quitter cette page."
+                    ) } }));
+                @endif
             });
         </script>
 
@@ -127,33 +147,6 @@
                 </div>
             </div>
         </div>
-
-        @if (session('temp_password'))
-            <div class="fixed top-16 inset-x-0 z-[60] px-4 py-3 bg-amber-50 dark:bg-amber-900/80 border-b border-amber-200 dark:border-amber-700">
-                <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-                    <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
-                        <span class="font-bold">Mot de passe temporaire :</span> {{ session('temp_password') }}
-                    </p>
-                    <span class="text-xs text-amber-700 dark:text-amber-200">Notez-le avant de quitter cette page.</span>
-                </div>
-            </div>
-        @endif
-
-        @if (session('temp_credentials'))
-            <div class="fixed top-16 inset-x-0 z-[60] px-4 py-3 bg-amber-50 dark:bg-amber-900/80 border-b border-amber-200 dark:border-amber-700">
-                <div class="max-w-7xl mx-auto space-y-1">
-                    <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
-                        <span class="font-bold">Mot de passe temporaire élève :</span> {{ session('temp_credentials')['student_password'] }}
-                    </p>
-                    @if (session('temp_credentials')['parent_password'])
-                        <p class="text-sm font-medium text-amber-800 dark:text-amber-100">
-                            <span class="font-bold">Mot de passe temporaire parent ({{ session('temp_credentials')['parent_matricule'] }}) :</span> {{ session('temp_credentials')['parent_password'] }}
-                        </p>
-                    @endif
-                    <p class="text-xs text-amber-700 dark:text-amber-200">Notez-les avant de quitter cette page.</p>
-                </div>
-            </div>
-        @endif
 
         @stack('scripts')
     </body>
