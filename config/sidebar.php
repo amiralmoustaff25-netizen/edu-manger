@@ -33,6 +33,11 @@ return [
             // avec la bonne permission voie le groupe sans devoir s'appeler admin/surveillant
             // (correctif RBAC validé le 2026-08-09 — un 'roles' codé en dur, même élargi,
             // reste fragile face à tout futur rôle métier personnalisé).
+            // exclude_roles : gestion des inscriptions/promotions/dossiers élèves = travail
+            // administratif, pas celui d'un professeur — même si un compte professeur se
+            // retrouve un jour avec une permission de ce groupe (ex. voir-eleves accordée
+            // individuellement), ce groupe ne doit jamais lui apparaître.
+            'exclude_roles' => ['professeur'],
             'active_routes' => ['students.*', 'registrations.*', 'parents.*', 'classrooms.*', 'teachers.*', 'promotion.*'],
             'children' => [
                 ['label' => 'Élèves', 'route' => 'students.index', 'permission' => 'voir-eleves'],
@@ -169,6 +174,28 @@ return [
             ],
         ],
         [
+            // Tableau de bord du professeur remonté en entrée de premier niveau (même
+            // traitement que "Tableau de bord" + "Vue d'ensemble" pour l'admin) plutôt que
+            // simple 1er lien noyé dans "Espace Professeur" ci-dessous.
+            'label' => 'Tableau de bord',
+            'route' => 'professeur.dashboard',
+            'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+            'roles' => ['professeur'],
+            'active_routes' => ['professeur.dashboard'],
+        ],
+        [
+            // Le rôle professeur a la permission 'voir-notifications' (RoleAndPermissionSeeder)
+            // mais aucune entrée de menu ne pointait vers notifications.index pour lui — les
+            // deux entrées existantes du même nom sont chacune restreintes à roles=>['eleve']
+            // et roles=>['parent'].
+            'label' => 'Notifications',
+            'route' => 'notifications.index',
+            'icon' => 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+            'permission' => 'voir-notifications',
+            'roles' => ['professeur'],
+            'active_routes' => ['notifications.*'],
+        ],
+        [
             // heading => true : section toujours dépliée, pas d'accordéon à ouvrir — un
             // professeur n'a qu'un seul espace de travail, autant que tout soit visible
             // d'un coup (même mécanisme déjà utilisé pour "Espace Comptabilité" du rôle
@@ -181,7 +208,6 @@ return [
             'heading' => true,
             'active_routes' => ['professeur.*', 'programs.*', 'cahier-textes.*'],
             'children' => [
-                ['label' => 'Tableau de bord', 'route' => 'professeur.dashboard'],
                 ['label' => 'Mes Classes', 'route' => 'professeur.classes.index'],
                 ['label' => 'Saisie Notes', 'route' => 'professeur.notes.index'],
                 ['label' => 'Saisie Notes par Matricule', 'route' => 'professeur.notes.eleve'],
