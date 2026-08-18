@@ -86,9 +86,13 @@ return [
             // Pas de 'roles' ici : voir commentaire du groupe 'École'.
             'active_routes' => ['users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
             'children' => [
+                // Professeurs et Parents & Tuteurs : intégrés à "Utilisateurs" (filtre par
+                // rôle + action "Voir le dossier" par ligne) au lieu de pages de menu
+                // séparées — ce sont tous des utilisateurs. Les pages teachers.index/
+                // parents.index restent fonctionnelles (tableaux spécialisés : heures pour
+                // les professeurs, nombre d'enfants pour les parents) mais ne sont plus
+                // dans la navigation principale.
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
-                ['label' => 'Professeurs', 'route' => 'teachers.index', 'permission' => 'voir-professeurs'],
-                ['label' => 'Parents & Tuteurs', 'route' => 'parents.index', 'permission' => 'voir-parents'],
                 ['label' => 'Attribution des rôles', 'route' => 'users.roles.index', 'permission' => 'modifier-utilisateur'],
                 ['label' => 'Logs de connexion', 'route' => 'login-logs.index', 'permission' => 'voir-logs-connexion'],
                 ['label' => 'Nouvelle notification', 'route' => 'announcements.create', 'permission' => 'creer-notification'],

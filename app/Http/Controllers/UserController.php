@@ -29,7 +29,9 @@ class UserController extends Controller
             // withTrashed() : sans ça, le filtre "Archivés" ne peut structurellement
             // jamais rien retourner (même bug déjà corrigé pour le module Parents).
             ->withTrashed()
-            ->with(['creator', 'roles'])
+            // teacher/parentProfile : pour le lien "Voir le dossier" (fusion des anciennes
+            // pages Professeurs/Parents & Tuteurs dans Utilisateurs), sans requête N+1 par ligne.
+            ->with(['creator', 'roles', 'teacher', 'parentProfile'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->string('search')->toString();
 
