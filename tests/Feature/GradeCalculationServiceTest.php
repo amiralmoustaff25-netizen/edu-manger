@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
+use App\Models\SubjectConfiguration;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\GradeCalculationService;
@@ -97,6 +98,71 @@ test('the general average is correctly weighted across multiple graded subjects'
 
     // (10*2 + 15*3) / (2+3) = 65/5 = 13
     expect($bulletin['general_average'])->toBe(13.0);
+});
+
+test('a coefficient configured via "Configuration pédagogique" overrides the global Matiere coefficient', function () {
+    // L'écran "Matières & coefficients" (SubjectConfiguration) était jusqu'ici purement
+    // décoratif : GradeCalculationService lisait toujours Matiere::coefficient (global,
+    // non versionné), donc modifier un coefficient via cet écran n'avait aucun effet réel.
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 2]);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id,
+        'school_year_id' => $this->year->id,
+        'cycle' => null,
+        'classroom_id' => null,
+        'coefficient' => 5,
+        'is_active' => true,
+    ]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    expect($bulletin['subjects'][0]['coefficient'])->toBe(5.0);
+    expect($bulletin['total_coefficients'])->toBe(5.0);
+});
+
+test('a cycle-specific configured coefficient takes priority over the "all cycles" configured coefficient', function () {
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 2]);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id, 'school_year_id' => $this->year->id,
+        'cycle' => null, 'classroom_id' => null, 'coefficient' => 5, 'is_active' => true,
+    ]);
+    // La classe de test est en cycle "primaire" (voir beforeEach) : ce coefficient
+    // spécifique doit primer sur le coefficient "Tous les cycles" ci-dessus.
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id, 'school_year_id' => $this->year->id,
+        'cycle' => 'primaire', 'classroom_id' => null, 'coefficient' => 4, 'is_active' => true,
+    ]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    expect($bulletin['subjects'][0]['coefficient'])->toBe(4.0);
+});
+
+test('an inactive configured coefficient is ignored, falling back to the global Matiere coefficient', function () {
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 2]);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id, 'school_year_id' => $this->year->id,
+        'cycle' => null, 'classroom_id' => null, 'coefficient' => 5, 'is_active' => false,
+    ]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    expect($bulletin['subjects'][0]['coefficient'])->toBe(2.0);
 });
 
 test('the class rank is consistent with the general average shown on the bulletin', function () {

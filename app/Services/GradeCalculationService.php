@@ -6,6 +6,7 @@ use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\PedagogicalAssignment;
+use App\Models\SubjectConfiguration;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -64,7 +65,7 @@ class GradeCalculationService
                 ->where('periode', $period)
                 ->get();
 
-            $coefficient = (float) ($matiere->coefficient ?? 1.0);
+            $coefficient = $this->resolveCoefficient($matiere, $classroom, $schoolYearId);
             $hasNotes = $notes->isNotEmpty();
             $average = $hasNotes ? round($notes->avg('valeur'), 2) : 0.0;
             $weightedAverage = $hasNotes ? round($average * $coefficient, 2) : 0.0;
@@ -91,6 +92,35 @@ class GradeCalculationService
             'general_average' => $generalAverage,
             'total_coefficients' => $totalCoefficients,
         ];
+    }
+
+    /**
+     * Coefficient réellement applicable pour une matière/classe/année : l'écran
+     * "Configuration pédagogique" > Matières & coefficients (SubjectConfiguration)
+     * est la source de vérité quand un coefficient y a été configuré pour l'année
+     * scolaire de l'élève — priorité au coefficient spécifique au cycle de la classe,
+     * puis au coefficient "Tous les cycles" (cycle = null) de cette même année.
+     * Repli sur Matiere::coefficient (champ global, non versionné) si rien n'est
+     * configuré pour cette année — comportement historique conservé pour ne pas
+     * casser les bulletins d'années sans configuration dédiée.
+     */
+    private function resolveCoefficient(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
+    {
+        if ($schoolYearId) {
+            $configurations = SubjectConfiguration::where('matiere_id', $matiere->id)
+                ->where('school_year_id', $schoolYearId)
+                ->where('is_active', true)
+                ->get();
+
+            $match = $configurations->firstWhere('cycle', $classroom->cycle)
+                ?? $configurations->firstWhere('cycle', null);
+
+            if ($match) {
+                return (float) $match->coefficient;
+            }
+        }
+
+        return (float) ($matiere->coefficient ?? 1.0);
     }
 
     /**
