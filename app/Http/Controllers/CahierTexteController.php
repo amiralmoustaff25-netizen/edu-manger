@@ -27,6 +27,20 @@ class CahierTexteController extends Controller
             return redirect()->route('cahier-textes.select');
         }
 
+        // Un professeur ne doit consulter que le cahier de texte d'une classe/matière
+        // qui lui est réellement affectée (même contrôle que toggle/bulkToggle/
+        // markLessonDone ci-dessous) — sans ceci, il pouvait lire n'importe quelle
+        // classe en changeant classroom_id/subject_id dans l'URL.
+        if (! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+            $hasAssignment = \App\Models\PedagogicalAssignment::where('classroom_id', $request->classroom_id)
+                ->where('matiere_id', $request->subject_id)
+                ->where('is_active', true)
+                ->whereHas('teacher', fn ($q) => $q->where('user_id', auth()->id()))
+                ->exists();
+
+            abort_unless($hasAssignment, 403);
+        }
+
         $program = ProgramAnnual::query()
             ->where('classroom_id', $request->classroom_id)
             ->where('subject_id', $request->subject_id)
