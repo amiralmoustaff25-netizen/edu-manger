@@ -3,6 +3,7 @@
 use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Registration;
+use App\Models\Reminder;
 use App\Models\SchoolYear;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
@@ -111,6 +112,110 @@ test('a parent cannot see or use the staff-only edit/transfer/status controls on
         ->patchJson(route('students.status', $child), [
             'registration_id' => $registration->id, 'status' => 'suspendu',
         ])->assertForbidden();
+});
+
+test('a parent sees a pending payment reminder for their own child on the dashboard', function () {
+    // Les rappels générés par ReminderService (retard/échéance) n'étaient jusqu'ici
+    // visibles que sur la page interne "Rappels" (super-admin/manager-comptable) :
+    // aucun canal d'envoi réel (email/SMS) n'existe, le parent concerné ne les voyait
+    // donc jamais. Le tableau de bord parent est désormais ce canal.
+    [$parentUser, , $child] = createParentPortalFixture();
+
+    $year = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $year->id, 'cycle' => 'primaire']);
+    $registration = Registration::create([
+        'user_id' => $child->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $year->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-TEST-002',
+        'status' => 'active',
+    ]);
+
+    Reminder::create([
+        'registration_id' => $registration->id,
+        'type' => 'overdue',
+        'message' => 'Votre paiement pour le mois de Octobre est en retard.',
+        'scheduled_at' => now()->subDay(),
+        'status' => 'pending',
+        'channel' => 'email',
+    ]);
+
+    $response = $this->actingAs($parentUser)->get(route('parents.dashboard'));
+
+    $response->assertOk()
+        ->assertSee('Votre paiement pour le mois de Octobre est en retard.')
+        ->assertSee($child->name);
+});
+
+test('a parent hitting the generic dashboard route also sees their pending payment reminders', function () {
+    // DashboardController::parentDashboard() rend la même vue (parents.dashboard) que
+    // ParentPortalController::dashboard() par un chemin différent (route "dashboard",
+    // celle que tout utilisateur authentifié atteint en premier) : les deux doivent
+    // fournir $reminders, sinon ce chemin plante en 500 (régression réelle rencontrée
+    // en vérifiant ce correctif manuellement).
+    [$parentUser, , $child] = createParentPortalFixture();
+
+    $year = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $year->id, 'cycle' => 'primaire']);
+    $registration = Registration::create([
+        'user_id' => $child->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $year->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-TEST-004',
+        'status' => 'active',
+    ]);
+
+    Reminder::create([
+        'registration_id' => $registration->id,
+        'type' => 'payment_due',
+        'message' => 'Rappel: le paiement pour le mois de Novembre est dû prochainement.',
+        'scheduled_at' => now()->subHour(),
+        'status' => 'pending',
+        'channel' => 'email',
+    ]);
+
+    $response = $this->actingAs($parentUser)->get(route('dashboard'));
+
+    $response->assertOk()->assertSee('Rappel: le paiement pour le mois de Novembre est dû prochainement.');
+});
+
+test('a parent does not see a payment reminder for a child that is not theirs', function () {
+    [$parentUser, , , $otherChild] = createParentPortalFixture();
+
+    $year = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $year->id, 'cycle' => 'primaire']);
+    $otherRegistration = Registration::create([
+        'user_id' => $otherChild->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $year->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-TEST-003',
+        'status' => 'active',
+    ]);
+
+    Reminder::create([
+        'registration_id' => $otherRegistration->id,
+        'type' => 'overdue',
+        'message' => 'Message confidentiel pour un autre parent.',
+        'scheduled_at' => now()->subDay(),
+        'status' => 'pending',
+        'channel' => 'email',
+    ]);
+
+    $response = $this->actingAs($parentUser)->get(route('parents.dashboard'));
+
+    $response->assertOk()->assertDontSee('Message confidentiel pour un autre parent.');
 });
 
 test('the admin parents resource still works and is not shadowed by the parent portal routes', function () {

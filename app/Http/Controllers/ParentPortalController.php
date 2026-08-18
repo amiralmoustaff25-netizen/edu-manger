@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Matiere;
+use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,19 @@ class ParentPortalController extends Controller
 
         $parent->setRelation('students', $parent->students->loadCount('notes', 'attendances'));
 
-        return view('parents.dashboard', compact('parent'));
+        // Rappels de paiement des enfants de ce parent : les rappels générés
+        // (ReminderService) n'étaient jusqu'ici visibles que via la page "Rappels"
+        // interne (super-admin/manager-comptable), jamais transmis au parent
+        // concerné — aucun canal d'envoi réel (email/SMS) n'est en place, seul
+        // ce tableau de bord les rend effectivement visibles au bon destinataire.
+        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
+        $reminders = Reminder::pending()
+            ->whereIn('registration_id', $registrationIds)
+            ->with('registration.user')
+            ->orderBy('scheduled_at')
+            ->get();
+
+        return view('parents.dashboard', compact('parent', 'reminders'));
     }
 
     public function childrenIndex(Request $request)

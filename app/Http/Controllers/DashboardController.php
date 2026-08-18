@@ -6,6 +6,7 @@ use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
+use App\Models\Reminder;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
@@ -50,7 +51,17 @@ class DashboardController extends Controller
             }])
             ->firstOrFail();
 
-        return view('parents.dashboard', compact('parent'));
+        // parents.dashboard est aussi rendue par ParentPortalController::dashboard()
+        // (route parents.dashboard, celle utilisée par le menu) : les deux chemins
+        // doivent fournir les mêmes variables à la vue, ici $reminders.
+        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
+        $reminders = Reminder::pending()
+            ->whereIn('registration_id', $registrationIds)
+            ->with('registration.user')
+            ->orderBy('scheduled_at')
+            ->get();
+
+        return view('parents.dashboard', compact('parent', 'reminders'));
     }
 
     private function staffDashboard(): View
