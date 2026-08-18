@@ -34,7 +34,7 @@
 
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirmez votre mot de passe</label>
-                        <input id="password" name="password" type="password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <x-password-input id="password" name="password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">

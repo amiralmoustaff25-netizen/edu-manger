@@ -16,8 +16,7 @@
         <div class="mt-4">
             <x-input-label for="password" value="Mot de passe" />
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
+            <x-password-input id="password" class="block mt-1 w-full border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-md shadow-sm"
                             name="password"
                             required autocomplete="current-password" />
 

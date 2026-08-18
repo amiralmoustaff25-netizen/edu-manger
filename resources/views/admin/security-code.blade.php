@@ -34,8 +34,8 @@
                         <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Mot de passe actuel (vérification d'identité)
                         </label>
-                        <input type="password" name="current_password" id="current_password" required autocomplete="current-password"
-                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <x-password-input name="current_password" id="current_password" required autocomplete="current-password"
+                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         @error('current_password')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -45,8 +45,8 @@
                         <label for="security_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {{ $hasCode ? 'Nouveau code de sécurité' : 'Code de sécurité' }}
                         </label>
-                        <input type="password" name="security_code" id="security_code" required minlength="6" autocomplete="off"
-                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <x-password-input name="security_code" id="security_code" required minlength="6" autocomplete="off"
+                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         @error('security_code')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
@@ -56,8 +56,8 @@
                         <label for="security_code_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Confirmer le code
                         </label>
-                        <input type="password" name="security_code_confirmation" id="security_code_confirmation" required minlength="6" autocomplete="off"
-                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <x-password-input name="security_code_confirmation" id="security_code_confirmation" required minlength="6" autocomplete="off"
+                               class="w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
                     </div>
 
                     <div class="pt-2">
