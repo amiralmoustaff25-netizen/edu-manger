@@ -39,6 +39,86 @@ test('first payment activates a pending registration and inactive student accoun
     expect($student->refresh()->is_active)->toBeTrue();
 });
 
+test('an overpayment with change given records only the amount actually kept as revenue, not the amount tendered', function () {
+    // Mode "change" (rendre la monnaie), le défaut de config('edu.overpayment_mode') :
+    // si le payeur tend 20000 pour une mensualité de 15000, l'établissement ne garde
+    // que 15000 — les 5000 rendus ne doivent jamais compter comme revenu encaissé.
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    $schoolYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $schoolYear->id, 'cycle' => 'primaire']);
+    $student = User::factory()->create(['role' => 'eleve']);
+    $registration = Registration::create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $schoolYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-26-000160',
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($manager)
+        ->post('/payments', [
+            'registration_id' => $registration->id,
+            'amount_paid' => 20000,
+            'month' => 'Octobre',
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'espèces',
+        ]);
+
+    $response->assertRedirect();
+
+    $payment = Payment::first();
+    expect((float) $payment->amount)->toBe(15000.0);
+    expect((float) $payment->remaining_balance)->toBe(0.0);
+    expect($payment->status)->toBe('complet');
+    expect($payment->comment)->toContain('Monnaie rendue');
+    expect($payment->comment)->toContain('5,000.00');
+});
+
+test('an overpayment credited to the student keeps the full amount tendered as revenue', function () {
+    // Mode "credit" : le surplus reste la propriété de l'établissement (crédité à
+    // l'élève pour un usage futur), donc le montant total reçu est bien conservé.
+    config(['edu.overpayment_mode' => 'credit']);
+
+    $manager = User::factory()->create();
+    $manager->assignRole('manager-comptable');
+
+    $schoolYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => true]);
+    $classroom = Classroom::create(['name' => 'CM1 A', 'school_year_id' => $schoolYear->id, 'cycle' => 'primaire']);
+    $student = User::factory()->create(['role' => 'eleve']);
+    $registration = Registration::create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'school_year_id' => $schoolYear->id,
+        'monthly_fee' => 15000,
+        'registration_fee_paid' => 0,
+        'registration_date' => now()->toDateString(),
+        'academic_year' => '2025-2026',
+        'matricule' => 'EDU-26-000161',
+        'status' => 'active',
+    ]);
+
+    $response = $this->actingAs($manager)
+        ->post('/payments', [
+            'registration_id' => $registration->id,
+            'amount_paid' => 20000,
+            'month' => 'Octobre',
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'espèces',
+        ]);
+
+    $response->assertRedirect();
+
+    $payment = Payment::first();
+    expect((float) $payment->amount)->toBe(20000.0);
+    expect(\App\Models\Credit::where('payment_id', $payment->id)->sum('amount'))->toEqual(5000);
+});
+
 test('a user without valider-paiement-partiel can still register a partial payment, pending validation', function () {
     // Un comptable peut avoir 'valider-paiement-partiel' révoqué individuellement (cf.
     // RoleAssignmentController), tout en gardant 'enregistrer-paiement'. Un paiement partiel

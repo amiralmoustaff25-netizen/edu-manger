@@ -215,9 +215,21 @@ class PaymentController extends Controller
             $remainingBalance = max(0, $totalExpected - $amountPaid);
             $canValidatePartial = Gate::allows('validatePartial');
 
+            // En mode "change" (rendre la monnaie, mode par défaut), la monnaie rendue
+            // n'est jamais un revenu réel de l'établissement : le montant enregistré sur
+            // le paiement (celui qui alimente ensuite tous les totaux financiers) doit
+            // donc être plafonné à ce qui est réellement dû, pas à la somme tendue par le
+            // payeur. En mode "credit", le surplus reste en revanche la propriété de
+            // l'établissement (crédité à l'élève pour un usage futur) : le montant total
+            // reçu est bien conservé tel quel.
+            $surplus = max(0, $amountPaid - $totalExpected);
+            $recordedAmount = ($surplus > 0 && config('edu.overpayment_mode', 'change') !== 'credit')
+                ? $totalExpected
+                : $amountPaid;
+
             $payment = Payment::create([
                 'registration_id' => $registration->id,
-                'amount' => $amountPaid,
+                'amount' => $recordedAmount,
                 'status' => $isPartial ? 'partiel' : 'complet',
                 'remaining_balance' => $remainingBalance,
                 'month' => $this->getPaymentMonth($allocatedItems, $validated['month'] ?? null),
@@ -231,8 +243,7 @@ class PaymentController extends Controller
 
             $paymentService->applyPaymentToInvoices($payment, $registration, min($amountPaid, $totalExpected));
 
-            if ($amountPaid > $totalExpected) {
-                $surplus = $amountPaid - $totalExpected;
+            if ($surplus > 0) {
                 if (config('edu.overpayment_mode', 'change') === 'credit') {
                     $paymentService->recordSurplusCredit($payment, $surplus);
                 } else {
