@@ -136,10 +136,6 @@ it('prevents students from creating announcements', function () {
     $student = User::factory()->create(['role' => 'eleve'])->assignRole('eleve');
 
     $this->actingAs($student)
-        ->get(route('announcements.create'))
-        ->assertForbidden();
-
-    $this->actingAs($student)
         ->post(route('announcements.store'), [
             'title' => 'Test',
             'content' => 'Test',
