@@ -28,5 +28,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(AddSecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Une session expirée (ex. déconnexion après inactivité, token CSRF
+        // désormais périmé) ne doit pas afficher la page d'erreur 419 brute :
+        // l'utilisateur doit simplement retomber sur la page de connexion.
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Session expirée, veuillez vous reconnecter.'], 419);
+            }
+
+            return redirect()->route('login')->with('status', 'Votre session a expiré. Veuillez vous reconnecter.');
+        });
     })->create();
