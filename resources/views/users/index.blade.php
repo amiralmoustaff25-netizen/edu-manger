@@ -3,11 +3,26 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">Gestion des utilisateurs</h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comptes, rôles, accès et cycle de vie.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comptes, rôles, accès et cycle de vie — professeurs et parents/tuteurs y compris (filtrer par rôle ci-dessous).</p>
             </div>
-            <a href="{{ route('users.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-                Ajouter un utilisateur
-            </a>
+            <div class="flex flex-wrap gap-2">
+                {{-- Professeur/parent exigent des champs dédiés (RIB, matières, enfants...) que
+                     ce formulaire générique ne capture pas : le formulaire spécialisé reste
+                     nécessaire, mais accessible ici plutôt que via une page de menu séparée. --}}
+                @can('create', \App\Models\Teacher::class)
+                    <a href="{{ route('teachers.create') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                        Ajouter un professeur
+                    </a>
+                @endcan
+                @can('creer-parent')
+                    <a href="{{ route('parents.create') }}" class="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                        Ajouter un parent/tuteur
+                    </a>
+                @endcan
+                <a href="{{ route('users.create') }}" class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                    Ajouter un utilisateur
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -108,6 +123,16 @@
                                                     @endif
                                                 @endcan
                                             @else
+                                                @if($user->teacher)
+                                                    @can('view', $user->teacher)
+                                                        <a href="{{ route('teachers.show', $user->teacher) }}" class="rounded-md border border-sky-200 dark:border-sky-700 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30">Voir le dossier</a>
+                                                    @endcan
+                                                @elseif($user->parentProfile)
+                                                    @can('voir-detail-parent', $user->parentProfile)
+                                                        <a href="{{ route('parents.show', $user->parentProfile) }}" class="rounded-md border border-sky-200 dark:border-sky-700 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/30">Voir le dossier</a>
+                                                    @endcan
+                                                @endif
+
                                                 @can('modifier-utilisateur', $user)
                                                     @if($canTargetSuperAdmin)
                                                         <a href="{{ route('users.edit', $user) }}" class="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700">Modifier</a>
