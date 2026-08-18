@@ -9,6 +9,17 @@ return [
             'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
             'permission' => 'voir-dashboard',
         ],
+        [
+            // Sitemap complet de tous les modules accessibles (AdminController::index), pas
+            // un doublon du Tableau de bord (KPIs) : déplacé hors du groupe Administration
+            // (où il était noyé comme simple 1er sous-item) pour rester visible juste après
+            // le Tableau de bord.
+            'label' => 'Vue d\'ensemble',
+            'route' => 'admin.dashboard',
+            'icon' => 'M4 6a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V6zM14 6a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V6zM4 16a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 16a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z',
+            'roles' => ['super-admin', 'admin'],
+            'active_routes' => ['admin.dashboard'],
+        ],
         // --- Regroupement simplifié (5 macro-groupes) pour Super-Admin / Admin ---
         [
             'label' => 'École',
@@ -72,13 +83,9 @@ return [
         [
             'label' => 'Administration',
             'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
-            // Pas de 'roles' ici : voir commentaire du groupe 'École'. 'Vue d'ensemble'
-            // ci-dessous porte son propre verrou de rôle car sa route (admin.dashboard)
-            // est protégée côté serveur par rôle (middleware role:super-admin|admin),
-            // pas par permission — le menu doit rester cohérent avec ça.
-            'active_routes' => ['admin.dashboard', 'users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
+            // Pas de 'roles' ici : voir commentaire du groupe 'École'.
+            'active_routes' => ['users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
             'children' => [
-                ['label' => 'Vue d\'ensemble', 'route' => 'admin.dashboard', 'roles' => ['super-admin', 'admin']],
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
                 ['label' => 'Professeurs', 'route' => 'teachers.index', 'permission' => 'voir-professeurs'],
                 ['label' => 'Parents & Tuteurs', 'route' => 'parents.index', 'permission' => 'voir-parents'],
