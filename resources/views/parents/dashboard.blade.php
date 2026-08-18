@@ -30,6 +30,39 @@
 
             <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-200 dark:border-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Rappels de paiement</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Échéances et retards de paiement pour vos enfants.</p>
+                </div>
+                <div class="divide-y divide-gray-200 dark:divide-slate-700">
+                    @forelse($reminders as $reminder)
+                        <div class="px-6 py-4 sm:flex sm:items-start sm:justify-between gap-4">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ $reminder->registration->user->name ?? 'Élève' }}
+                                </p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $reminder->message }}</p>
+                            </div>
+                            <div class="mt-2 sm:mt-0 flex items-center gap-2 shrink-0">
+                                <span @class([
+                                    'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
+                                    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' => $reminder->type === 'overdue',
+                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' => $reminder->type !== 'overdue',
+                                ])>
+                                    {{ $reminder->type === 'overdue' ? 'Retard' : 'À venir' }}
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $reminder->scheduled_at->format('d/m/Y') }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                            Aucun rappel de paiement en attente.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-slate-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes enfants</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Accédez rapidement à la fiche et aux informations de chaque enfant.</p>
                 </div>
