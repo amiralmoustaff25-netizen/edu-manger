@@ -84,7 +84,7 @@ return [
             'label' => 'Administration',
             'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
             // Pas de 'roles' ici : voir commentaire du groupe 'École'.
-            'active_routes' => ['users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'announcements.*', 'school-years.*'],
+            'active_routes' => ['users.*', 'teachers.*', 'parents.*', 'login-logs.*', 'audit-logs.*', 'announcements.*', 'school-years.*'],
             'children' => [
                 // Professeurs et Parents & Tuteurs : intégrés à "Utilisateurs" (filtre par
                 // rôle + action "Voir le dossier" par ligne) au lieu de pages de menu
@@ -94,9 +94,13 @@ return [
                 // dans la navigation principale.
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
                 ['label' => 'Attribution des rôles', 'route' => 'users.roles.index', 'permission' => 'modifier-utilisateur'],
-                ['label' => 'Logs de connexion', 'route' => 'login-logs.index', 'permission' => 'voir-logs-connexion'],
                 ['label' => 'Nouvelle notification', 'route' => 'announcements.create', 'permission' => 'creer-notification'],
                 ['label' => 'Historique notifications', 'route' => 'announcements.index', 'permission' => 'voir-historique-notifications'],
+                // "Logs de connexion" (tentatives d'authentification) remplacée dans le menu
+                // par "Audit" (actions métier : créations/modifications/suppressions), plus
+                // utile au quotidien — la page login-logs.index reste fonctionnelle (route
+                // conservée) mais n'a plus d'entrée de menu dédiée.
+                ['label' => 'Audit', 'route' => 'audit-logs.index', 'permission' => 'voir-journal-audit'],
                 ['label' => 'Années scolaires', 'route' => 'school-years.index', 'permission' => 'voir-annees-scolaires'],
             ],
         ],
