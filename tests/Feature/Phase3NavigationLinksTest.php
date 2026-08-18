@@ -13,23 +13,25 @@ beforeEach(function () {
 });
 
 test('a manager comptable sees a link to the pending payment validation workflow from the accounting dashboard', function () {
-    // Finding H1 : payments.validation existe, fonctionne, mais aucune vue n'y menait —
-    // les paiements partiels y restaient indéfiniment "en attente" sans que personne ne
-    // puisse jamais les valider via l'interface.
+    // Finding H1 : la fonctionnalité de validation existe, fonctionne, mais aucune vue n'y
+    // menait — les paiements partiels y restaient indéfiniment "en attente" sans que
+    // personne ne puisse jamais les valider via l'interface. Depuis la fusion de la page
+    // dédiée dans payments.index (bouton "Valider" par ligne), le lien du dashboard pointe
+    // désormais vers la liste des paiements filtrée sur les partiels.
     $manager = User::factory()->create();
     $manager->assignRole('manager-comptable');
 
     $response = actingAs($manager)->get(route('accounting.dashboard'));
 
-    $response->assertOk()->assertSee(route('payments.validation'), false);
+    $response->assertOk()->assertSee(route('payments.index', ['status' => 'partiel']), false);
 });
 
-test('the payment validation page is now reachable and lists a pending partial payment', function () {
+test('a pending partial payment can be validated directly from the payments list, without a dedicated page', function () {
     $manager = User::factory()->create();
     $manager->assignRole('manager-comptable');
 
     $registration = Registration::factory()->create();
-    Payment::create([
+    $payment = Payment::create([
         'registration_id' => $registration->id,
         'amount' => 5000,
         'status' => 'partiel',
@@ -38,10 +40,11 @@ test('the payment validation page is now reachable and lists a pending partial p
         'payment_date' => now(),
         'payment_method' => 'espèces',
         'payment_type' => 'mensualité',
-        'validated_by' => $manager->id,
     ]);
 
-    $response = actingAs($manager)->get(route('payments.validation'));
+    $response = actingAs($manager)->get(route('payments.index', ['status' => 'partiel']));
 
-    $response->assertOk()->assertSee($registration->user->name);
+    $response->assertOk()
+        ->assertSee($registration->user->name)
+        ->assertSee(route('payments.validate', $payment), false);
 });

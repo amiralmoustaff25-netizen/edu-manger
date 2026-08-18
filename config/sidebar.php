@@ -67,8 +67,9 @@ return [
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
                 ['label' => 'Vue financière', 'route' => 'accounting.dashboard', 'permission' => 'voir-comptabilite'],
+                // Valider paiements partiels : plus de page dédiée, bouton "Valider" directement
+                // sur les lignes concernées de "Paiements".
                 ['label' => 'Paiements', 'route' => 'payments.index', 'permission' => 'voir-paiements'],
-                ['label' => 'Valider paiements partiels', 'route' => 'payments.validation', 'permission' => 'valider-paiement-partiel'],
                 ['label' => 'Factures', 'route' => 'invoices.index', 'permission' => 'voir-factures'],
                 // voir-alertes-impayes, pas voir-recouvrement : c'est la permission réellement
                 // exigée par AccountingController::alerts(). Les deux sont accordées ensemble
@@ -132,7 +133,6 @@ return [
             'children' => [
                 ['label' => 'Dashboard', 'route' => 'accounting.dashboard', 'permission' => 'voir-comptabilite'],
                 ['label' => 'Paiements', 'route' => 'payments.index', 'permission' => 'voir-paiements'],
-                ['label' => 'Valider paiements partiels', 'route' => 'payments.validation', 'permission' => 'valider-paiement-partiel'],
                 ['label' => 'Factures', 'route' => 'invoices.index', 'permission' => 'voir-factures'],
                 ['label' => 'Types de Frais', 'route' => 'fee-types.index', 'permission' => 'voir-types-frais'],
                 ['label' => 'Frais par Classe', 'route' => 'classroom-fees.index', 'permission' => 'voir-frais-classe'],
@@ -151,7 +151,6 @@ return [
             'children' => [
                 ['label' => 'Dashboard', 'route' => 'accounting.dashboard'],
                 ['label' => 'Paiements', 'route' => 'payments.index'],
-                ['label' => 'Valider paiements partiels', 'route' => 'payments.validation'],
                 ['label' => 'Factures', 'route' => 'invoices.index'],
                 ['label' => 'Rappels', 'route' => 'reminders.index', 'roles' => ['manager-comptable']],
                 ['label' => 'Types de Frais', 'route' => 'fee-types.index'],

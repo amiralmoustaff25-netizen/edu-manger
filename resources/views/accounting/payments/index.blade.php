@@ -85,8 +85,21 @@
                                     <span class="font-semibold text-gray-900 dark:text-white">{{ number_format($payment->amount, 0, ',', ' ') }} FCFA</span>
                                     <span class="text-gray-500 dark:text-gray-400">{{ $payment->month }} · {{ $payment->payment_date->format('d/m/Y') }}</span>
                                 </div>
-                                <div class="mt-3 flex flex-wrap gap-3 text-sm">
+                                <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
                                     <a href="{{ route('payments.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">Voir</a>
+                                    @if($payment->status === 'partiel' && ! $payment->validated_at)
+                                        @can('validatePartial')
+                                            <form action="{{ route('payments.validate', $payment) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera validé et pourra modifier le solde de la facture associée.', confirmLabel: 'Valider' })">
+                                                @csrf
+                                                <button type="submit" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">Valider</button>
+                                            </form>
+                                            <form action="{{ route('payments.reject', $payment) }}" method="POST" class="inline-flex items-center gap-1" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
+                                                @csrf
+                                                <input type="text" name="reason" placeholder="Motif du rejet" aria-label="Motif du rejet" required class="w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-xs">
+                                                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Rejeter</button>
+                                            </form>
+                                        @endcan
+                                    @endif
                                     @unless($payment->isCancelled())
                                         <a href="{{ route('payments.edit', $payment) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">Modifier</a>
                                         @if($payment->isValidated())
@@ -156,13 +169,27 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             {{ $payment->payment_date->format('d/m/Y') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('payments.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-2">Voir</a>
+                                        <td class="px-6 py-4 text-right text-sm font-medium">
+                                            <div class="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                                            <a href="{{ route('payments.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 whitespace-nowrap">Voir</a>
+                                            @if($payment->status === 'partiel' && ! $payment->validated_at)
+                                                @can('validatePartial')
+                                                    <form action="{{ route('payments.validate', $payment) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Valider le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera validé et pourra modifier le solde de la facture associée.', confirmLabel: 'Valider' })">
+                                                        @csrf
+                                                        <button type="submit" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 whitespace-nowrap">Valider</button>
+                                                    </form>
+                                                    <form action="{{ route('payments.reject', $payment) }}" method="POST" class="inline-flex items-center gap-1" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
+                                                        @csrf
+                                                        <input type="text" name="reason" placeholder="Motif du rejet" aria-label="Motif du rejet" required class="w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-xs">
+                                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 whitespace-nowrap">Rejeter</button>
+                                                    </form>
+                                                @endcan
+                                            @endif
                                             @unless($payment->isCancelled())
-                                                <a href="{{ route('payments.edit', $payment) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2">Modifier</a>
+                                                <a href="{{ route('payments.edit', $payment) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 whitespace-nowrap">Modifier</a>
                                                 @if($payment->isValidated())
                                                     @can('cancel', $payment)
-                                                        <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                                        <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 whitespace-nowrap"
                                                             x-on:click="$dispatch('open-cancel-payment', { action: '{{ route('payments.cancel', $payment) }}', receipt: '{{ addslashes($payment->receipt_number) }}' })">
                                                             Annuler
                                                         </button>
@@ -171,10 +198,11 @@
                                                     <form action="{{ route('payments.destroy', $payment) }}" method="POST" class="inline" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera supprimé et pourra modifier le solde financier de l’inscription.', confirmLabel: 'Supprimer' })">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Supprimer</button>
+                                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 whitespace-nowrap">Supprimer</button>
                                                     </form>
                                                 @endif
                                             @endunless
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

@@ -210,7 +210,8 @@ class PaymentController extends Controller
             // Un paiement partiel reste autorisé pour tout utilisateur ayant le droit
             // 'enregistrer-paiement' : s'il n'a pas 'valider-paiement-partiel', le paiement
             // est simplement créé en attente (validated_by = null) et apparaît dans le
-            // workflow de validation (cf. validationIndex/validatePayment/rejectPayment).
+            // workflow de validation (bouton Valider/Rejeter sur payments.index, cf.
+            // validatePayment/rejectPayment).
             // Bloquer ici avec Gate::authorize empêcherait purement et simplement ce workflow.
             $remainingBalance = max(0, $totalExpected - $amountPaid);
             $canValidatePartial = Gate::allows('validatePartial');
@@ -239,6 +240,7 @@ class PaymentController extends Controller
                 'comment' => $validated['comment'] ?? null,
                 'fee_breakdown' => $allocatedItems,
                 'validated_by' => ($isPartial && $canValidatePartial) ? auth()->id() : ($isPartial ? null : auth()->id()),
+                'validated_at' => ($isPartial && $canValidatePartial) ? now() : null,
             ]);
 
             $paymentService->applyPaymentToInvoices($payment, $registration, min($amountPaid, $totalExpected));
@@ -458,18 +460,6 @@ class PaymentController extends Controller
         if ($parentUsers->isNotEmpty()) {
             Notification::send($parentUsers, new PaymentReceived($payment));
         }
-    }
-
-    public function validationIndex(): View
-    {
-        Gate::authorize('validatePartial');
-
-        $pendingPayments = Payment::with(['registration.user', 'registration.classroom'])
-            ->pendingValidation()
-            ->latest()
-            ->paginate(15);
-
-        return view('accounting.payments.validation', compact('pendingPayments'));
     }
 
     public function validatePayment(Payment $payment): RedirectResponse

@@ -79,9 +79,10 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
     // large que le reste du bloc finance ci-dessous ; la Policy (PaymentPolicy) reste le contrôle
     // fin par action (un admin n'a par ex. pas la permission 'supprimer-paiement').
     Route::middleware(['role:super-admin|manager-comptable|comptable|admin'])->group(function () {
-        // Validation des paiements (permission explicite) — déclaré avant la ressource pour éviter le conflit avec /payments/{payment}
+        // Validation des paiements partiels : actions désormais directement sur les lignes
+        // de payments.index (boutons Valider/Rejeter), plus de page dédiée — déclarées avant
+        // la ressource pour éviter le conflit avec /payments/{payment}.
         Route::middleware(['permission:valider-paiement-partiel'])->group(function () {
-            Route::get('/payments/validation', [PaymentController::class, 'validationIndex'])->name('payments.validation');
             Route::post('/payments/{payment}/validate', [PaymentController::class, 'validatePayment'])->name('payments.validate');
             Route::post('/payments/{payment}/reject', [PaymentController::class, 'rejectPayment'])->name('payments.reject');
         });
