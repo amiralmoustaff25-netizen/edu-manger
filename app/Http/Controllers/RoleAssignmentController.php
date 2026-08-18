@@ -47,8 +47,20 @@ class RoleAssignmentController extends Controller
                 ->first();
         }
 
+        // Un admin (non super-admin) ne doit même pas pouvoir consulter la page de
+        // gestion des rôles d'un compte Super-Admin, faute de quoi l'écran laisse
+        // penser qu'il pourrait le modifier (seule la soumission était protégée
+        // jusqu'ici, via SuperAdminProtectionService::ensureCanTarget dans update()).
+        $restrictedSuperAdmin = false;
+
+        if ($user && $user->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin')) {
+            $restrictedSuperAdmin = true;
+            $user = null;
+        }
+
         return view('users.roles.index', [
             'user' => $user,
+            'restrictedSuperAdmin' => $restrictedSuperAdmin,
             'search' => $search,
             'roles' => $this->availableRoles(),
             'permissions' => $this->groupedPermissions(),

@@ -39,7 +39,11 @@
                 </form>
             </section>
 
-            @if ($search !== '' && ! $user)
+            @if ($restrictedSuperAdmin)
+                <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 p-6 text-center text-sm text-red-800 dark:text-red-200">
+                    Seul un Super-Administrateur peut consulter ou modifier les accès d'un compte Super-Admin.
+                </div>
+            @elseif ($search !== '' && ! $user)
                 <div class="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 p-6 text-center text-sm text-amber-800 dark:text-amber-200">
                     Aucun utilisateur trouvé pour <strong>{{ $search }}</strong>.
                 </div>
