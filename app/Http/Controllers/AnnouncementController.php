@@ -47,18 +47,19 @@ class AnnouncementController extends Controller
         $announcements = $query->paginate(15)->withQueryString();
         $roles = Role::all()->pluck('name');
 
-        return view('announcements.index', compact('announcements', 'roles'));
-    }
+        // Classes/utilisateurs : uniquement nécessaires pour le formulaire "Nouvelle
+        // notification" désormais intégré à cette même page (fusion Nouvelle
+        // notification / Historique en une seule vue) — chargés seulement si
+        // l'utilisateur a le droit de créer, comme create() le faisait auparavant.
+        $classrooms = collect();
+        $users = collect();
 
-    public function create(): View
-    {
-        $this->authorize('creer-notification');
+        if ($request->user()->can('creer-notification')) {
+            $classrooms = Classroom::with('schoolYear')->orderBy('name')->get();
+            $users = User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']);
+        }
 
-        $roles = Role::all()->pluck('name');
-        $classrooms = Classroom::with('schoolYear')->orderBy('name')->get();
-        $users = User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']);
-
-        return view('announcements.create', compact('roles', 'classrooms', 'users'));
+        return view('announcements.index', compact('announcements', 'roles', 'classrooms', 'users'));
     }
 
     public function store(Request $request): RedirectResponse

@@ -5,14 +5,44 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" x-data="{ showForm: {{ $errors->any() ? 'true' : 'false' }} }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Historique</h3>
-                <a href="{{ route('announcements.create') }}" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
-                    + {{ __('Nouvelle notification') }}
-                </a>
-            </div>
+            @can('creer-notification')
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Notifications & Communications</h3>
+                    <button type="button" x-on:click="showForm = !showForm" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+                        <span x-show="!showForm">+ {{ __('Nouvelle notification') }}</span>
+                        <span x-show="showForm" x-cloak>{{ __('Fermer le formulaire') }}</span>
+                    </button>
+                </div>
+
+                <div x-show="showForm" x-cloak class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700">
+                        <form action="{{ route('announcements.store') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+
+                            @include('announcements._form')
+
+                            <div class="mt-8 flex flex-wrap gap-3 border-t border-gray-200 dark:border-slate-700 pt-6">
+                                <button type="submit" name="action" value="draft" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">
+                                    {{ __('Enregistrer le brouillon') }}
+                                </button>
+                                <button type="submit" name="action" value="preview" class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60">
+                                    {{ __('Prévisualiser') }}
+                                </button>
+                                <button type="submit" name="action" value="schedule" class="px-4 py-2 bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60">
+                                    {{ __('Programmer') }}
+                                </button>
+                                <button type="submit" name="action" value="publish" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                    {{ __('Publier maintenant') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endcan
+
+            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Historique</h3>
 
             <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('announcements.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">

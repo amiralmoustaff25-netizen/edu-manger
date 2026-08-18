@@ -94,8 +94,10 @@ return [
                 // dans la navigation principale.
                 ['label' => 'Utilisateurs', 'route' => 'users.index', 'permission' => 'voir-utilisateurs'],
                 ['label' => 'Attribution des rôles', 'route' => 'users.roles.index', 'permission' => 'modifier-utilisateur'],
-                ['label' => 'Nouvelle notification', 'route' => 'announcements.create', 'permission' => 'creer-notification'],
-                ['label' => 'Historique notifications', 'route' => 'announcements.index', 'permission' => 'voir-historique-notifications'],
+                // Nouvelle notification / Historique fusionnées : le formulaire de création
+                // est désormais intégré (repliable) en haut de announcements.index — une
+                // seule page au lieu de deux entrées de menu pour la même fonctionnalité.
+                ['label' => 'Notifications', 'route' => 'announcements.index', 'permissions' => ['voir-historique-notifications', 'creer-notification']],
                 // "Logs de connexion" (tentatives d'authentification) remplacée dans le menu
                 // par "Audit" (actions métier : créations/modifications/suppressions), plus
                 // utile au quotidien — la page login-logs.index reste fonctionnelle (route

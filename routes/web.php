@@ -376,7 +376,9 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::get('/announcements/{announcement}/preview', [AnnouncementController::class, 'preview'])->name('announcements.preview');
         Route::post('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish'])->name('announcements.publish');
         Route::post('/announcements/{announcement}/archive', [AnnouncementController::class, 'archive'])->name('announcements.archive');
-        Route::resource('announcements', AnnouncementController::class);
+        // 'create' exclue : le formulaire de création est intégré à announcements.index
+        // (une seule page "Notifications" au lieu de deux pages de menu séparées).
+        Route::resource('announcements', AnnouncementController::class)->except(['create']);
     });
 
     // Centre de notifications pour tous les utilisateurs authentifiés
