@@ -8,6 +8,10 @@ return [
             'route' => 'dashboard',
             'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
             'permission' => 'voir-dashboard',
+            // professeur/parent/eleve ont chacun leur propre entrée "Tableau de bord" (ou
+            // "Accueil") dédiée plus bas, qui pointe vers la même page — sans cette
+            // exclusion, ce lien générique apparaît en double dans leur menu.
+            'exclude_roles' => ['professeur', 'parent', 'eleve'],
         ],
         [
             // Sitemap complet de tous les modules accessibles (AdminController::index), pas
@@ -42,6 +46,10 @@ return [
             'label' => 'Pédagogie',
             'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
             // Pas de 'roles' ici : voir commentaire du groupe 'École'.
+            // exclude_roles : un professeur a sa propre entrée "Programmes annuels"/"Cahier
+            // de textes" dans "Espace Professeur" (mêmes pages, déjà scopées à ses classes
+            // côté contrôleur) — ce groupe générique ferait doublon dans son menu.
+            'exclude_roles' => ['professeur'],
             'active_routes' => ['programs.*', 'cahier-textes.*', 'bulletins.*', 'attendances.overview', 'pedagogical-configuration.*'],
             'children' => [
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
@@ -161,10 +169,17 @@ return [
             ],
         ],
         [
+            // heading => true : section toujours dépliée, pas d'accordéon à ouvrir — un
+            // professeur n'a qu'un seul espace de travail, autant que tout soit visible
+            // d'un coup (même mécanisme déjà utilisé pour "Espace Comptabilité" du rôle
+            // comptable). Programmes annuels et Cahier de textes intégrés ici (au lieu du
+            // groupe générique "Pédagogie", exclu pour ce rôle ci-dessus) : mêmes pages,
+            // déjà scopées aux classes du professeur connecté côté contrôleur.
             'label' => 'Espace Professeur',
             'icon' => 'M12 14l9-5-9-5-9 5 9 5z',
             'roles' => ['professeur'],
-            'active_routes' => ['professeur.*'],
+            'heading' => true,
+            'active_routes' => ['professeur.*', 'programs.*', 'cahier-textes.*'],
             'children' => [
                 ['label' => 'Tableau de bord', 'route' => 'professeur.dashboard'],
                 ['label' => 'Mes Classes', 'route' => 'professeur.classes.index'],
@@ -172,6 +187,8 @@ return [
                 ['label' => 'Saisie Notes par Matricule', 'route' => 'professeur.notes.eleve'],
                 ['label' => 'Pointage des cours & présences', 'route' => 'professeur.teaching-sessions.index', 'active_routes' => ['professeur.attendances.index']],
                 ['label' => 'Historique présences', 'route' => 'professeur.attendances.history'],
+                ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
+                ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
             ],
         ],
         [
