@@ -63,9 +63,20 @@
                             <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ $student->name }}</h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('Matricule') }} : {{ $student->matricule }} · {{ __('Classe') }} : {{ $classroom->name }}</p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('Moyenne pondérée (aperçu)') }}</p>
-                            <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400" x-text="average + ' / 20'"></p>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('Moyenne pondérée (aperçu)') }}</p>
+                                <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400" x-text="average + ' / 20'"></p>
+                            </div>
+                            {{-- Aperçu du bulletin réel (bulletins.show), déjà recalculé en direct à
+                                 partir des notes/matières enregistrées à l'instant — pas besoin de
+                                 quitter la saisie pour voir où en est l'élève. Reflète les notes déjà
+                                 enregistrées, pas la saisie en cours non sauvegardée ci-dessous. --}}
+                            @can('generer-bulletins')
+                                <a href="{{ route('bulletins.show', [$student, $periode]) }}" target="_blank" class="inline-flex items-center rounded-md border border-indigo-300 dark:border-indigo-700 px-3 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30">
+                                    {{ __('Aperçu du bulletin') }} ↗
+                                </a>
+                            @endcan
                         </div>
                     </div>
 

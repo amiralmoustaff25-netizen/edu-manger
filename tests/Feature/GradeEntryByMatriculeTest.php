@@ -114,6 +114,14 @@ test('teacher cannot save a grade for a subject not assigned to them in that cla
     $this->assertDatabaseMissing('notes', ['user_id' => $student->id, 'matiere_id' => $foreignMatiere->id]);
 });
 
+test('the search-by-matricule page links to a live bulletin preview for the student found', function () {
+    [$teacherUser, $classroom, $matiere, $student] = createMatriculeGradeFixture();
+
+    $response = $this->actingAs($teacherUser)->get(route('professeur.notes.eleve', ['matricule' => $student->matricule, 'periode' => 'trimestre_2']));
+
+    $response->assertOk()->assertSee(route('bulletins.show', [$student, 'trimestre_2']), false);
+});
+
 test('a primaire classroom only offers the composition evaluation type', function () {
     [$teacherUser, $classroom, $matiere, $student] = createMatriculeGradeFixture('primaire');
 
