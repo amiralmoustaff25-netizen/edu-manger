@@ -60,13 +60,46 @@ class PedagogicalConfigurationController extends Controller
     {
         $schoolYears = SchoolYear::orderByDesc('year_string')->get();
         $schoolYear = $request->filled('school_year_id') ? SchoolYear::findOrFail($request->integer('school_year_id')) : SchoolYear::getActive();
-        $query = PedagogicalAssignment::with(['teacher.user', 'classroom', 'matiere', 'schoolYear'])->latest('updated_at');
+        // whereHas('classroom') exclut les affectations orphelines d'une classe supprimée
+        // depuis (aucun garde-fou empêchant la suppression d'une classe qui a encore des
+        // affectations actives) : sans ce filtre, la ligne correspondante fait planter le
+        // rendu de la liste (relation classroom/teacher/matiere nulle) pour TOUS les admins.
+        $query = PedagogicalAssignment::with(['teacher.user', 'classroom', 'matiere', 'schoolYear'])
+            ->whereHas('classroom')->whereHas('teacher')->whereHas('matiere')
+            ->latest('updated_at');
         if ($schoolYear) { $query->where('school_year_id', $schoolYear->id); }
         foreach (['teacher_id', 'classroom_id', 'matiere_id'] as $filter) { if ($request->filled($filter)) { $query->where($filter, $request->integer($filter)); } }
+
+        // Pour griser côté formulaire les classes primaire qu'un professeur ne peut pas
+        // se voir attribuer (règle "professeur principal" déjà appliquée côté serveur dans
+        // storeAssignments(), voir plus bas) : qui est déjà principal de quelle classe, et
+        // quelle classe a déjà son principal — indexé par matricule/id pour Alpine.js.
+        $primaireClassroomPrincipals = [];
+        $teacherPrimairePrincipalOf = [];
+
+        if ($schoolYear) {
+            PedagogicalAssignment::with(['teacher', 'classroom'])
+                ->where('school_year_id', $schoolYear->id)
+                ->where('is_active', true)
+                ->whereHas('classroom', fn ($q) => $q->where('cycle', 'primaire'))
+                ->whereHas('matiere', fn ($q) => $q->whereNotIn('nom', $this->specialistSubjectNames()))
+                ->get()
+                ->each(function (PedagogicalAssignment $assignment) use (&$primaireClassroomPrincipals, &$teacherPrimairePrincipalOf) {
+                    $primaireClassroomPrincipals[$assignment->classroom_id] = [
+                        'teacher_matricule' => $assignment->teacher->matricule,
+                        'teacher_name' => $assignment->teacher->user?->name ?? '—',
+                    ];
+                    $teacherPrimairePrincipalOf[$assignment->teacher->matricule] = [
+                        'classroom_id' => $assignment->classroom_id,
+                        'classroom_name' => $assignment->classroom->name,
+                    ];
+                });
+        }
 
         return view('pedagogical-configuration.assignments', [
             'assignments' => $query->paginate(20)->withQueryString(), 'schoolYear' => $schoolYear, 'schoolYears' => $schoolYears,
             'teachers' => Teacher::with('user')->orderBy('matricule')->get(), 'classrooms' => $schoolYear ? Classroom::where('school_year_id', $schoolYear->id)->orderBy('name')->get() : collect(), 'matieres' => Matiere::orderBy('nom')->get(),
+            'primaireClassroomPrincipals' => $primaireClassroomPrincipals, 'teacherPrimairePrincipalOf' => $teacherPrimairePrincipalOf,
         ]);
     }
 
