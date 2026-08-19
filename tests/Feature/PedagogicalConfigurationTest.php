@@ -137,6 +137,33 @@ test('a primaire main teacher cannot be assigned as main teacher of a second cla
     $this->assertDatabaseMissing('pedagogical_assignments', ['classroom_id' => $secondClassroom->id]);
 });
 
+test('the assignments screen exposes which teacher is already principal of which primaire classroom, for the form to grey out invalid choices', function () {
+    // Le blocage serveur existait déjà (tests ci-dessus) mais l'admin ne le découvrait
+    // qu'après avoir rempli tout le formulaire et essuyé une erreur. Ces données
+    // permettent au formulaire (Alpine.js) de griser directement les classes primaire
+    // qu'un professeur ne peut pas se voir attribuer.
+    $teacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id,
+        'volume_horaire_hebdo' => 0,
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('pedagogical-configuration.assignments', ['school_year_id' => $this->schoolYear->id]));
+
+    $response->assertOk();
+    expect($response->viewData('primaireClassroomPrincipals'))->toHaveKey($classroom->id);
+    expect($response->viewData('primaireClassroomPrincipals')[$classroom->id]['teacher_matricule'])->toBe($teacher->matricule);
+    expect($response->viewData('teacherPrimairePrincipalOf'))->toHaveKey($teacher->matricule);
+    expect($response->viewData('teacherPrimairePrincipalOf')[$teacher->matricule]['classroom_id'])->toBe($classroom->id);
+});
+
 test('anglais and musique are exempt from the primaire main-teacher exclusivity rules', function () {
     $mainTeacher = Teacher::factory()->create();
     $englishTeacher = Teacher::factory()->create();
