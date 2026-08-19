@@ -89,8 +89,17 @@ class PedagogicalConfigurationController extends Controller
             'school_year_id.required' => 'Sélectionnez une année scolaire.',
         ]);
 
+        $classrooms = Classroom::whereIn('id', $data['classroom_ids'])->get()->keyBy('id');
+
+        // Le primaire n'a pas de volume horaire par matière à saisir (un seul professeur
+        // principal couvre toutes les matières générales) — uniquement le secondaire
+        // (collège/lycée) exige un volume entre 0 et 50h par classe sélectionnée.
         $volumeErrors = [];
         foreach ($data['classroom_ids'] as $classroomId) {
+            if (($classrooms[$classroomId]->cycle ?? null) === 'primaire') {
+                continue;
+            }
+
             $volume = $request->input("classroom_volumes.$classroomId");
             if ($volume === null || $volume === '' || ! is_numeric($volume) || $volume < 0 || $volume > 50) {
                 $volumeErrors["classroom_volumes.$classroomId"] = 'Indiquez un volume entre 0 et 50 heures pour chaque classe sélectionnée.';
@@ -114,13 +123,61 @@ class PedagogicalConfigurationController extends Controller
             return back()->withInput()->withErrors(['new_subject_names' => 'Sélectionnez ou saisissez au moins une matière.']);
         }
 
-        $created = 0;
-        DB::transaction(function () use ($data, $request, $teacher, $subjectIds, &$created) {
+        // Règle "professeur principal" du primaire : une matière générale (tout sauf les
+        // matières spécialisées comme anglais/musique) affectée dans une classe de
+        // primaire désigne son professeur principal, exclusif dans les deux sens —
+        // une classe n'en a qu'un, un professeur n'en est qu'un pour une seule classe.
+        $subjects = Matiere::whereIn('id', $subjectIds)->get()->keyBy('id');
+        $generalSubjectIds = $subjectIds->reject(fn ($id) => $this->isSpecialistSubject($subjects[$id]));
+
+        if ($generalSubjectIds->isNotEmpty()) {
             foreach ($data['classroom_ids'] as $classroomId) {
+                $classroom = $classrooms[$classroomId];
+                if ($classroom->cycle !== 'primaire') {
+                    continue;
+                }
+
+                $otherPrincipal = PedagogicalAssignment::with('teacher.user')
+                    ->where('classroom_id', $classroomId)
+                    ->where('school_year_id', $data['school_year_id'])
+                    ->where('teacher_id', '!=', $teacher->id)
+                    ->where('is_active', true)
+                    ->whereHas('matiere', fn ($q) => $q->whereNotIn('nom', $this->specialistSubjectNames()))
+                    ->first();
+
+                if ($otherPrincipal) {
+                    return back()->withInput()->withErrors([
+                        'classroom_ids' => "La classe {$classroom->name} a déjà un professeur principal ({$otherPrincipal->teacher->user?->name}). Une classe de primaire ne peut avoir qu'un seul professeur principal (hors matières spécialisées comme l'anglais ou la musique).",
+                    ]);
+                }
+
+                $principalElsewhere = PedagogicalAssignment::with('classroom')
+                    ->where('teacher_id', $teacher->id)
+                    ->where('school_year_id', $data['school_year_id'])
+                    ->where('classroom_id', '!=', $classroomId)
+                    ->where('is_active', true)
+                    ->whereHas('classroom', fn ($q) => $q->where('cycle', 'primaire'))
+                    ->whereHas('matiere', fn ($q) => $q->whereNotIn('nom', $this->specialistSubjectNames()))
+                    ->first();
+
+                if ($principalElsewhere) {
+                    return back()->withInput()->withErrors([
+                        'teacher_matricule' => "Ce professeur est déjà professeur principal de la classe {$principalElsewhere->classroom->name}. Un professeur principal de primaire ne peut être affecté qu'à une seule classe.",
+                    ]);
+                }
+            }
+        }
+
+        $created = 0;
+        DB::transaction(function () use ($data, $request, $teacher, $subjectIds, $classrooms, &$created) {
+            foreach ($data['classroom_ids'] as $classroomId) {
+                $isPrimaire = ($classrooms[$classroomId]->cycle ?? null) === 'primaire';
+                $volume = $isPrimaire ? 0 : $request->input("classroom_volumes.$classroomId");
+
                 foreach ($subjectIds as $matiereId) {
-                    $assignment = PedagogicalAssignment::firstOrCreate(['teacher_id' => $teacher->id, 'classroom_id' => $classroomId, 'matiere_id' => $matiereId, 'school_year_id' => $data['school_year_id']], ['volume_horaire_hebdo' => $request->input("classroom_volumes.$classroomId"), 'is_active' => true]);
+                    $assignment = PedagogicalAssignment::firstOrCreate(['teacher_id' => $teacher->id, 'classroom_id' => $classroomId, 'matiere_id' => $matiereId, 'school_year_id' => $data['school_year_id']], ['volume_horaire_hebdo' => $volume, 'is_active' => true]);
                     if (! $assignment->wasRecentlyCreated) {
-                        $assignment->update(['volume_horaire_hebdo' => $request->input("classroom_volumes.$classroomId"), 'is_active' => true]);
+                        $assignment->update(['volume_horaire_hebdo' => $volume, 'is_active' => true]);
                     }
                     if ($assignment->wasRecentlyCreated) { $created++; }
                 }
@@ -128,6 +185,28 @@ class PedagogicalConfigurationController extends Controller
         });
 
         return redirect()->route('pedagogical-configuration.assignments', ['school_year_id' => $data['school_year_id']])->with('success', "$created affectation(s) pédagogique(s) créée(s).");
+    }
+
+    /**
+     * Liste des noms de matières spécialisées du primaire (config, comparaison insensible
+     * à la casse/accents) — voir isSpecialistSubject().
+     */
+    private function specialistSubjectNames(): array
+    {
+        return Matiere::query()
+            ->get(['id', 'nom'])
+            ->filter(fn (Matiere $matiere) => in_array(Str::of($matiere->nom)->lower()->ascii()->toString(), config('edu.primary_specialist_subjects'), true))
+            ->pluck('nom')
+            ->all();
+    }
+
+    /**
+     * Une matière spécialisée du primaire (ex. anglais, musique) peut avoir son propre
+     * professeur dédié en plus du professeur principal — voir config('edu.primary_specialist_subjects').
+     */
+    private function isSpecialistSubject(Matiere $matiere): bool
+    {
+        return in_array(Str::of($matiere->nom)->lower()->ascii()->toString(), config('edu.primary_specialist_subjects'), true);
     }
 
     public function toggleAssignment(PedagogicalAssignment $assignment, SchoolYearGuardService $schoolYearGuard)
