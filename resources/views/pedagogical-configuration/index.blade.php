@@ -10,7 +10,48 @@
 
             <section x-show="tab === 'assignments'" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800"><div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900 dark:text-white">Affectations pédagogiques</h3><p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Professeur, classe, matière et année scolaire.</p></div><a href="{{ route('pedagogical-configuration.assignments', ['school_year_id' => $schoolYear->id]) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Gérer les affectations</a></div></section>
 
-            <section x-show="tab === 'subjects'" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800"><h3 class="font-semibold text-gray-900 dark:text-white">Coefficients par cycle</h3><form method="POST" action="{{ route('pedagogical-configuration.subjects.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">@csrf<input type="hidden" name="school_year_id" value="{{ $schoolYear->id }}"><select name="matiere_id" aria-label="Matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">@foreach(\App\Models\Matiere::orderBy('nom')->get() as $matiere)<option value="{{ $matiere->id }}">{{ $matiere->nom }}</option>@endforeach</select><select name="cycle" aria-label="Cycle" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">Tous les cycles</option><option value="primaire">Primaire</option><option value="college">Collège</option><option value="lycee">Lycée</option></select><input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Enregistrer</button></form><div class="mt-5 divide-y dark:divide-slate-700">@forelse($configuredSubjects as $configuration)<div class="flex justify-between py-3 text-sm dark:text-gray-200"><span>{{ $configuration->matiere?->nom ?? 'Matière' }} — {{ $configuration->cycle ?: 'Tous cycles' }}</span><strong>Coef. {{ $configuration->coefficient }}</strong></div>@empty<p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucun coefficient spécifique configuré.</p>@endforelse</div></section>
+            <section x-show="tab === 'subjects'" class="space-y-6">
+                <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Créer une matière</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Le coefficient saisi ici est le coefficient de base de la matière (utilisé par défaut, sauf s'il est surchargé par cycle ci-dessous).</p>
+                    @error('nom')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                    <form method="POST" action="{{ route('pedagogical-configuration.matieres.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                        @csrf
+                        <input name="nom" placeholder="Ex. Philosophie" aria-label="Nom de la matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
+                        <input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient de base" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
+                        <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Créer la matière</button>
+                    </form>
+                    <div class="mt-5 divide-y dark:divide-slate-700">
+                        @forelse($matieres as $matiere)
+                            <div class="flex justify-between py-2 text-sm dark:text-gray-200"><span>{{ $matiere->nom }}</span><strong>Coef. de base {{ $matiere->coefficient }}</strong></div>
+                        @empty
+                            <p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucune matière créée pour le moment.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Coefficients par cycle</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Surcharge le coefficient de base pour un cycle donné, pour l'année scolaire sélectionnée. Pour le <strong>primaire</strong>, renseignez aussi le <strong>barème</strong> (note maximale de la matière, ex. Mathématiques /80) : les notes de cette matière seront alors saisies et comptées sur ce barème au lieu d'être sur /20.</p>
+                    @error('subject_name')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                    <form method="POST" action="{{ route('pedagogical-configuration.subjects.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+                        @csrf
+                        <input type="hidden" name="school_year_id" value="{{ $schoolYear->id }}">
+                        <select name="matiere_id" aria-label="Matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">@foreach($matieres as $matiere)<option value="{{ $matiere->id }}">{{ $matiere->nom }}</option>@endforeach</select>
+                        <select name="cycle" aria-label="Cycle" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">Tous les cycles</option><option value="primaire">Primaire</option><option value="college">Collège</option><option value="lycee">Lycée</option></select>
+                        <input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <input name="bareme" type="number" min="1" step="1" placeholder="Barème (primaire)" aria-label="Barème (primaire uniquement)" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Enregistrer</button>
+                    </form>
+                    <div class="mt-5 divide-y dark:divide-slate-700">
+                        @forelse($configuredSubjects as $configuration)
+                            <div class="flex justify-between py-3 text-sm dark:text-gray-200"><span>{{ $configuration->matiere?->nom ?? 'Matière' }} — {{ $configuration->cycle ?: 'Tous cycles' }}</span><strong>Coef. {{ $configuration->coefficient }}@if($configuration->bareme) · Barème /{{ rtrim(rtrim(number_format($configuration->bareme, 2), '0'), '.') }}@endif</strong></div>
+                        @empty
+                            <p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucun coefficient spécifique configuré.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </section>
 
             <section x-show="tab === 'evaluations'" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800"><h3 class="font-semibold text-gray-900 dark:text-white">Types d’évaluation</h3><form method="POST" action="{{ route('pedagogical-configuration.evaluation-types.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">@csrf<input name="name" placeholder="Ex. Composition" aria-label="Nom du type d'évaluation" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required><input name="default_coefficient" type="number" step="0.1" min="0.1" value="1" aria-label="Coefficient par défaut" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required><select name="default_scale" aria-label="Barème par défaut" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option>20</option><option>10</option><option>40</option><option>100</option></select><button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Ajouter</button></form><div class="mt-5 divide-y dark:divide-slate-700">@forelse(\App\Models\EvaluationType::orderBy('position')->get() as $type)<div class="flex justify-between py-3 text-sm dark:text-gray-200"><span>{{ $type->name }}</span><span>Coef. {{ $type->default_coefficient }} · /{{ $type->default_scale }}</span></div>@empty<p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucun type d’évaluation configuré.</p>@endforelse</div></section>
 

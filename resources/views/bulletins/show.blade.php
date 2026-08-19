@@ -63,15 +63,24 @@
                     </div>
 
                     <!-- Tableau des notes -->
+                    @php
+                        // Système "sunuBulletin" (primaire) : chaque matière a son propre barème
+                        // (note max) plutôt qu'un coefficient appliqué à une note /20 — colonnes
+                        // et libellés adaptés en conséquence, voir GradeCalculationService::
+                        // computeAverageDataPrimaire().
+                        $usesBaremeSystem = collect($bulletin['subjects'])->contains(fn ($s) => $s['bareme'] !== null);
+                    @endphp
                     <div class="overflow-x-auto mb-8">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                             <thead class="bg-gray-800 dark:bg-slate-900">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Matière</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Coef</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">{{ $usesBaremeSystem ? 'Barème' : 'Coef' }}</th>
                                     <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Notes</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Moyenne</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Moy. × Coef</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">{{ $usesBaremeSystem ? 'Points obtenus' : 'Moyenne' }}</th>
+                                    @unless($usesBaremeSystem)
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Moy. × Coef</th>
+                                    @endunless
                                     <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Appréciation</th>
                                 </tr>
                             </thead>
@@ -82,15 +91,17 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{{ $subject['coefficient'] }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{{ implode(', ', $subject['notes']) ?: '-' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-center">{{ $subject['average'] > 0 ? number_format($subject['average'], 2) : '-' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{{ $subject['weighted_average'] > 0 ? number_format($subject['weighted_average'], 2) : '-' }}</td>
+                                    @unless($usesBaremeSystem)
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{{ $subject['weighted_average'] > 0 ? number_format($subject['weighted_average'], 2) : '-' }}</td>
+                                    @endunless
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">{{ $subject['appreciation'] ?: '-' }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-100 dark:bg-slate-700">
                                 <tr>
-                                    <td colspan="2" class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">Total Coefficients :</td>
-                                    <td colspan="4" class="px-6 py-3 text-sm font-bold text-gray-900 dark:text-white">{{ $bulletin['total_coefficients'] }}</td>
+                                    <td colspan="2" class="px-6 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">{{ $usesBaremeSystem ? 'Total Barèmes :' : 'Total Coefficients :' }}</td>
+                                    <td colspan="{{ $usesBaremeSystem ? 3 : 4 }}" class="px-6 py-3 text-sm font-bold text-gray-900 dark:text-white">{{ $bulletin['total_coefficients'] }}</td>
                                 </tr>
                             </tfoot>
                         </table>
