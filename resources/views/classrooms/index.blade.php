@@ -76,12 +76,6 @@
                                                     </button>
                                                 </form>
                                             </div>
-                                            <div class="mt-1 flex items-center gap-1 text-xs">
-                                                <span class="text-gray-500 dark:text-gray-400">Bulletins :</span>
-                                                @foreach(['trimestre_1' => 'T1', 'trimestre_2' => 'T2', 'trimestre_3' => 'T3'] as $period => $label)
-                                                    <a href="{{ route('bulletins.class-pdf', [$classroom->id, $period]) }}" target="_blank" class="px-2 py-0.5 rounded bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30">{{ $label }}</a>
-                                                @endforeach
-                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
