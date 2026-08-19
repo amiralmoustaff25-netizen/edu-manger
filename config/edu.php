@@ -17,4 +17,11 @@ return [
     // password_must_change=true, seule l'application de la redirection est désactivable ici.
     // À remettre à true avant tout passage en production.
     'force_password_change' => env('FORCE_PASSWORD_CHANGE', true),
+
+    // Mot de passe temporaire fixe utilisé par un admin lors d'une réinitialisation
+    // (UserController::resetPassword, ParentController::resetPassword) : plus facile à
+    // communiquer par téléphone/papier à un parent ou professeur qu'un mot de passe
+    // aléatoire. Le compte reste forcé à le changer à la prochaine connexion
+    // (password_must_change=true), tant que force_password_change ci-dessus est actif.
+    'default_reset_password' => env('DEFAULT_RESET_PASSWORD', 'password123'),
 ];
