@@ -18,6 +18,7 @@ abstract class BaseClassroomRequest extends FormRequest
         return [
             'level' => ['required', 'string'],
             'section' => ['nullable', 'string'],
+            'serie' => ['nullable', 'string', 'max:50'],
             'teacher_id' => ['nullable', 'exists:users,id'],
             'max_students' => ['required', 'integer', 'min:1', 'max:60'],
         ];

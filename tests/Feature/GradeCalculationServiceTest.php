@@ -148,6 +148,38 @@ test('a cycle-specific configured coefficient takes priority over the "all cycle
     expect($bulletin['subjects'][0]['coefficient'])->toBe(4.0);
 });
 
+test('a série-specific configured coefficient takes priority over the cycle-only coefficient, for a lycée classroom', function () {
+    // Un même cycle "lycee" peut avoir des coefficients différents par série (ex. Maths
+    // coef. 4 en Série S, coef. 2 en Série L) — la série n'existe qu'au lycée.
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 2]);
+    $serieS = Classroom::create(['name' => 'Terminale S', 'cycle' => 'lycee', 'serie' => 'S', 'school_year_id' => $this->year->id]);
+    $serieL = Classroom::create(['name' => 'Terminale L', 'cycle' => 'lycee', 'serie' => 'L', 'school_year_id' => $this->year->id]);
+    assignMatiereToClassroom($serieS, $this->year, $math);
+    assignMatiereToClassroom($serieL, $this->year, $math);
+
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id, 'school_year_id' => $this->year->id,
+        'cycle' => 'lycee', 'serie' => null, 'classroom_id' => null, 'coefficient' => 3, 'is_active' => true,
+    ]);
+    SubjectConfiguration::create([
+        'matiere_id' => $math->id, 'school_year_id' => $this->year->id,
+        'cycle' => 'lycee', 'serie' => 'S', 'classroom_id' => null, 'coefficient' => 4, 'is_active' => true,
+    ]);
+
+    $studentS = enrollStudentInClassroom($serieS, $this->year);
+    Note::create(['user_id' => $studentS->id, 'classroom_id' => $serieS->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+    $bulletinS = $this->service->getBulletinData($studentS, 'trimestre_1');
+    // Série S a sa propre configuration (coef. 4), prioritaire sur le coef. 3 "cycle lycée
+    // sans distinction de série".
+    expect($bulletinS['subjects'][0]['coefficient'])->toBe(4.0);
+
+    $studentL = enrollStudentInClassroom($serieL, $this->year);
+    Note::create(['user_id' => $studentL->id, 'classroom_id' => $serieL->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+    $bulletinL = $this->service->getBulletinData($studentL, 'trimestre_1');
+    // Série L n'a pas de configuration dédiée : repli sur le coef. 3 "cycle lycée".
+    expect($bulletinL['subjects'][0]['coefficient'])->toBe(3.0);
+});
+
 test('an inactive configured coefficient is ignored, falling back to the global Matiere coefficient', function () {
     $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 2]);
     assignMatiereToClassroom($this->classroom, $this->year, $math);

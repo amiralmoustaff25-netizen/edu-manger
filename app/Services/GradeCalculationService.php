@@ -182,11 +182,13 @@ class GradeCalculationService
      * Coefficient réellement applicable pour une matière/classe/année : l'écran
      * "Configuration pédagogique" > Matières & coefficients (SubjectConfiguration)
      * est la source de vérité quand un coefficient y a été configuré pour l'année
-     * scolaire de l'élève — priorité au coefficient spécifique au cycle de la classe,
-     * puis au coefficient "Tous les cycles" (cycle = null) de cette même année.
-     * Repli sur Matiere::coefficient (champ global, non versionné) si rien n'est
-     * configuré pour cette année — comportement historique conservé pour ne pas
-     * casser les bulletins d'années sans configuration dédiée.
+     * scolaire de l'élève — priorité au coefficient spécifique à la série de la classe
+     * (lycée uniquement, ex. Maths coef. 4 en Série S vs coef. 2 en Série L), puis au
+     * coefficient du cycle sans distinction de série, puis au coefficient "Tous les
+     * cycles" (cycle = null) de cette même année. Repli sur Matiere::coefficient (champ
+     * global, non versionné) si rien n'est configuré pour cette année — comportement
+     * historique conservé pour ne pas casser les bulletins d'années sans configuration
+     * dédiée.
      */
     private function resolveCoefficient(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
     {
@@ -196,7 +198,8 @@ class GradeCalculationService
                 ->where('is_active', true)
                 ->get();
 
-            $match = $configurations->firstWhere('cycle', $classroom->cycle)
+            $match = $configurations->first(fn ($c) => $c->cycle === $classroom->cycle && $c->serie === $classroom->serie)
+                ?? ($classroom->serie ? $configurations->first(fn ($c) => $c->cycle === $classroom->cycle && $c->serie === null) : null)
                 ?? $configurations->firstWhere('cycle', null);
 
             if ($match) {
@@ -211,10 +214,11 @@ class GradeCalculationService
      * Barème (note maximale) réellement applicable pour une matière de primaire, dans le
      * système "sunuBulletin" : configuré via SubjectConfiguration.bareme (même écran
      * "Matières & coefficients" que resolveCoefficient(), même priorité cycle spécifique
-     * puis "Tous les cycles"). Repli sur 20 si rien n'est configuré, pour qu'une matière
-     * de primaire jamais paramétrée reste malgré tout saisissable/calculable comme une
-     * note /20 ordinaire plutôt que de casser le bulletin. Publique : réutilisée par la
-     * validation de saisie de notes (GradeController) et les formulaires (max dynamique).
+     * puis "Tous les cycles"). Repli sur le barème de base de la matière (Matiere::bareme,
+     * /20 par défaut) si rien n'est configuré pour ce cycle/cette année, pour qu'une
+     * matière de primaire jamais paramétrée reste malgré tout saisissable/calculable
+     * plutôt que de casser le bulletin. Publique : réutilisée par la validation de
+     * saisie de notes (GradeController) et les formulaires (max dynamique).
      */
     public function resolveBareme(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
     {
@@ -233,7 +237,7 @@ class GradeCalculationService
             }
         }
 
-        return 20.0;
+        return (float) ($matiere->bareme ?? 20.0);
     }
 
     /**

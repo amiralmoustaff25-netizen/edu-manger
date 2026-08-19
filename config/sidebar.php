@@ -68,6 +68,15 @@ return [
                     'route' => 'pedagogical-configuration.index',
                     'roles' => ['super-admin', 'admin'],
                 ],
+                // Accès direct plutôt que uniquement via le bouton "Gérer les affectations"
+                // de l'onglet "Affectations" de Configuration pédagogique — la liste
+                // "Affectations enregistrées" (avec modification/suppression) mérite sa
+                // propre entrée, au même niveau que les autres pages de gestion du menu.
+                [
+                    'label' => 'Affectations pédagogiques',
+                    'route' => 'pedagogical-configuration.assignments',
+                    'roles' => ['super-admin', 'admin'],
+                ],
             ],
         ],
         [
