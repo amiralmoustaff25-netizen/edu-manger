@@ -299,6 +299,8 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             Route::patch('/periods/{period}/toggle', [PedagogicalConfigurationController::class, 'togglePeriod'])->name('periods.toggle');
             Route::post('/evaluation-types', [PedagogicalConfigurationController::class, 'storeEvaluationType'])->name('evaluation-types.store');
             Route::post('/matieres', [PedagogicalConfigurationController::class, 'storeMatiere'])->name('matieres.store');
+            Route::patch('/matieres/{matiere}', [PedagogicalConfigurationController::class, 'updateMatiere'])->name('matieres.update');
+            Route::delete('/matieres/{matiere}', [PedagogicalConfigurationController::class, 'destroyMatiere'])->name('matieres.destroy');
             Route::post('/subject-configurations', [PedagogicalConfigurationController::class, 'storeSubjectConfiguration'])->name('subjects.store');
             Route::put('/school-years/{schoolYear}/grade-settings', [PedagogicalConfigurationController::class, 'updateSettings'])->name('settings.update');
         });

@@ -1,6 +1,14 @@
 <x-app-layout>
     <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100">Configuration pédagogique</h2></x-slot>
-    <div class="py-8" x-data="{ tab: new URLSearchParams(location.search).get('tab') || 'overview' }">
+    <div class="py-8" x-data="{ tab: new URLSearchParams(location.search).get('tab') || 'overview' }" x-init="$watch('tab', value => {
+        // Reflète l'onglet actif dans l'URL (sans recharger la page) : le Referer d'un
+        // formulaire soumis depuis cette page inclut alors le bon onglet, donc back()
+        // (utilisé par tous les store*() de ce contrôleur) y ramène l'utilisateur au lieu
+        // de retomber sur 'Vue générale' par défaut après chaque enregistrement.
+        const url = new URL(window.location);
+        url.searchParams.set('tab', value);
+        history.replaceState(history.state, '', url);
+    })">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <form method="GET" class="flex items-end gap-3 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-800"><div><label for="school_year_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Année scolaire</label><select name="school_year_id" id="school_year_id" class="mt-1 rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">@foreach($schoolYears as $year)<option value="{{ $year->id }}" @selected($schoolYear?->id === $year->id)>{{ $year->year_string }}</option>@endforeach</select></div><button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Afficher</button></form>
             @if(! $schoolYear)<div class="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-6 text-amber-800 dark:text-amber-200">Créez puis activez une année scolaire avant de configurer la pédagogie.</div>@else
@@ -15,6 +23,7 @@
                     <h3 class="font-semibold text-gray-900 dark:text-white">Créer une matière</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Le coefficient saisi ici est le coefficient de base de la matière (utilisé par défaut, sauf s'il est surchargé par cycle ci-dessous).</p>
                     @error('nom')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                    @error('matiere')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
                     <form method="POST" action="{{ route('pedagogical-configuration.matieres.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                         @csrf
                         <input name="nom" placeholder="Ex. Philosophie" aria-label="Nom de la matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
@@ -23,7 +32,28 @@
                     </form>
                     <div class="mt-5 divide-y dark:divide-slate-700">
                         @forelse($matieres as $matiere)
-                            <div class="flex justify-between py-2 text-sm dark:text-gray-200"><span>{{ $matiere->nom }}</span><strong>Coef. de base {{ $matiere->coefficient }}</strong></div>
+                            <div x-data="{ editing: false }" class="py-2 text-sm dark:text-gray-200">
+                                <div x-show="! editing" class="flex items-center justify-between gap-3">
+                                    <span>{{ $matiere->nom }}</span>
+                                    <div class="flex items-center gap-3">
+                                        <strong>Coef. de base {{ $matiere->coefficient }}</strong>
+                                        <button type="button" @click="editing = true" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Modifier</button>
+                                        <form method="POST" action="{{ route('pedagogical-configuration.matieres.destroy', $matiere) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la matière', message: 'Supprimer « {{ addslashes($matiere->nom) }} » ? Impossible si des notes, affectations ou configurations de coefficient/barème y sont déjà rattachées.', confirmLabel: 'Supprimer' })">
+                                            @csrf @method('DELETE')
+                                            <button class="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <form x-show="editing" method="POST" action="{{ route('pedagogical-configuration.matieres.update', $matiere) }}" class="grid grid-cols-1 gap-2 md:grid-cols-4">
+                                    @csrf @method('PATCH')
+                                    <input name="nom" value="{{ $matiere->nom }}" aria-label="Nom de la matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white md:col-span-2" required>
+                                    <input name="coefficient" type="number" min="0.1" step="0.1" value="{{ $matiere->coefficient }}" aria-label="Coefficient de base" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
+                                    <div class="flex items-center gap-2">
+                                        <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white">Enregistrer</button>
+                                        <button type="button" @click="editing = false" class="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:underline">Annuler</button>
+                                    </div>
+                                </form>
+                            </div>
                         @empty
                             <p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucune matière créée pour le moment.</p>
                         @endforelse

@@ -15,6 +15,7 @@ use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PedagogicalConfigurationController extends Controller
 {
@@ -310,6 +311,48 @@ class PedagogicalConfigurationController extends Controller
         Matiere::create($data);
 
         return back()->with('success', "Matière « {$data['nom']} » créée avec un coefficient de {$data['coefficient']}.");
+    }
+
+    public function updateMatiere(Request $request, Matiere $matiere)
+    {
+        $data = $request->validate([
+            'nom' => ['required', 'string', 'max:100', Rule::unique('matieres', 'nom')->ignore($matiere->id)],
+            'coefficient' => ['required', 'numeric', 'min:0.1', 'max:99.9'],
+        ], [
+            'nom.required' => 'Saisissez le nom de la matière.',
+            'nom.unique' => 'Cette matière existe déjà.',
+            'coefficient.required' => 'Indiquez le coefficient de la matière.',
+        ]);
+
+        $matiere->update($data);
+
+        return back()->with('success', "Matière « {$matiere->nom} » modifiée.");
+    }
+
+    /**
+     * Une matière déjà utilisée (note saisie, affectation pédagogique, configuration de
+     * coefficient/barème par cycle) ne peut pas être supprimée : la retirer casserait
+     * silencieusement ces données existantes plutôt que de simplement empêcher un usage
+     * futur — même principe que Classroom::destroy() (bloqué s'il y a des inscriptions).
+     */
+    public function destroyMatiere(Matiere $matiere)
+    {
+        if ($matiere->notes()->exists()) {
+            return back()->withErrors(['matiere' => "Impossible de supprimer « {$matiere->nom} » : des notes y sont déjà rattachées."]);
+        }
+
+        if ($matiere->pedagogicalAssignments()->exists()) {
+            return back()->withErrors(['matiere' => "Impossible de supprimer « {$matiere->nom} » : des affectations pédagogiques y sont rattachées."]);
+        }
+
+        if ($matiere->configurations()->exists()) {
+            return back()->withErrors(['matiere' => "Impossible de supprimer « {$matiere->nom} » : des configurations de coefficient/barème y sont rattachées."]);
+        }
+
+        $nom = $matiere->nom;
+        $matiere->delete();
+
+        return back()->with('success', "Matière « {$nom} » supprimée.");
     }
 
     public function storeSubjectConfiguration(Request $request, SchoolYearGuardService $schoolYearGuard)
