@@ -18,7 +18,7 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-slate-900 transition-colors duration-300">
             <div class="flex items-center space-x-2">
                 <a href="/" class="flex items-center space-x-2">
-                    <x-application-logo class="w-12 h-12 fill-current text-indigo-600 dark:text-indigo-400" />
+                    <x-application-logo class="w-12 h-12" />
                     <span class="text-2xl font-bold text-gray-800 dark:text-white">EduManager</span>
                 </a>
             </div>
