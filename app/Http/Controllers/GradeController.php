@@ -21,16 +21,28 @@ class GradeController extends Controller
     {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
+
         if (!$teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
-        $classrooms = $teacher->classrooms()
-            ->with(['schoolYear'])
+
+        // PedagogicalAssignment (écran "Affectations pédagogiques") est la seule source
+        // de vérité des affectations enseignant/classe/matière alimentée par
+        // l'administration — l'ancien pivot teacher_classroom (Teacher::classrooms(),
+        // écran "Gestion des enseignants" retiré de la navigation) n'est plus jamais
+        // renseigné : une classe/matière affectée uniquement via l'écran actuel
+        // n'apparaissait donc jamais ici ni dans le menu déroulant matière, et la
+        // saisie était de toute façon rejetée par store() (même bug, corrigé ci-dessous).
+        $assignments = PedagogicalAssignment::with(['classroom.schoolYear', 'matiere'])
+            ->where('teacher_id', $teacher->id)
+            ->where('is_active', true)
             ->get();
 
-        $matieres = Matiere::all();
+        $classrooms = $assignments->pluck('classroom')->unique('id')->values();
+
+        $matieres = $request->filled('classroom_id')
+            ? $assignments->where('classroom_id', $request->integer('classroom_id'))->pluck('matiere')->unique('id')->values()
+            : collect();
 
         return view('teachers.grades.index', compact('classrooms', 'matieres'));
     }
@@ -62,10 +74,13 @@ class GradeController extends Controller
             abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
         }
 
-        // Vérifier que le professeur est assigné à cette classe ET cette matière
-        $isAssigned = $teacher->classrooms()
-            ->where('classrooms.id', $classroom->id)
-            ->wherePivot('matiere_id', $matiere->id)
+        // Vérifier que le professeur est assigné à cette classe ET cette matière — via
+        // PedagogicalAssignment, seule source de vérité alimentée par l'administration
+        // (voir index() ci-dessus, même correctif).
+        $isAssigned = PedagogicalAssignment::where('teacher_id', $teacher->id)
+            ->where('classroom_id', $classroom->id)
+            ->where('matiere_id', $matiere->id)
+            ->where('is_active', true)
             ->exists();
 
         if (!$isAssigned) {
@@ -132,7 +147,7 @@ class GradeController extends Controller
      * Rechercher un élève par matricule et afficher directement toutes les matières
      * (avec coefficients) qu'il doit à ce professeur pour la période choisie.
      */
-    public function searchStudent(Request $request)
+    public function searchStudent(Request $request, \App\Services\GradeCalculationService $gradeCalculationService)
     {
         $teacher = Teacher::where('user_id', auth()->id())->first();
 
@@ -145,6 +160,8 @@ class GradeController extends Controller
         $classroom = null;
         $assignments = collect();
         $existingNotes = collect();
+        $baremes = collect();
+        $usesBaremeSystem = false;
 
         if ($request->filled('matricule')) {
             // Allow searching by matricule regardless of role column, some fixtures set role via 'role' attribute
@@ -187,15 +204,26 @@ class GradeController extends Controller
                 ->whereIn('matiere_id', $assignments->pluck('matiere_id'))
                 ->get()
                 ->keyBy(fn ($note) => $note->matiere_id.'_'.$note->type_evaluation);
+
+            // Barème par matière (système "sunuBulletin" du primaire) : la note max saisie
+            // et affichée n'est pas toujours /20, voir GradeCalculationService::resolveBareme().
+            $usesBaremeSystem = $gradeCalculationService->usesBaremeSystem($classroom, $classroom->school_year_id);
+            if ($usesBaremeSystem) {
+                $baremes = $assignments->mapWithKeys(
+                    fn (PedagogicalAssignment $assignment) => [
+                        $assignment->matiere_id => $gradeCalculationService->resolveBareme($assignment->matiere, $classroom, $classroom->school_year_id),
+                    ]
+                );
+            }
         }
 
-        return view('teachers.grades.student', compact('student', 'classroom', 'assignments', 'periode', 'existingNotes'));
+        return view('teachers.grades.student', compact('student', 'classroom', 'assignments', 'periode', 'existingNotes', 'baremes', 'usesBaremeSystem'));
     }
 
     /**
      * Enregistrer les notes d'un seul élève, toutes matières confondues, pour une période donnée.
      */
-    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard)
+    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard, \App\Services\GradeCalculationService $gradeCalculationService)
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -204,7 +232,10 @@ class GradeController extends Controller
             'grades' => ['required', 'array'],
             'grades.*.matiere_id' => ['required', 'exists:matieres,id'],
             'grades.*.type_evaluation' => ['required', 'string'],
-            'grades.*.valeur' => ['nullable', 'numeric', 'min:0', 'max:20'],
+            // Pas de max fixe ici : chaque matière peut avoir son propre barème en
+            // primaire (ex. Mathématiques /80) — vérifié plus bas une fois la classe
+            // résolue, une seule règle statique ne peut pas varier par ligne du tableau.
+            'grades.*.valeur' => ['nullable', 'numeric', 'min:0'],
             'grades.*.appreciation' => ['nullable', 'string'],
         ]);
 
@@ -245,6 +276,20 @@ class GradeController extends Controller
 
             if (!$assignedMatiereIds->contains((int) $gradeData['matiere_id'])) {
                 abort(403, "Vous n'êtes pas autorisé à saisir des notes pour une de ces matières dans cette classe.");
+            }
+
+            // Barème dynamique par matière (système "sunuBulletin" du primaire, ex.
+            // Mathématiques /80) — une seule règle de validation statique ne peut pas
+            // varier par ligne du tableau, vérifié ici une fois la matière connue.
+            $matiereForGrade = Matiere::find($gradeData['matiere_id']);
+            $maxValeur = $matiereForGrade
+                ? $gradeCalculationService->resolveBareme($matiereForGrade, $classroom, $classroom->school_year_id)
+                : 20;
+
+            if ((float) $gradeData['valeur'] > $maxValeur) {
+                return back()->withInput()->withErrors([
+                    'grades' => "La note pour {$matiereForGrade?->nom} ne peut pas dépasser le barème de cette matière ({$maxValeur}).",
+                ]);
             }
 
             if (!in_array($gradeData['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {

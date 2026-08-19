@@ -40,9 +40,19 @@
                             <select name="matiere_id" id="matiereSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">{{ __('Sélectionner une matière') }}</option>
                                 @if(request('classroom_id'))
+                                    @php
+                                        $dropdownClassroom = \App\Models\Classroom::find(request('classroom_id'));
+                                        $dropdownGradeService = app(\App\Services\GradeCalculationService::class);
+                                        $dropdownUsesBareme = $dropdownClassroom && $dropdownGradeService->usesBaremeSystem($dropdownClassroom, $dropdownClassroom->school_year_id);
+                                    @endphp
                                     @foreach($matieres as $matiere)
                                         <option value="{{ $matiere->id }}" data-coefficient="{{ $matiere->coefficient }}" {{ request('matiere_id') == $matiere->id ? 'selected' : '' }}>
-                                            {{ $matiere->nom }} (Coef: {{ $matiere->coefficient }})
+                                            {{ $matiere->nom }}
+                                            @if($dropdownUsesBareme)
+                                                (Barème: {{ $dropdownGradeService->resolveBareme($matiere, $dropdownClassroom, $dropdownClassroom->school_year_id) }})
+                                            @else
+                                                (Coef: {{ $matiere->coefficient }})
+                                            @endif
                                         </option>
                                     @endforeach
                                 @endif
@@ -90,6 +100,14 @@
                         })
                         ->with('latestRegistration')
                         ->get();
+                    // Barème par matière (système "sunuBulletin" du primaire, ex. Mathématiques
+                    // /80) : la note max de cette grille n'est pas toujours /20, voir
+                    // GradeCalculationService::resolveBareme().
+                    $gradeCalculationService = app(\App\Services\GradeCalculationService::class);
+                    $usesBaremeSystem = $gradeCalculationService->usesBaremeSystem($selectedClassroom, $selectedClassroom->school_year_id);
+                    $maxValeur = $usesBaremeSystem
+                        ? $gradeCalculationService->resolveBareme($selectedMatiere, $selectedClassroom, $selectedClassroom->school_year_id)
+                        : 20;
                 @endphp
                 
                 <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -97,7 +115,7 @@
                         <div class="flex items-center justify-between">
                             <h4 class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                {{ __('Grille de saisie') }} - {{ $selectedClassroom->name }} | {{ $selectedMatiere->nom }} (Coef: {{ $selectedMatiere->coefficient }})
+                                {{ __('Grille de saisie') }} - {{ $selectedClassroom->name }} | {{ $selectedMatiere->nom }} ({{ $usesBaremeSystem ? 'Barème: '.$maxValeur : 'Coef: '.$selectedMatiere->coefficient }})
                             </h4>
                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ $students->count() }} élève(s)</span>
                         </div>
@@ -135,7 +153,7 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('N°') }}</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Élève') }}</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Matricule') }}</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Note (/20)') }}</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ $usesBaremeSystem ? __('Note (/'.$maxValeur.')') : __('Note (/20)') }}</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Appréciation') }}</th>
                                             @can('generer-bulletins')
                                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Bulletin') }}</th>
@@ -155,7 +173,7 @@
                                                 {{ $student->matricule }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <input type="number" name="grades[{{ $index }}][valeur]" min="0" max="20" step="0.5" class="w-24 rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="0-20">
+                                                <input type="number" name="grades[{{ $index }}][valeur]" min="0" max="{{ $maxValeur }}" step="0.5" class="w-24 rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="0-{{ $maxValeur }}">
                                                 <input type="hidden" name="grades[{{ $index }}][user_id]" value="{{ $student->id }}">
                                                 <input type="hidden" name="grades[{{ $index }}][matiere_id]" value="{{ request('matiere_id') }}">
                                             </td>

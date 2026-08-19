@@ -44,6 +44,7 @@ class PedagogicalConfigurationController extends Controller
         $classrooms = Classroom::where('school_year_id', $schoolYear->id)->get();
         $configuredSubjects = SubjectConfiguration::where('school_year_id', $schoolYear->id)->get();
         $periods = $schoolYear->academicPeriods;
+        $matieres = Matiere::orderBy('nom')->get();
 
         $issues = [
             ['label' => 'Classes sans affectation pédagogique', 'count' => $classrooms->filter(fn ($classroom) => ! $assignments->contains('classroom_id', $classroom->id))->count(), 'tab' => 'assignments'],
@@ -52,7 +53,7 @@ class PedagogicalConfigurationController extends Controller
             ['label' => 'Périodes non configurées', 'count' => $periods->isEmpty() ? 1 : 0, 'tab' => 'periods'],
         ];
 
-        return view('pedagogical-configuration.index', compact('schoolYears', 'schoolYear', 'assignments', 'classrooms', 'configuredSubjects', 'periods', 'issues'));
+        return view('pedagogical-configuration.index', compact('schoolYears', 'schoolYear', 'assignments', 'classrooms', 'configuredSubjects', 'periods', 'issues', 'matieres'));
     }
 
     public function assignments(Request $request)
@@ -256,9 +257,42 @@ class PedagogicalConfigurationController extends Controller
         return back()->with('success', 'Règles de notes enregistrées.');
     }
 
+    /**
+     * Création explicite d'une matière avec son coefficient de base — jusqu'ici une
+     * matière n'existait qu'en sous-produit d'un autre formulaire (nouvelle affectation
+     * ou configuration de coefficient par cycle), sans jamais pouvoir fixer son
+     * coefficient de base au moment de la création.
+     */
+    public function storeMatiere(Request $request)
+    {
+        $data = $request->validate([
+            'nom' => ['required', 'string', 'max:100', 'unique:matieres,nom'],
+            'coefficient' => ['required', 'numeric', 'min:0.1', 'max:99.9'],
+        ], [
+            'nom.required' => 'Saisissez le nom de la matière.',
+            'nom.unique' => 'Cette matière existe déjà.',
+            'coefficient.required' => 'Indiquez le coefficient de la matière.',
+        ]);
+
+        Matiere::create($data);
+
+        return back()->with('success', "Matière « {$data['nom']} » créée avec un coefficient de {$data['coefficient']}.");
+    }
+
     public function storeSubjectConfiguration(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
-        $data = $request->validate(['school_year_id' => ['required', 'exists:school_years,id'], 'matiere_id' => ['nullable', 'exists:matieres,id'], 'subject_name' => ['nullable', 'string', 'max:100'], 'cycle' => ['nullable', 'string'], 'coefficient' => ['required', 'numeric', 'min:0.1']]);
+        $data = $request->validate([
+            'school_year_id' => ['required', 'exists:school_years,id'],
+            'matiere_id' => ['nullable', 'exists:matieres,id'],
+            'subject_name' => ['nullable', 'string', 'max:100'],
+            'cycle' => ['nullable', 'string'],
+            'coefficient' => ['required', 'numeric', 'min:0.1'],
+            // Barème (système "sunuBulletin" du primaire, ex. Mathématiques /80) :
+            // uniquement pertinent pour le cycle primaire, voir GradeCalculationService::
+            // resolveBareme()/usesBaremeSystem(). Laissé vide, la matière reste sur le
+            // système standard (coefficient + note /20).
+            'bareme' => ['nullable', 'numeric', 'min:1', 'max:999.99'],
+        ]);
         $schoolYearGuard->assertNotLocked(SchoolYear::findOrFail($data['school_year_id']));
         if (! $data['matiere_id'] && blank($data['subject_name'] ?? null)) {
             return back()->withErrors(['subject_name' => 'Sélectionnez une matière ou saisissez-en une nouvelle.']);

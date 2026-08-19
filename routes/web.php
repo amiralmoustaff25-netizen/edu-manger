@@ -298,6 +298,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             Route::post('/periods', [PedagogicalConfigurationController::class, 'storePeriod'])->name('periods.store');
             Route::patch('/periods/{period}/toggle', [PedagogicalConfigurationController::class, 'togglePeriod'])->name('periods.toggle');
             Route::post('/evaluation-types', [PedagogicalConfigurationController::class, 'storeEvaluationType'])->name('evaluation-types.store');
+            Route::post('/matieres', [PedagogicalConfigurationController::class, 'storeMatiere'])->name('matieres.store');
             Route::post('/subject-configurations', [PedagogicalConfigurationController::class, 'storeSubjectConfiguration'])->name('subjects.store');
             Route::put('/school-years/{schoolYear}/grade-settings', [PedagogicalConfigurationController::class, 'updateSettings'])->name('settings.update');
         });

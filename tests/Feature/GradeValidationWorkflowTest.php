@@ -3,6 +3,7 @@
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
+use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
@@ -19,10 +20,17 @@ function createGradeFixture(): array
     $teacherUser = User::factory()->create(['role' => 'professeur']);
     $teacherUser->assignRole('professeur');
     $teacher = Teacher::factory()->create(['user_id' => $teacherUser->id]);
-    $teacher->classrooms()->attach($classroom->id, [
-        'annee_scolaire' => $schoolYear->year_string,
+    // PedagogicalAssignment (écran "Affectations pédagogiques") : seule source de vérité
+    // des affectations enseignant/classe/matière alimentée par l'administration — le
+    // pivot teacher_classroom (Teacher::classrooms()) utilisé ici auparavant n'est plus
+    // jamais renseigné par aucun écran accessible (voir GradeController::index/store).
+    PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,
+        'school_year_id' => $schoolYear->id,
         'volume_horaire_hebdo' => 4,
+        'is_active' => true,
     ]);
 
     $student = User::factory()->create(['role' => 'eleve']);

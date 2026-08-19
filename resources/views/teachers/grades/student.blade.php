@@ -51,11 +51,21 @@
                     $defaultEvaluationType = \App\Support\EvaluationTypeScope::allowedFor($classroom->cycle)[0];
                 @endphp
                 <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="{
-                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_'.$defaultEvaluationType))->valeur)])->toJson() }},
+                    usesBareme: {{ $usesBaremeSystem ? 'true' : 'false' }},
+                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'bareme' => (float) ($baremes[$a->matiere_id] ?? 20), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_'.$defaultEvaluationType))->valeur)])->toJson() }},
                     get average() {
-                        let total = 0, coef = 0;
-                        this.rows.forEach(r => { if (r.valeur !== null && r.valeur !== '' && !isNaN(r.valeur)) { total += parseFloat(r.valeur) * r.coef; coef += r.coef; } });
-                        return coef > 0 ? (total / coef).toFixed(2) : '—';
+                        // Primaire avec barèmes (sunuBulletin) : somme des points obtenus / somme
+                        // des barèmes des matières notées × 20 — jamais valeur × barème, qui
+                        // n'aurait aucun sens (voir GradeCalculationService::computeAverageDataPrimaire).
+                        // Sinon (collège/lycée) : moyenne pondérée par coefficient classique.
+                        let total = 0, weight = 0;
+                        this.rows.forEach(r => {
+                            if (r.valeur === null || r.valeur === '' || isNaN(r.valeur)) { return; }
+                            if (this.usesBareme) { total += parseFloat(r.valeur); weight += r.bareme; }
+                            else { total += parseFloat(r.valeur) * r.coef; weight += r.coef; }
+                        });
+                        if (weight <= 0) { return '—'; }
+                        return this.usesBareme ? ((total / weight) * 20).toFixed(2) : (total / weight).toFixed(2);
                     }
                 }">
                     <div class="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between flex-wrap gap-2">
@@ -91,9 +101,9 @@
                                 <thead class="bg-gray-50 dark:bg-slate-700/50">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('Matière') }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('Coef.') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $usesBaremeSystem ? __('Barème') : __('Coef.') }}</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __("Type d'évaluation") }}</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('Note (/20)') }}</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('Note') }}</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ __('Appréciation') }}</th>
                                     </tr>
                                 </thead>
@@ -101,10 +111,11 @@
                                     @foreach($assignments as $index => $assignment)
                                         @php
                                             $existing = $existingNotes->get($assignment->matiere_id.'_'.$defaultEvaluationType);
+                                            $maxValeur = $usesBaremeSystem ? (float) ($baremes[$assignment->matiere_id] ?? 20) : 20;
                                         @endphp
                                         <tr>
                                             <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-200">{{ $assignment->matiere->nom }}</td>
-                                            <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $assignment->matiere->coefficient }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $usesBaremeSystem ? $maxValeur : $assignment->matiere->coefficient }}</td>
                                             <td class="px-4 py-3">
                                                 <input type="hidden" name="grades[{{ $index }}][matiere_id]" value="{{ $assignment->matiere_id }}">
                                                 <select name="grades[{{ $index }}][type_evaluation]" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -114,7 +125,7 @@
                                                 </select>
                                             </td>
                                             <td class="px-4 py-3">
-                                                <input type="number" x-model="rows[{{ $index }}].valeur" name="grades[{{ $index }}][valeur]" min="0" max="20" step="0.5" value="{{ old('grades.'.$index.'.valeur', $existing?->valeur) }}" class="w-24 rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="0-20">
+                                                <input type="number" x-model="rows[{{ $index }}].valeur" name="grades[{{ $index }}][valeur]" min="0" max="{{ $maxValeur }}" step="0.5" value="{{ old('grades.'.$index.'.valeur', $existing?->valeur) }}" class="w-24 rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="0-{{ $maxValeur }}">
                                             </td>
                                             <td class="px-4 py-3">
                                                 <input type="text" name="grades[{{ $index }}][appreciation]" value="{{ old('grades.'.$index.'.appreciation', $existing?->appreciation) }}" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="{{ __('Optionnelle') }}">

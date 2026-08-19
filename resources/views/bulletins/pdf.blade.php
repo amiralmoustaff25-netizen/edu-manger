@@ -145,14 +145,21 @@
         </table>
     </div>
 
+    @php
+        // Système "sunuBulletin" (primaire) : chaque matière a son propre barème (note
+        // max) plutôt qu'un coefficient appliqué à une note /20.
+        $usesBaremeSystem = collect($bulletin['subjects'])->contains(fn ($s) => $s['bareme'] !== null);
+    @endphp
     <table class="grades-table">
         <thead>
             <tr>
                 <th class="subject">Matière</th>
-                <th>Coef</th>
+                <th>{{ $usesBaremeSystem ? 'Barème' : 'Coef' }}</th>
                 <th>Notes</th>
-                <th>Moyenne</th>
-                <th>Moy. × Coef</th>
+                <th>{{ $usesBaremeSystem ? 'Points obtenus' : 'Moyenne' }}</th>
+                @unless($usesBaremeSystem)
+                    <th>Moy. × Coef</th>
+                @endunless
                 <th>Appréciation</th>
             </tr>
         </thead>
@@ -163,15 +170,17 @@
                 <td>{{ $subject['coefficient'] }}</td>
                 <td>{{ implode(', ', $subject['notes']) ?: '-' }}</td>
                 <td>{{ $subject['average'] > 0 ? number_format($subject['average'], 2) : '-' }}</td>
-                <td>{{ $subject['weighted_average'] > 0 ? number_format($subject['weighted_average'], 2) : '-' }}</td>
+                @unless($usesBaremeSystem)
+                    <td>{{ $subject['weighted_average'] > 0 ? number_format($subject['weighted_average'], 2) : '-' }}</td>
+                @endunless
                 <td>{{ $subject['appreciation'] ?: '-' }}</td>
             </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="2" style="text-align: right; font-weight: bold;">Total Coefficients :</td>
-                <td colspan="4" style="font-weight: bold;">{{ $bulletin['total_coefficients'] }}</td>
+                <td colspan="2" style="text-align: right; font-weight: bold;">{{ $usesBaremeSystem ? 'Total Barèmes :' : 'Total Coefficients :' }}</td>
+                <td colspan="{{ $usesBaremeSystem ? 3 : 4 }}" style="font-weight: bold;">{{ $bulletin['total_coefficients'] }}</td>
             </tr>
         </tfoot>
     </table>

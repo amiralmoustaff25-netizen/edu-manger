@@ -69,7 +69,11 @@ class GradeCalculationService
             : $this->computeAverageDataStandard($student, $classroom, $period, $schoolYearId);
     }
 
-    private function usesBaremeSystem(Classroom $classroom, ?int $schoolYearId): bool
+    /**
+     * Publique : réutilisée par les formulaires de saisie de notes pour savoir s'il faut
+     * afficher/valider un barème par matière plutôt que la note /20 classique.
+     */
+    public function usesBaremeSystem(Classroom $classroom, ?int $schoolYearId): bool
     {
         if ($classroom->cycle !== 'primaire' || ! $schoolYearId) {
             return false;
