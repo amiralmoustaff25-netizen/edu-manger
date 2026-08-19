@@ -80,6 +80,63 @@ test('admin can create a user with a generated matricule and temporary password'
     expect($user->hasRole('comptable'))->toBeTrue();
 });
 
+test('admin can create a professeur account with its fiche métier from the generic user form', function () {
+    // Le module Professeurs séparé (bouton "Ajouter un professeur") a été retiré pour
+    // simplifier la navigation : "Ajouter un utilisateur" est désormais l'unique point
+    // d'entrée, y compris pour un professeur, dont la fiche métier (Teacher) doit donc
+    // être collectée dans ce même formulaire quand role=professeur est sélectionné.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $admin->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post(route('users.store'), [
+        'nom' => 'Sarr',
+        'prenom' => 'Ousmane',
+        'email' => 'ousmane.sarr@edumanager.sn',
+        'role' => 'professeur',
+        'is_active' => '1',
+        'date_naissance' => '1985-05-15',
+        'lieu_naissance' => 'Dakar',
+        'sexe' => 'masculin',
+        'nationalite' => 'Sénégalaise',
+        'diplomes' => 'Licence en mathématiques',
+        'etablissements_formation' => 'UCAD',
+        'statut' => 'fonctionnaire',
+        'date_recrutement' => '2020-09-01',
+        'specialites' => 'Mathématiques, Physique',
+        'filiation' => 'Fils de M. Sarr',
+        'contact_urgence_nom' => 'Mme Sarr',
+        'contact_urgence_tel' => '770000000',
+        'nombre_heures_semaine' => 18,
+    ]);
+
+    $response->assertSessionDoesntHaveErrors()->assertRedirect(route('users.index'));
+
+    $user = User::where('email', 'ousmane.sarr@edumanager.sn')->firstOrFail();
+    expect($user->hasRole('professeur'))->toBeTrue();
+    expect($user->matricule)->toStartWith('PROF');
+
+    $teacher = Teacher::where('user_id', $user->id)->firstOrFail();
+    expect($teacher->statut)->toBe('fonctionnaire');
+    expect($teacher->specialites)->toBe(['Mathématiques', 'Physique']);
+});
+
+test('creating a professeur from the generic user form requires the fiche métier fields', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('users.store'), [
+            'nom' => 'Sarr',
+            'prenom' => 'Ousmane',
+            'email' => 'ousmane.sarr2@edumanager.sn',
+            'role' => 'professeur',
+            'is_active' => '1',
+        ])
+        ->assertSessionHasErrors(['date_naissance', 'lieu_naissance', 'sexe', 'nationalite', 'diplomes', 'etablissements_formation', 'statut', 'date_recrutement', 'specialites', 'filiation', 'contact_urgence_nom', 'contact_urgence_tel']);
+
+    expect(User::where('email', 'ousmane.sarr2@edumanager.sn')->exists())->toBeFalse();
+});
+
 test('admin can deactivate and reactivate a user', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $admin->assignRole('admin');

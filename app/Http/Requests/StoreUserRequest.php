@@ -13,17 +13,51 @@ class StoreUserRequest extends FormRequest
         return $this->user()->can('creer-utilisateur');
     }
 
+    protected function prepareForValidation(): void
+    {
+        // Même format libre "séparé par des virgules" que StoreTeacherRequest.
+        if ($this->filled('specialites') && is_string($this->specialites)) {
+            $specialites = collect(explode(',', $this->specialites))
+                ->map(fn ($item) => trim($item))
+                ->filter()
+                ->values()
+                ->all();
+
+            $this->merge(['specialites' => $specialites]);
+        }
+    }
+
     public function rules(): array
     {
-        // Ni le rôle professeur (fiche dédiée via le module Professeurs) ni le rôle
-        // super-admin (jamais attribuable à la création) ne sont proposés ici.
+        // Le rôle super-admin n'est jamais attribuable à la création.
+        $isProfesseur = $this->input('role') === 'professeur';
+
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->where(fn ($query) => $query->whereNull('deleted_at'))],
+            // Email obligatoire pour un professeur (compte utilisé au quotidien), facultatif
+            // pour les autres rôles créés ici — comportement inchangé pour ceux-ci.
+            'email' => [$isProfesseur ? 'required' : 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->where(fn ($query) => $query->whereNull('deleted_at'))],
             'telephone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', Rule::in(UserRoles::CREATABLE_VIA_USER_FORM)],
             'is_active' => ['boolean'],
+
+            // Fiche professeur (Teacher) : mêmes règles que StoreTeacherRequest, affichées
+            // dynamiquement dans le formulaire quand role=professeur est sélectionné.
+            'date_naissance' => [Rule::requiredIf($isProfesseur), 'date'],
+            'lieu_naissance' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
+            'sexe' => [Rule::requiredIf($isProfesseur), Rule::in(['masculin', 'feminin'])],
+            'nationalite' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
+            'diplomes' => [Rule::requiredIf($isProfesseur), 'string'],
+            'etablissements_formation' => [Rule::requiredIf($isProfesseur), 'string'],
+            'statut' => [Rule::requiredIf($isProfesseur), Rule::in(['fonctionnaire', 'contractuel', 'vacataire'])],
+            'date_recrutement' => [Rule::requiredIf($isProfesseur), 'date'],
+            'specialites' => [Rule::requiredIf($isProfesseur), 'array', 'min:1'],
+            'specialites.*' => ['required', 'string', 'max:255'],
+            'filiation' => [Rule::requiredIf($isProfesseur), 'string'],
+            'contact_urgence_nom' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
+            'contact_urgence_tel' => [Rule::requiredIf($isProfesseur), 'string', 'max:20'],
+            'nombre_heures_semaine' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -37,9 +71,23 @@ class StoreUserRequest extends FormRequest
             'telephone.max' => 'Le numéro de téléphone ne doit pas dépasser 20 caractères.',
             'role.required' => 'Le rôle est obligatoire.',
             'role.in' => 'Le rôle sélectionné est invalide.',
+            'email.required' => 'L’adresse email est obligatoire pour un compte professeur.',
+            'date_naissance.required' => 'La date de naissance est obligatoire.',
             'date_naissance.date' => 'La date de naissance doit être une date valide.',
+            'lieu_naissance.required' => 'Le lieu de naissance est obligatoire.',
+            'sexe.required' => 'Le sexe est obligatoire.',
             'sexe.in' => 'Le sexe doit être masculin ou féminin.',
+            'nationalite.required' => 'La nationalité est obligatoire.',
+            'diplomes.required' => 'Les diplômes sont obligatoires.',
+            'etablissements_formation.required' => 'Les établissements de formation sont obligatoires.',
+            'statut.required' => 'Le statut est obligatoire.',
             'statut.in' => 'Le statut doit être fonctionnaire, contractuel ou vacataire.',
+            'date_recrutement.required' => 'La date de recrutement est obligatoire.',
+            'specialites.required' => 'Les spécialités sont obligatoires.',
+            'specialites.*.required' => 'Chaque spécialité doit être renseignée.',
+            'filiation.required' => 'La filiation est obligatoire.',
+            'contact_urgence_nom.required' => 'Le nom du contact d’urgence est obligatoire.',
+            'contact_urgence_tel.required' => 'Le téléphone du contact d’urgence est obligatoire.',
         ];
     }
 }

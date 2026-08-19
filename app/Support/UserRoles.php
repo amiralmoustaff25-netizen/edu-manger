@@ -6,10 +6,6 @@ use App\Models\User;
 
 class UserRoles
 {
-    // Rôles métier du système. Le rôle 'professeur' n'est volontairement pas
-    // attribuable via le formulaire utilisateur générique : la fiche professeur
-    // exige des informations obligatoires (statut, diplômes...) collectées via
-    // le module Professeurs (voir TeacherController::store).
     public const ALL = [
         'super-admin',
         'admin',
@@ -21,11 +17,17 @@ class UserRoles
         'eleve',
     ];
 
+    // Le rôle 'professeur' est attribuable via le formulaire utilisateur générique
+    // (choix explicite : un seul point de création "Ajouter un utilisateur" plutôt
+    // qu'un module dédié séparé) — la fiche professeur (statut, diplômes...) est
+    // alors collectée dans le même formulaire, champs affichés dynamiquement quand
+    // ce rôle est sélectionné (voir StoreUserRequest, UserController::store()).
     public const CREATABLE_VIA_USER_FORM = [
         'admin',
         'manager-comptable',
         'comptable',
         'surveillant',
+        'professeur',
     ];
 
     /**
@@ -48,8 +50,14 @@ class UserRoles
 
     /**
      * Rôles à fiche dédiée : leur attribution crée des données métier liées
-     * (Teacher, Registration, ParentModel) qui ne sont collectées que par leur
-     * module dédié, jamais par le formulaire Utilisateurs générique.
+     * (Teacher, Registration, ParentModel). Pour 'eleve'/'parent', ces données ne
+     * sont jamais collectées que par leur module dédié (Élèves/Parents). Pour
+     * 'professeur', elles le sont désormais aussi par le formulaire Utilisateurs
+     * générique à la CRÉATION (voir CREATABLE_VIA_USER_FORM) — mais pas à
+     * l'ÉDITION : cette liste continue donc d'exclure 'professeur' du formulaire
+     * d'édition générique pour un compte qui ne l'a pas déjà (changer un compte
+     * existant vers professeur nécessiterait de créer sa fiche Teacher, ce que ce
+     * formulaire d'édition ne fait pas — cela reste gèré par le module Professeurs).
      */
     public const DEDICATED_PROFILE_ROLES = ['professeur', 'eleve', 'parent'];
 

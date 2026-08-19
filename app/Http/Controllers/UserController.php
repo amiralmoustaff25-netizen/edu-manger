@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\SuperAdminProtectionService;
@@ -88,12 +89,18 @@ class UserController extends Controller
         $role = $validated['role'];
         unset($validated['role']);
 
-        $validated['matricule'] = User::generateMatricule($role);
         $temporaryPassword = Str::password(12);
+        $isActive = $request->boolean('is_active', true);
+
+        if ($role === 'professeur') {
+            return $this->storeProfesseur($validated, $temporaryPassword, $isActive);
+        }
+
+        $validated['matricule'] = User::generateMatricule($role);
         $validated['password'] = Hash::make($temporaryPassword);
         $validated['created_by'] = auth()->id();
         $validated['password_must_change'] = true;
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['is_active'] = $isActive;
 
         $user = DB::transaction(function () use ($validated, $role) {
             $user = User::create($validated);
@@ -110,6 +117,60 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', 'Utilisateur créé. Matricule : '.$user->matricule.'.')
+            ->with('temp_password', $temporaryPassword)
+            ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
+    }
+
+    /**
+     * Création d'un professeur depuis le formulaire Utilisateurs générique : même logique
+     * que TeacherController::store() (compte + fiche métier créés ensemble), pour que
+     * "Ajouter un utilisateur" reste l'unique point d'entrée quel que soit le rôle choisi.
+     */
+    private function storeProfesseur(array $validated, string $temporaryPassword, bool $isActive): RedirectResponse
+    {
+        $teacher = DB::transaction(function () use ($validated, $temporaryPassword, $isActive) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'password' => Hash::make($temporaryPassword),
+                'matricule' => User::generateMatricule('professeur'),
+                'telephone' => $validated['telephone'] ?? null,
+                'date_naissance' => $validated['date_naissance'],
+                'specialite' => implode(', ', $validated['specialites']),
+                'created_by' => auth()->id(),
+                'is_active' => $isActive,
+                'password_must_change' => true,
+            ]);
+
+            $user->assignRole('professeur');
+            $user->syncPrimaryRoleColumn();
+
+            return Teacher::create([
+                'user_id' => $user->id,
+                'matricule' => Teacher::generateMatricule(),
+                'date_naissance' => $validated['date_naissance'],
+                'lieu_naissance' => $validated['lieu_naissance'],
+                'sexe' => $validated['sexe'],
+                'nationalite' => $validated['nationalite'],
+                'diplomes' => $validated['diplomes'],
+                'etablissements_formation' => $validated['etablissements_formation'],
+                'statut' => $validated['statut'],
+                'date_recrutement' => $validated['date_recrutement'],
+                'specialites' => $validated['specialites'],
+                'filiation' => $validated['filiation'],
+                'contact_urgence_nom' => $validated['contact_urgence_nom'],
+                'contact_urgence_tel' => $validated['contact_urgence_tel'],
+                'nombre_heures_semaine' => $validated['nombre_heures_semaine'] ?? 0,
+                'created_by' => auth()->id(),
+            ]);
+        });
+
+        app(AuditLogService::class)->log('created', Teacher::class, $teacher->id, null, ['matricule' => $teacher->matricule]);
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'Professeur créé avec succès. Matricule : '.$teacher->user->matricule.'.')
             ->with('temp_password', $temporaryPassword)
             ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
