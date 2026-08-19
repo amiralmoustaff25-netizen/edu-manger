@@ -165,6 +165,85 @@ test('an inactive configured coefficient is ignored, falling back to the global 
     expect($bulletin['subjects'][0]['coefficient'])->toBe(2.0);
 });
 
+test('a primaire classroom with configured barèmes computes the general average as points obtained over total barème, out of 20', function () {
+    // Système "sunuBulletin" : Mathématiques /80, Arabe /10 — la moyenne générale n'est
+    // ni une moyenne arithmétique ni pondérée par un petit coefficient classique, mais
+    // somme des points obtenus / somme des barèmes × 20.
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 1]);
+    $arabe = Matiere::factory()->create(['nom' => 'Arabe', 'coefficient' => 1]);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+    assignMatiereToClassroom($this->classroom, $this->year, $arabe);
+
+    SubjectConfiguration::create(['matiere_id' => $math->id, 'school_year_id' => $this->year->id, 'cycle' => 'primaire', 'bareme' => 80, 'is_active' => true]);
+    SubjectConfiguration::create(['matiere_id' => $arabe->id, 'school_year_id' => $this->year->id, 'cycle' => 'primaire', 'bareme' => 10, 'is_active' => true]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 65, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $arabe->id, 'valeur' => 7, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    // (65 + 7) / (80 + 10) * 20 = 72/90*20 = 16
+    expect($bulletin['general_average'])->toBe(16.0);
+    expect($bulletin['total_coefficients'])->toBe(90.0);
+    $subjectsByName = collect($bulletin['subjects'])->keyBy('matiere');
+    expect($subjectsByName['Mathématiques']['bareme'])->toBe(80.0);
+    expect($subjectsByName['Mathématiques']['weighted_average'])->toBe(65.0);
+});
+
+test('a primaire subject without a graded note this period is excluded from both sides of the barème average', function () {
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $arabe = Matiere::factory()->create(['nom' => 'Arabe']);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+    assignMatiereToClassroom($this->classroom, $this->year, $arabe);
+
+    SubjectConfiguration::create(['matiere_id' => $math->id, 'school_year_id' => $this->year->id, 'cycle' => 'primaire', 'bareme' => 80, 'is_active' => true]);
+    SubjectConfiguration::create(['matiere_id' => $arabe->id, 'school_year_id' => $this->year->id, 'cycle' => 'primaire', 'bareme' => 10, 'is_active' => true]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    // Seule Mathématiques a une note ce trimestre.
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 40, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    // Si Arabe (barème 10, note 0) comptait, ce serait 40/90*20 = 8.89 au lieu de
+    // 40/80*20 = 10 (seule matière notée, comme le principe déjà appliqué au collège/lycée).
+    expect($bulletin['general_average'])->toBe(10.0);
+});
+
+test('a primaire classroom without any configured barème still falls back to the standard /20 system', function () {
+    // usesBaremeSystem() n'active le système sunuBulletin que si l'établissement a
+    // explicitement configuré au moins un barème — une classe de primaire non configurée
+    // continue sur le système standard (coefficient=1 par défaut), sans changement de
+    // comportement pour un établissement qui n'utilise pas ce système.
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 1]);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $math->id, 'valeur' => 14, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    expect($bulletin['general_average'])->toBe(14.0);
+});
+
+test('resolveBareme falls back to 20 for a primaire subject with no configured barème, even when the barème system is active for other subjects', function () {
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $unconfigured = Matiere::factory()->create(['nom' => 'Sport']);
+    assignMatiereToClassroom($this->classroom, $this->year, $math);
+    assignMatiereToClassroom($this->classroom, $this->year, $unconfigured);
+
+    SubjectConfiguration::create(['matiere_id' => $math->id, 'school_year_id' => $this->year->id, 'cycle' => 'primaire', 'bareme' => 80, 'is_active' => true]);
+
+    $student = enrollStudentInClassroom($this->classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $unconfigured->id, 'valeur' => 15, 'type_evaluation' => 'composition', 'periode' => 'trimestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'trimestre_1');
+
+    $sport = collect($bulletin['subjects'])->firstWhere('matiere', 'Sport');
+    expect($sport['bareme'])->toBe(20.0);
+});
+
 test('the class rank is consistent with the general average shown on the bulletin', function () {
     $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 1]);
     assignMatiereToClassroom($this->classroom, $this->year, $math);

@@ -55,6 +55,35 @@ class GradeCalculationService
      */
     private function computeAverageData(User $student, Classroom $classroom, string $period, ?int $schoolYearId): array
     {
+        // Primaire (système "sunuBulletin") : chaque matière a son propre barème (note
+        // max, ex. Mathématiques /80, Arabe /10) qui sert aussi de poids — moyenne
+        // générale = somme des points obtenus / somme des barèmes des matières notées ×
+        // 20. Fondamentalement différent du collège/lycée (coefficient appliqué à une
+        // note toujours /20). N'active ce mode que si l'établissement a réellement
+        // configuré au moins un barème pour le primaire cette année (usesBaremeSystem) :
+        // un cycle 'primaire' sans configuration de barème continue sur le système
+        // standard (coefficient=1 par défaut, équivalent à une moyenne /20 classique) —
+        // n'impose jamais ce système à une classe de primaire qui ne l'utilise pas.
+        return $this->usesBaremeSystem($classroom, $schoolYearId)
+            ? $this->computeAverageDataPrimaire($student, $classroom, $period, $schoolYearId)
+            : $this->computeAverageDataStandard($student, $classroom, $period, $schoolYearId);
+    }
+
+    private function usesBaremeSystem(Classroom $classroom, ?int $schoolYearId): bool
+    {
+        if ($classroom->cycle !== 'primaire' || ! $schoolYearId) {
+            return false;
+        }
+
+        return SubjectConfiguration::where('school_year_id', $schoolYearId)
+            ->where('is_active', true)
+            ->whereNotNull('bareme')
+            ->where(fn ($query) => $query->where('cycle', 'primaire')->orWhereNull('cycle'))
+            ->exists();
+    }
+
+    private function computeAverageDataStandard(User $student, Classroom $classroom, string $period, ?int $schoolYearId): array
+    {
         $subjectsData = [];
         $totalCoefficients = 0.0;
         $totalWeighted = 0.0;
@@ -73,6 +102,7 @@ class GradeCalculationService
             $subjectsData[] = [
                 'matiere' => $matiere->nom,
                 'coefficient' => $coefficient,
+                'bareme' => null,
                 'notes' => $notes->pluck('valeur')->toArray(),
                 'average' => $average,
                 'weighted_average' => $weightedAverage,
@@ -91,6 +121,56 @@ class GradeCalculationService
             'subjects' => $subjectsData,
             'general_average' => $generalAverage,
             'total_coefficients' => $totalCoefficients,
+        ];
+    }
+
+    /**
+     * @return array{subjects: array, general_average: float, total_coefficients: float}
+     */
+    private function computeAverageDataPrimaire(User $student, Classroom $classroom, string $period, ?int $schoolYearId): array
+    {
+        $subjectsData = [];
+        $totalBaremes = 0.0;
+        $totalPoints = 0.0;
+
+        foreach ($this->classroomSubjects($classroom, $schoolYearId) as $matiere) {
+            $notes = Note::where('user_id', $student->id)
+                ->where('matiere_id', $matiere->id)
+                ->where('periode', $period)
+                ->get();
+
+            $bareme = $this->resolveBareme($matiere, $classroom, $schoolYearId);
+            $hasNotes = $notes->isNotEmpty();
+            // Somme des points obtenus (pas moyenne) : le primaire n'a qu'une composition
+            // par matière et par période (EvaluationTypeScope::allowedFor('primaire')),
+            // mais avg() reste correct si jamais plusieurs notes existent sur la période.
+            $average = $hasNotes ? round($notes->avg('valeur'), 2) : 0.0;
+
+            $subjectsData[] = [
+                'matiere' => $matiere->nom,
+                'coefficient' => $bareme,
+                'bareme' => $bareme,
+                'notes' => $notes->pluck('valeur')->toArray(),
+                'average' => $average,
+                // Les points obtenus SONT déjà la contribution pondérée (le barème est le
+                // dénominateur, pas un multiplicateur) — contrairement à Moy.×Coef au
+                // collège/lycée, ne jamais multiplier average par bareme ici.
+                'weighted_average' => $average,
+                'appreciation' => $notes->last()?->appreciation ?? '',
+            ];
+
+            if ($hasNotes) {
+                $totalBaremes += $bareme;
+                $totalPoints += $average;
+            }
+        }
+
+        $generalAverage = $totalBaremes > 0 ? round($totalPoints / $totalBaremes * 20, 2) : 0.0;
+
+        return [
+            'subjects' => $subjectsData,
+            'general_average' => $generalAverage,
+            'total_coefficients' => $totalBaremes,
         ];
     }
 
@@ -121,6 +201,35 @@ class GradeCalculationService
         }
 
         return (float) ($matiere->coefficient ?? 1.0);
+    }
+
+    /**
+     * Barème (note maximale) réellement applicable pour une matière de primaire, dans le
+     * système "sunuBulletin" : configuré via SubjectConfiguration.bareme (même écran
+     * "Matières & coefficients" que resolveCoefficient(), même priorité cycle spécifique
+     * puis "Tous les cycles"). Repli sur 20 si rien n'est configuré, pour qu'une matière
+     * de primaire jamais paramétrée reste malgré tout saisissable/calculable comme une
+     * note /20 ordinaire plutôt que de casser le bulletin. Publique : réutilisée par la
+     * validation de saisie de notes (GradeController) et les formulaires (max dynamique).
+     */
+    public function resolveBareme(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
+    {
+        if ($schoolYearId) {
+            $configurations = SubjectConfiguration::where('matiere_id', $matiere->id)
+                ->where('school_year_id', $schoolYearId)
+                ->where('is_active', true)
+                ->whereNotNull('bareme')
+                ->get();
+
+            $match = $configurations->firstWhere('cycle', $classroom->cycle)
+                ?? $configurations->firstWhere('cycle', null);
+
+            if ($match) {
+                return (float) $match->bareme;
+            }
+        }
+
+        return 20.0;
     }
 
     /**
