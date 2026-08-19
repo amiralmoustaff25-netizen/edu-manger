@@ -17,6 +17,7 @@ class Classroom extends Model
     protected $fillable = [
         'name',
         'cycle',
+        'serie',
         'ordre',
         'school_year_id',
         'teacher_id',

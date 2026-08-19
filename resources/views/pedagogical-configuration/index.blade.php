@@ -19,24 +19,34 @@
             <section x-show="tab === 'assignments'" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800"><div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900 dark:text-white">Affectations pédagogiques</h3><p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Professeur, classe, matière et année scolaire.</p></div><a href="{{ route('pedagogical-configuration.assignments', ['school_year_id' => $schoolYear->id]) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Gérer les affectations</a></div></section>
 
             <section x-show="tab === 'subjects'" class="space-y-6">
-                <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
-                    <h3 class="font-semibold text-gray-900 dark:text-white">Créer une matière</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Le coefficient saisi ici est le coefficient de base de la matière (utilisé par défaut, sauf s'il est surchargé par cycle ci-dessous).</p>
-                    @error('nom')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800" x-data="{ cycle: '' }">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Matière &amp; coefficient</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Choisissez une matière existante ou saisissez-en une nouvelle, puis son coefficient — pour un cycle donné ou pour tous les cycles, en une seule étape. Pour le <strong>primaire</strong>, renseignez aussi le <strong>barème</strong> (note maximale, ex. Mathématiques /80). Pour le <strong>lycée</strong>, précisez la <strong>série</strong> si le coefficient en dépend (ex. Maths coef. 4 en Série S, coef. 2 en Série L).</p>
+                    @error('subject_name')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
                     @error('matiere')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
-                    <form method="POST" action="{{ route('pedagogical-configuration.matieres.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <form method="POST" action="{{ route('pedagogical-configuration.subjects.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                         @csrf
-                        <input name="nom" placeholder="Ex. Philosophie" aria-label="Nom de la matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
-                        <input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient de base" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
-                        <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Créer la matière</button>
+                        <input type="hidden" name="school_year_id" value="{{ $schoolYear->id }}">
+                        <select name="matiere_id" aria-label="Matière existante" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">— Matière existante —</option>@foreach($matieres as $matiere)<option value="{{ $matiere->id }}">{{ $matiere->nom }}</option>@endforeach</select>
+                        <input name="subject_name" placeholder="Ou nouvelle matière : Ex. Philosophie" aria-label="Ou nouvelle matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <select name="cycle" x-model="cycle" aria-label="Cycle" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">Tous les cycles</option><option value="primaire">Primaire</option><option value="college">Collège</option><option value="lycee">Lycée</option></select>
+                        <input x-show="cycle === 'lycee'" x-cloak name="serie" placeholder="Série (Ex. L, S, ES)" aria-label="Série (lycée uniquement)" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <input x-show="cycle === 'primaire'" x-cloak name="bareme" type="number" min="1" step="1" placeholder="Barème (primaire)" aria-label="Barème (primaire uniquement)" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                        <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Enregistrer</button>
                     </form>
-                    <div class="mt-5 divide-y dark:divide-slate-700">
+                </div>
+
+                <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Matières</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Coefficient de base (utilisé par défaut, sauf s'il est surchargé par cycle/série ci-dessus pour l'année sélectionnée).</p>
+                    <div class="mt-4 divide-y dark:divide-slate-700">
                         @forelse($matieres as $matiere)
                             <div x-data="{ editing: false }" class="py-2 text-sm dark:text-gray-200">
                                 <div x-show="! editing" class="flex items-center justify-between gap-3">
                                     <span>{{ $matiere->nom }}</span>
                                     <div class="flex items-center gap-3">
-                                        <strong>Coef. de base {{ $matiere->coefficient }}</strong>
+                                        <strong>Coef. de base {{ $matiere->coefficient }} · Barème /{{ rtrim(rtrim(number_format($matiere->bareme, 2), '0'), '.') }}</strong>
                                         <button type="button" @click="editing = true" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Modifier</button>
                                         <form method="POST" action="{{ route('pedagogical-configuration.matieres.destroy', $matiere) }}" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la matière', message: 'Supprimer « {{ addslashes($matiere->nom) }} » ? Impossible si des notes, affectations ou configurations de coefficient/barème y sont déjà rattachées.', confirmLabel: 'Supprimer' })">
                                             @csrf @method('DELETE')
@@ -44,10 +54,11 @@
                                         </form>
                                     </div>
                                 </div>
-                                <form x-show="editing" method="POST" action="{{ route('pedagogical-configuration.matieres.update', $matiere) }}" class="grid grid-cols-1 gap-2 md:grid-cols-4">
+                                <form x-show="editing" method="POST" action="{{ route('pedagogical-configuration.matieres.update', $matiere) }}" class="grid grid-cols-1 gap-2 md:grid-cols-5">
                                     @csrf @method('PATCH')
                                     <input name="nom" value="{{ $matiere->nom }}" aria-label="Nom de la matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white md:col-span-2" required>
                                     <input name="coefficient" type="number" min="0.1" step="0.1" value="{{ $matiere->coefficient }}" aria-label="Coefficient de base" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white" required>
+                                    <input name="bareme" type="number" min="1" step="1" value="{{ $matiere->bareme }}" aria-label="Barème de base" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
                                     <div class="flex items-center gap-2">
                                         <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white">Enregistrer</button>
                                         <button type="button" @click="editing = false" class="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:underline">Annuler</button>
@@ -62,20 +73,10 @@
 
                 <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
                     <h3 class="font-semibold text-gray-900 dark:text-white">Coefficients par cycle</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Surcharge le coefficient de base pour un cycle donné, pour l'année scolaire sélectionnée. Pour le <strong>primaire</strong>, renseignez aussi le <strong>barème</strong> (note maximale de la matière, ex. Mathématiques /80) : les notes de cette matière seront alors saisies et comptées sur ce barème au lieu d'être sur /20.</p>
-                    @error('subject_name')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
-                    <form method="POST" action="{{ route('pedagogical-configuration.subjects.store') }}" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-                        @csrf
-                        <input type="hidden" name="school_year_id" value="{{ $schoolYear->id }}">
-                        <select name="matiere_id" aria-label="Matière" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">@foreach($matieres as $matiere)<option value="{{ $matiere->id }}">{{ $matiere->nom }}</option>@endforeach</select>
-                        <select name="cycle" aria-label="Cycle" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"><option value="">Tous les cycles</option><option value="primaire">Primaire</option><option value="college">Collège</option><option value="lycee">Lycée</option></select>
-                        <input name="coefficient" type="number" min="0.1" step="0.1" value="1" aria-label="Coefficient" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
-                        <input name="bareme" type="number" min="1" step="1" placeholder="Barème (primaire)" aria-label="Barème (primaire uniquement)" class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
-                        <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Enregistrer</button>
-                    </form>
-                    <div class="mt-5 divide-y dark:divide-slate-700">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Surcharges enregistrées pour l'année scolaire sélectionnée (créées via le formulaire ci-dessus).</p>
+                    <div class="mt-4 divide-y dark:divide-slate-700">
                         @forelse($configuredSubjects as $configuration)
-                            <div class="flex justify-between py-3 text-sm dark:text-gray-200"><span>{{ $configuration->matiere?->nom ?? 'Matière' }} — {{ $configuration->cycle ?: 'Tous cycles' }}</span><strong>Coef. {{ $configuration->coefficient }}@if($configuration->bareme) · Barème /{{ rtrim(rtrim(number_format($configuration->bareme, 2), '0'), '.') }}@endif</strong></div>
+                            <div class="flex justify-between py-3 text-sm dark:text-gray-200"><span>{{ $configuration->matiere?->nom ?? 'Matière' }} — {{ $configuration->cycle ?: 'Tous cycles' }}@if($configuration->serie) (Série {{ $configuration->serie }})@endif</span><strong>Coef. {{ $configuration->coefficient }}@if($configuration->bareme) · Barème /{{ rtrim(rtrim(number_format($configuration->bareme, 2), '0'), '.') }}@endif</strong></div>
                         @empty
                             <p class="py-4 text-sm text-gray-500 dark:text-gray-400">Aucun coefficient spécifique configuré.</p>
                         @endforelse

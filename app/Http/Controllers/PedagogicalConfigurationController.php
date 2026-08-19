@@ -253,6 +253,72 @@ class PedagogicalConfigurationController extends Controller
         return back()->with('success', 'Statut de l’affectation mis à jour.');
     }
 
+    public function updateAssignment(Request $request, PedagogicalAssignment $assignment, SchoolYearGuardService $schoolYearGuard)
+    {
+        $schoolYearGuard->assertNotLocked($assignment->schoolYear);
+
+        $data = $request->validate([
+            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'matiere_id' => ['required', 'exists:matieres,id'],
+            'volume_horaire_hebdo' => ['nullable', 'numeric', 'min:0', 'max:50'],
+        ]);
+
+        $classroom = Classroom::findOrFail($data['classroom_id']);
+        $matiere = Matiere::findOrFail($data['matiere_id']);
+
+        // Mêmes règles d'exclusivité "professeur principal" du primaire que storeAssignments()
+        // (voir plus haut) — une modification ne doit pas pouvoir les contourner.
+        if ($classroom->cycle === 'primaire' && ! $this->isSpecialistSubject($matiere)) {
+            $otherPrincipal = PedagogicalAssignment::with('teacher.user')
+                ->where('classroom_id', $classroom->id)
+                ->where('school_year_id', $assignment->school_year_id)
+                ->where('teacher_id', '!=', $assignment->teacher_id)
+                ->where('id', '!=', $assignment->id)
+                ->where('is_active', true)
+                ->whereHas('matiere', fn ($q) => $q->whereNotIn('nom', $this->specialistSubjectNames()))
+                ->first();
+
+            if ($otherPrincipal) {
+                return back()->withInput()->withErrors([
+                    'classroom_id' => "La classe {$classroom->name} a déjà un professeur principal ({$otherPrincipal->teacher->user?->name}).",
+                ]);
+            }
+
+            $principalElsewhere = PedagogicalAssignment::with('classroom')
+                ->where('teacher_id', $assignment->teacher_id)
+                ->where('school_year_id', $assignment->school_year_id)
+                ->where('classroom_id', '!=', $classroom->id)
+                ->where('id', '!=', $assignment->id)
+                ->where('is_active', true)
+                ->whereHas('classroom', fn ($q) => $q->where('cycle', 'primaire'))
+                ->whereHas('matiere', fn ($q) => $q->whereNotIn('nom', $this->specialistSubjectNames()))
+                ->first();
+
+            if ($principalElsewhere) {
+                return back()->withInput()->withErrors([
+                    'classroom_id' => "Ce professeur est déjà professeur principal de la classe {$principalElsewhere->classroom->name}.",
+                ]);
+            }
+        }
+
+        $assignment->update([
+            'classroom_id' => $classroom->id,
+            'matiere_id' => $matiere->id,
+            'volume_horaire_hebdo' => $classroom->cycle === 'primaire' ? 0 : ($data['volume_horaire_hebdo'] ?? 0),
+        ]);
+
+        return back()->with('success', 'Affectation modifiée.');
+    }
+
+    public function destroyAssignment(PedagogicalAssignment $assignment, SchoolYearGuardService $schoolYearGuard)
+    {
+        $schoolYearGuard->assertNotLocked($assignment->schoolYear);
+
+        $assignment->delete();
+
+        return back()->with('success', 'Affectation supprimée.');
+    }
+
     public function storePeriod(Request $request, SchoolYearGuardService $schoolYearGuard)
     {
         $data = $request->validate(['school_year_id' => ['required', 'exists:school_years,id'], 'name' => ['required', 'string', 'max:100'], 'starts_at' => ['required', 'date'], 'ends_at' => ['required', 'date', 'after_or_equal:starts_at'], 'grade_entry_starts_at' => ['nullable', 'date'], 'grade_entry_ends_at' => ['nullable', 'date', 'after_or_equal:grade_entry_starts_at']]);
@@ -302,6 +368,7 @@ class PedagogicalConfigurationController extends Controller
         $data = $request->validate([
             'nom' => ['required', 'string', 'max:100', 'unique:matieres,nom'],
             'coefficient' => ['required', 'numeric', 'min:0.1', 'max:99.9'],
+            'bareme' => ['nullable', 'numeric', 'min:1', 'max:999.99'],
         ], [
             'nom.required' => 'Saisissez le nom de la matière.',
             'nom.unique' => 'Cette matière existe déjà.',
@@ -318,6 +385,9 @@ class PedagogicalConfigurationController extends Controller
         $data = $request->validate([
             'nom' => ['required', 'string', 'max:100', Rule::unique('matieres', 'nom')->ignore($matiere->id)],
             'coefficient' => ['required', 'numeric', 'min:0.1', 'max:99.9'],
+            // Barème de base par défaut (repli si aucun barème par cycle n'est configuré
+            // pour l'année en cours, voir GradeCalculationService::resolveBareme()).
+            'bareme' => ['nullable', 'numeric', 'min:1', 'max:999.99'],
         ], [
             'nom.required' => 'Saisissez le nom de la matière.',
             'nom.unique' => 'Cette matière existe déjà.',
@@ -362,6 +432,10 @@ class PedagogicalConfigurationController extends Controller
             'matiere_id' => ['nullable', 'exists:matieres,id'],
             'subject_name' => ['nullable', 'string', 'max:100'],
             'cycle' => ['nullable', 'string'],
+            // Série du lycée (ex. L, S, ES) : n'a de sens que si cycle=lycee, voir
+            // GradeCalculationService::resolveCoefficient() pour la priorité de résolution
+            // (série exacte > cycle sans distinction de série > tous cycles).
+            'serie' => ['nullable', 'string', 'max:50'],
             'coefficient' => ['required', 'numeric', 'min:0.1'],
             // Barème (système "sunuBulletin" du primaire, ex. Mathématiques /80) :
             // uniquement pertinent pour le cycle primaire, voir GradeCalculationService::
@@ -370,12 +444,18 @@ class PedagogicalConfigurationController extends Controller
             'bareme' => ['nullable', 'numeric', 'min:1', 'max:999.99'],
         ]);
         $schoolYearGuard->assertNotLocked(SchoolYear::findOrFail($data['school_year_id']));
-        if (! $data['matiere_id'] && blank($data['subject_name'] ?? null)) {
+        // Accès via ?? plutôt que direct : "matiere_id" est absent de $data (pas seulement
+        // null) quand le formulaire envoie subject_name à la place — un accès direct
+        // déclenche une ErrorException PHP ("Undefined array key"), jamais rencontrée tant
+        // que le formulaire imposait toujours un matiere_id (select sans option vide).
+        if (! ($data['matiere_id'] ?? null) && blank($data['subject_name'] ?? null)) {
             return back()->withErrors(['subject_name' => 'Sélectionnez une matière ou saisissez-en une nouvelle.']);
         }
         $data['matiere_id'] ??= Matiere::firstOrCreate(['nom' => trim($data['subject_name'])], ['coefficient' => $data['coefficient']])->id;
         unset($data['subject_name']);
-        SubjectConfiguration::updateOrCreate(['school_year_id' => $data['school_year_id'], 'matiere_id' => $data['matiere_id'], 'cycle' => $data['cycle'] ?? null, 'classroom_id' => null], $data);
+        $data['cycle'] = $data['cycle'] ?? null;
+        $data['serie'] = $data['cycle'] === 'lycee' ? ($data['serie'] ?? null) : null;
+        SubjectConfiguration::updateOrCreate(['school_year_id' => $data['school_year_id'], 'matiere_id' => $data['matiere_id'], 'cycle' => $data['cycle'], 'serie' => $data['serie'], 'classroom_id' => null], $data);
         return back()->with('success', 'Coefficient de matière enregistré.');
     }
 }

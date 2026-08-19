@@ -196,6 +196,56 @@ test('anglais and musique are exempt from the primaire main-teacher exclusivity 
     ]);
 });
 
+test('super admin can edit and delete an existing pedagogical assignment', function () {
+    $teacher = Teacher::factory()->create();
+    $classroomA = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college']);
+    $classroomB = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $french = Matiere::factory()->create(['nom' => 'Français']);
+
+    $assignment = PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id, 'classroom_id' => $classroomA->id, 'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id, 'volume_horaire_hebdo' => 4, 'is_active' => true,
+    ]);
+
+    $this->patch(route('pedagogical-configuration.assignments.update', $assignment), [
+        'classroom_id' => $classroomB->id, 'matiere_id' => $french->id, 'volume_horaire_hebdo' => 6,
+    ])->assertSessionDoesntHaveErrors();
+
+    $assignment->refresh();
+    expect($assignment->classroom_id)->toBe($classroomB->id);
+    expect($assignment->matiere_id)->toBe($french->id);
+    expect((float) $assignment->volume_horaire_hebdo)->toBe(6.0);
+
+    $this->delete(route('pedagogical-configuration.assignments.destroy', $assignment))
+        ->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseMissing('pedagogical_assignments', ['id' => $assignment->id]);
+});
+
+test('editing an assignment into a primaire classroom respects the main-teacher exclusivity rules', function () {
+    $existingPrincipal = Teacher::factory()->create();
+    $otherTeacher = Teacher::factory()->create();
+    $primaireClassroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $collegeClassroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $existingPrincipal->id, 'classroom_id' => $primaireClassroom->id, 'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id, 'volume_horaire_hebdo' => 0, 'is_active' => true,
+    ]);
+    $assignment = PedagogicalAssignment::create([
+        'teacher_id' => $otherTeacher->id, 'classroom_id' => $collegeClassroom->id, 'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id, 'volume_horaire_hebdo' => 3, 'is_active' => true,
+    ]);
+
+    $this->patch(route('pedagogical-configuration.assignments.update', $assignment), [
+        'classroom_id' => $primaireClassroom->id, 'matiere_id' => $math->id,
+    ])->assertSessionHasErrors('classroom_id');
+
+    expect($assignment->refresh()->classroom_id)->toBe($collegeClassroom->id);
+});
+
 test('the assignments table paginates and lists every pedagogical assignment', function () {
     $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
     $matiere = Matiere::factory()->create();
@@ -219,6 +269,42 @@ test('the assignments table paginates and lists every pedagogical assignment', f
     expect($response->viewData('assignments')->total())->toBe(7);
 });
 
+test('super admin can create a matière and its cycle coefficient in a single submission, including a lycée série', function () {
+    // Le formulaire "Matière & coefficient" fusionne désormais création de la matière et
+    // configuration du coefficient par cycle : une nouvelle matière peut être saisie
+    // directement ici (subject_name), sans passer par un autre formulaire au préalable.
+    $this->post(route('pedagogical-configuration.subjects.store'), [
+        'school_year_id' => $this->schoolYear->id,
+        'subject_name' => 'Philosophie',
+        'cycle' => 'lycee',
+        'serie' => 'L',
+        'coefficient' => 4,
+    ])->assertSessionDoesntHaveErrors();
+
+    $matiere = Matiere::where('nom', 'Philosophie')->firstOrFail();
+    $this->assertDatabaseHas('subject_configurations', [
+        'matiere_id' => $matiere->id, 'school_year_id' => $this->schoolYear->id,
+        'cycle' => 'lycee', 'serie' => 'L', 'coefficient' => 4,
+    ]);
+});
+
+test('the série is ignored when the cycle is not lycée', function () {
+    $matiere = Matiere::factory()->create();
+
+    $this->post(route('pedagogical-configuration.subjects.store'), [
+        'school_year_id' => $this->schoolYear->id,
+        'matiere_id' => $matiere->id,
+        'cycle' => 'college',
+        'serie' => 'S',
+        'coefficient' => 3,
+    ])->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseHas('subject_configurations', [
+        'matiere_id' => $matiere->id, 'school_year_id' => $this->schoolYear->id,
+        'cycle' => 'college', 'serie' => null, 'coefficient' => 3,
+    ]);
+});
+
 test('super admin can create, edit and delete an unused matière', function () {
     $this->post(route('pedagogical-configuration.matieres.store'), [
         'nom' => 'Philosophie', 'coefficient' => 2,
@@ -237,6 +323,25 @@ test('super admin can create, edit and delete an unused matière', function () {
         ->assertSessionDoesntHaveErrors();
 
     $this->assertDatabaseMissing('matieres', ['id' => $matiere->id]);
+});
+
+test('a newly created matière defaults to a base barème of 20, editable and used as the resolveBareme fallback', function () {
+    $this->post(route('pedagogical-configuration.matieres.store'), [
+        'nom' => 'Philosophie', 'coefficient' => 2,
+    ])->assertSessionDoesntHaveErrors();
+
+    $matiere = Matiere::where('nom', 'Philosophie')->firstOrFail();
+    expect((float) $matiere->bareme)->toBe(20.0);
+
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college']);
+    expect(app(\App\Services\GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(20.0);
+
+    $this->patch(route('pedagogical-configuration.matieres.update', $matiere), [
+        'nom' => 'Philosophie', 'coefficient' => 2, 'bareme' => 100,
+    ])->assertSessionDoesntHaveErrors();
+
+    expect((float) $matiere->refresh()->bareme)->toBe(100.0);
+    expect(app(\App\Services\GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(100.0);
 });
 
 test('renaming a matière to a name already used by another matière is rejected', function () {
