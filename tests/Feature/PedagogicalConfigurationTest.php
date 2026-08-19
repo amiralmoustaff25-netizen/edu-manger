@@ -61,6 +61,114 @@ test('super admin can create multi-subject pedagogical assignments', function ()
         ->assertSee('Arabe');
 });
 
+test('a primaire classroom assignment does not require a weekly hour volume', function () {
+    $teacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+
+    // Aucune classroom_volumes envoyée du tout : ne doit pas être rejeté pour le primaire,
+    // contrairement au secondaire (voir test générique ci-dessus qui l'exige).
+    $this->post(route('pedagogical-configuration.assignments.store'), [
+        'teacher_matricule' => $teacher->matricule,
+        'classroom_ids' => [$classroom->id],
+        'matiere_ids' => [$math->id],
+        'school_year_id' => $this->schoolYear->id,
+    ])->assertRedirect(route('pedagogical-configuration.assignments', ['school_year_id' => $this->schoolYear->id]))
+        ->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseHas('pedagogical_assignments', [
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $math->id,
+        'volume_horaire_hebdo' => 0,
+    ]);
+});
+
+test('a primaire classroom cannot have two different main teachers for general subjects', function () {
+    $firstTeacher = Teacher::factory()->create();
+    $secondTeacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $french = Matiere::factory()->create(['nom' => 'Français']);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $firstTeacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id,
+        'volume_horaire_hebdo' => 0,
+        'is_active' => true,
+    ]);
+
+    $response = $this->post(route('pedagogical-configuration.assignments.store'), [
+        'teacher_matricule' => $secondTeacher->matricule,
+        'classroom_ids' => [$classroom->id],
+        'matiere_ids' => [$french->id],
+        'school_year_id' => $this->schoolYear->id,
+    ]);
+
+    $response->assertSessionHasErrors('classroom_ids');
+    $this->assertDatabaseMissing('pedagogical_assignments', ['teacher_id' => $secondTeacher->id]);
+});
+
+test('a primaire main teacher cannot be assigned as main teacher of a second classroom', function () {
+    $teacher = Teacher::factory()->create();
+    $firstClassroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $secondClassroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id,
+        'classroom_id' => $firstClassroom->id,
+        'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id,
+        'volume_horaire_hebdo' => 0,
+        'is_active' => true,
+    ]);
+
+    $response = $this->post(route('pedagogical-configuration.assignments.store'), [
+        'teacher_matricule' => $teacher->matricule,
+        'classroom_ids' => [$secondClassroom->id],
+        'matiere_ids' => [$math->id],
+        'school_year_id' => $this->schoolYear->id,
+    ]);
+
+    $response->assertSessionHasErrors('teacher_matricule');
+    $this->assertDatabaseMissing('pedagogical_assignments', ['classroom_id' => $secondClassroom->id]);
+});
+
+test('anglais and musique are exempt from the primaire main-teacher exclusivity rules', function () {
+    $mainTeacher = Teacher::factory()->create();
+    $englishTeacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'primaire']);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques']);
+    $english = Matiere::factory()->create(['nom' => 'Anglais']);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $mainTeacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $math->id,
+        'school_year_id' => $this->schoolYear->id,
+        'volume_horaire_hebdo' => 0,
+        'is_active' => true,
+    ]);
+
+    // Une classe déjà pourvue d'un professeur principal peut quand même recevoir un
+    // professeur d'anglais dédié, différent du principal.
+    $this->post(route('pedagogical-configuration.assignments.store'), [
+        'teacher_matricule' => $englishTeacher->matricule,
+        'classroom_ids' => [$classroom->id],
+        'matiere_ids' => [$english->id],
+        'school_year_id' => $this->schoolYear->id,
+    ])->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseHas('pedagogical_assignments', [
+        'teacher_id' => $englishTeacher->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $english->id,
+    ]);
+});
+
 test('the assignments table paginates and lists every pedagogical assignment', function () {
     $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
     $matiere = Matiere::factory()->create();
