@@ -26,7 +26,12 @@
         <!-- Fixed top: logo -->
         <div class="flex items-center justify-center h-16 bg-indigo-600 dark:bg-indigo-700 flex-shrink-0">
             <a href="{{ route('dashboard') }}" x-on:click="sidebarOpen = false" class="flex items-center space-x-2">
-                <x-application-logo class="block h-8 w-auto fill-current text-white" />
+                {{-- Fond blanc : le logo a ses propres couleurs fixes (indigo/or, pas
+                     currentColor comme l'ancien logo Laravel) — sans ce fond, son trait
+                     indigo se fondrait presque dans l'indigo-600 du bandeau. --}}
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white p-1">
+                    <x-application-logo class="block h-full w-full" />
+                </span>
                 <span class="text-white font-bold text-xl">EduManager</span>
             </a>
         </div>
