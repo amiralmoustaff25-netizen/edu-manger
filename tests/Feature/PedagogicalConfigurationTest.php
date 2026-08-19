@@ -219,6 +219,66 @@ test('the assignments table paginates and lists every pedagogical assignment', f
     expect($response->viewData('assignments')->total())->toBe(7);
 });
 
+test('super admin can create, edit and delete an unused matière', function () {
+    $this->post(route('pedagogical-configuration.matieres.store'), [
+        'nom' => 'Philosophie', 'coefficient' => 2,
+    ])->assertSessionDoesntHaveErrors();
+
+    $matiere = Matiere::where('nom', 'Philosophie')->firstOrFail();
+
+    $this->patch(route('pedagogical-configuration.matieres.update', $matiere), [
+        'nom' => 'Philosophie et citoyenneté', 'coefficient' => 3,
+    ])->assertSessionDoesntHaveErrors();
+
+    expect($matiere->refresh()->nom)->toBe('Philosophie et citoyenneté');
+    expect((float) $matiere->coefficient)->toBe(3.0);
+
+    $this->delete(route('pedagogical-configuration.matieres.destroy', $matiere))
+        ->assertSessionDoesntHaveErrors();
+
+    $this->assertDatabaseMissing('matieres', ['id' => $matiere->id]);
+});
+
+test('renaming a matière to a name already used by another matière is rejected', function () {
+    Matiere::factory()->create(['nom' => 'Anglais']);
+    $matiere = Matiere::factory()->create(['nom' => 'Espagnol']);
+
+    $this->patch(route('pedagogical-configuration.matieres.update', $matiere), [
+        'nom' => 'Anglais', 'coefficient' => 1,
+    ])->assertSessionHasErrors('nom');
+
+    expect($matiere->refresh()->nom)->toBe('Espagnol');
+});
+
+test('a matière with pedagogical assignments cannot be deleted', function () {
+    $matiere = Matiere::factory()->create();
+    $teacher = Teacher::factory()->create();
+    $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
+
+    PedagogicalAssignment::create([
+        'teacher_id' => $teacher->id, 'classroom_id' => $classroom->id, 'matiere_id' => $matiere->id,
+        'school_year_id' => $this->schoolYear->id, 'volume_horaire_hebdo' => 4, 'is_active' => true,
+    ]);
+
+    $this->delete(route('pedagogical-configuration.matieres.destroy', $matiere))
+        ->assertSessionHasErrors('matiere');
+
+    $this->assertDatabaseHas('matieres', ['id' => $matiere->id]);
+});
+
+test('a matière with a subject configuration (coefficient/barème) cannot be deleted', function () {
+    $matiere = Matiere::factory()->create();
+
+    $this->post(route('pedagogical-configuration.subjects.store'), [
+        'school_year_id' => $this->schoolYear->id, 'matiere_id' => $matiere->id, 'coefficient' => 2,
+    ])->assertSessionDoesntHaveErrors();
+
+    $this->delete(route('pedagogical-configuration.matieres.destroy', $matiere))
+        ->assertSessionHasErrors('matiere');
+
+    $this->assertDatabaseHas('matieres', ['id' => $matiere->id]);
+});
+
 test('super admin can configure periods and grade rules', function () {
     $this->post(route('pedagogical-configuration.periods.store'), [
         'school_year_id' => $this->schoolYear->id,
