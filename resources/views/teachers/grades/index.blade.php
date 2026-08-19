@@ -54,6 +54,28 @@
                             </button>
                         </div>
                     </form>
+
+                    {{--
+                        Recherche par matricule : même portée de données (les matières que ce
+                        professeur enseigne, dans ses classes assignées), juste une autre façon
+                        d'y entrer — un élève, toutes ses matières, plutôt qu'une classe, une
+                        matière, tous ses élèves. Repliable pour ne pas alourdir l'écran par
+                        défaut.
+                    --}}
+                    <details class="mt-4 border-t border-gray-200 pt-4 dark:border-slate-700">
+                        <summary class="cursor-pointer text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                            {{ __('Ou rechercher un seul élève par matricule (toutes ses matières)') }}
+                        </summary>
+                        <form action="{{ route('professeur.notes.eleve') }}" method="GET" class="mt-3 flex flex-wrap items-end gap-4">
+                            <div class="flex-1 min-w-[200px]">
+                                <label for="matricule" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Matricule de l\'élève') }}</label>
+                                <input type="text" name="matricule" id="matricule" placeholder="Ex. EL-26-0001" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <button type="submit" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-gray-800 dark:text-gray-100 rounded-lg font-medium">
+                                {{ __('Rechercher') }}
+                            </button>
+                        </form>
+                    </details>
                 </div>
             </div>
 

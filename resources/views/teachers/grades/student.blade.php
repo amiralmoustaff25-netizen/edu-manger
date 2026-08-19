@@ -8,6 +8,10 @@
     <div class="py-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+            <a href="{{ route('professeur.notes.index') }}" class="inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                ← {{ __('Retour à la Saisie des Notes') }}
+            </a>
+
             @if(session('error'))
                 <div class="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">{{ session('error') }}</div>
             @endif
@@ -37,8 +41,17 @@
             </div>
 
             @if($student && $classroom)
+                @php
+                    // Type d'évaluation par défaut de ce cycle (1er élément de la liste
+                    // autorisée) : celui que le <select> ci-dessous soumettra tant que
+                    // l'utilisateur ne le change pas — le préremplissage doit chercher la
+                    // note existante sous CE type, pas un type fixe ('devoir') qui n'existe
+                    // même pas en primaire (seul 'composition' y est autorisé, la note déjà
+                    // saisie ne se préremplissait donc jamais).
+                    $defaultEvaluationType = \App\Support\EvaluationTypeScope::allowedFor($classroom->cycle)[0];
+                @endphp
                 <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="{
-                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_devoir'))->valeur)])->toJson() }},
+                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_'.$defaultEvaluationType))->valeur)])->toJson() }},
                     get average() {
                         let total = 0, coef = 0;
                         this.rows.forEach(r => { if (r.valeur !== null && r.valeur !== '' && !isNaN(r.valeur)) { total += parseFloat(r.valeur) * r.coef; coef += r.coef; } });
@@ -76,7 +89,7 @@
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                                     @foreach($assignments as $index => $assignment)
                                         @php
-                                            $existing = $existingNotes->get($assignment->matiere_id.'_devoir');
+                                            $existing = $existingNotes->get($assignment->matiere_id.'_'.$defaultEvaluationType);
                                         @endphp
                                         <tr>
                                             <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-200">{{ $assignment->matiere->nom }}</td>

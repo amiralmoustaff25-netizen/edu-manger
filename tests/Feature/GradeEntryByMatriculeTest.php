@@ -124,6 +124,29 @@ test('a primaire classroom only offers the composition evaluation type', functio
         ->assertDontSee('Devoir');
 });
 
+test('a previously saved composition grade pre-fills on the search-by-matricule page for a primaire classroom', function () {
+    // Régression : le préremplissage cherchait toujours la note existante sous le type
+    // 'devoir' en dur, qui n'existe même pas en primaire (seul 'composition' y est
+    // autorisé) — une note déjà saisie n'apparaissait donc jamais en revenant sur cette
+    // page, malgré la validation ci-dessus qui la refuserait de toute façon si resaisie
+    // sous 'devoir'.
+    [$teacherUser, $classroom, $matiere, $student] = createMatriculeGradeFixture('primaire');
+
+    \App\Models\Note::create([
+        'user_id' => $student->id,
+        'classroom_id' => $classroom->id,
+        'matiere_id' => $matiere->id,
+        'type_evaluation' => 'composition',
+        'periode' => 'trimestre_1',
+        'valeur' => 14.5,
+        'appreciation' => 'Bon travail',
+    ]);
+
+    $response = $this->actingAs($teacherUser)->get(route('professeur.notes.eleve', ['matricule' => $student->matricule, 'periode' => 'trimestre_1']));
+
+    $response->assertOk()->assertSee('Bon travail');
+});
+
 test('a primaire classroom rejects the devoir evaluation type even via a direct request, not just the dropdown', function () {
     // Le formulaire ne propose que "composition" pour le primaire (voir le test
     // précédent), mais rien n'empêchait un envoi direct du formulaire avec "devoir"

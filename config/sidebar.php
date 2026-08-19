@@ -209,23 +209,35 @@ return [
             'active_routes' => ['professeur.*', 'programs.*', 'cahier-textes.*'],
             'children' => [
                 ['label' => 'Mes Classes', 'route' => 'professeur.classes.index'],
-                ['label' => 'Saisie Notes', 'route' => 'professeur.notes.index'],
-                ['label' => 'Saisie Notes par Matricule', 'route' => 'professeur.notes.eleve'],
+                // "Saisie Notes par Matricule" fusionnée : un professeur ne saisit jamais que
+                // les notes de sa propre matière dans sa propre classe, que l'entrée se fasse
+                // par classe ou par élève — plus besoin de deux entrées de menu pour la même
+                // portée de données. La recherche par matricule reste accessible directement
+                // depuis la page "Saisie Notes" (voir teachers/grades/index.blade.php).
+                ['label' => 'Saisie Notes', 'route' => 'professeur.notes.index', 'active_routes' => ['professeur.notes.eleve']],
                 ['label' => 'Pointage des cours & présences', 'route' => 'professeur.teaching-sessions.index', 'active_routes' => ['professeur.attendances.index']],
                 ['label' => 'Historique présences', 'route' => 'professeur.attendances.history'],
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
                 ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
             ],
         ],
+        // "Vie Scolaire" et "Suivi Pédagogique" (ci-dessous) : aplaties en liens de premier
+        // niveau au lieu de groupes déroulants — un élève n'a qu'une poignée de pages au
+        // total, un accordéon à ouvrir pour 2 liens n'apporte rien.
         [
-            'label' => 'Vie Scolaire',
+            'label' => 'Emploi du temps',
+            'route' => 'student.timetable',
             'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
             'roles' => ['eleve'],
-            'active_routes' => ['student.timetable', 'cahier-textes.*'],
-            'children' => [
-                ['label' => 'Emploi du temps', 'route' => 'student.timetable'],
-                ['label' => 'Cahier de texte', 'route' => 'cahier-textes.select', 'permission' => 'voir-cahier-textes'],
-            ],
+            'active_routes' => ['student.timetable'],
+        ],
+        [
+            'label' => 'Cahier de texte',
+            'route' => 'cahier-textes.select',
+            'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            'roles' => ['eleve'],
+            'permission' => 'voir-cahier-textes',
+            'active_routes' => ['cahier-textes.*'],
         ],
         // Parent Portal
         [
@@ -269,14 +281,18 @@ return [
             'active_routes' => ['notifications.*'],
         ],
         [
-            'label' => 'Suivi Pédagogique',
-            'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            'label' => 'Mes Notes',
+            'route' => 'student.notes',
+            'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
             'roles' => ['eleve'],
-            'active_routes' => ['student.notes', 'student.bulletins'],
-            'children' => [
-                ['label' => 'Mes Notes', 'route' => 'student.notes'],
-                ['label' => 'Bulletins', 'route' => 'student.bulletins'],
-            ],
+            'active_routes' => ['student.notes'],
+        ],
+        [
+            'label' => 'Bulletins',
+            'route' => 'student.bulletins',
+            'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            'roles' => ['eleve'],
+            'active_routes' => ['student.bulletins'],
         ],
     ],
 ];
