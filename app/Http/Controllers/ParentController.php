@@ -386,7 +386,7 @@ class ParentController extends Controller
             return back()->withErrors(['user' => 'Aucun compte utilisateur associé à ce parent.']);
         }
 
-        $temporaryPassword = Str::password(12);
+        $temporaryPassword = config('edu.default_reset_password');
 
         $parent->user->update([
             'password' => Hash::make($temporaryPassword),

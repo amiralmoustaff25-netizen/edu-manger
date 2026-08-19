@@ -212,7 +212,7 @@ class UserController extends Controller
         $this->authorize('reinitialiser-mot-de-passe-utilisateur', $user);
         $this->superAdminProtection->ensureCanTarget($user);
 
-        $temporaryPassword = Str::password(12);
+        $temporaryPassword = config('edu.default_reset_password');
 
         $user->update([
             'password' => Hash::make($temporaryPassword),

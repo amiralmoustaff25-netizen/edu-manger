@@ -133,11 +133,27 @@ test('admin can reset a user password', function () {
     $oldPasswordHash = $user->password;
     $user->refresh();
 
-    // Mot de passe temporaire désormais aléatoire (voir test de création ci-dessus) :
-    // on vérifie qu'il a bien changé plutôt que sa valeur littérale.
     expect($user->password)->not->toBe($oldPasswordHash);
     expect(Hash::check('old-password', $user->password))->toBeFalse();
     expect($user->password_must_change)->toBeTrue();
+});
+
+test('resetting a user password sets it to the fixed default password (edu.default_reset_password)', function () {
+    // Choix délibéré : un mot de passe fixe est plus facile à communiquer par
+    // téléphone/papier à un parent ou professeur qu'un mot de passe aléatoire — le
+    // compte reste forcé de le changer à la prochaine connexion (password_must_change).
+    $admin = User::factory()->create(['role' => 'admin']);
+    $admin->assignRole('admin');
+
+    $user = User::factory()->create(['role' => 'professeur']);
+    $user->assignRole('professeur');
+
+    $this->actingAs($admin)
+        ->patch(route('users.reset-password', $user))
+        ->assertRedirect()
+        ->assertSessionHas('temp_password', config('edu.default_reset_password'));
+
+    expect(Hash::check(config('edu.default_reset_password'), $user->refresh()->password))->toBeTrue();
 });
 
 test('admin cannot switch a non teacher account to the professeur role via user management', function () {
