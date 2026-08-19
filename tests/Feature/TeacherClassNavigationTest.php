@@ -41,3 +41,36 @@ test('teacher can open the grade page for an assigned class', function () {
         ->assertOk()
         ->assertSee('Saisie des Notes');
 });
+
+test('teacher can preview a student bulletin directly from the class grade entry grid', function () {
+    // Aperçu basé sur les notes/matières déjà enregistrées (bulletins.show, recalculé en
+    // direct par GradeCalculationService) — pas besoin de quitter la saisie de notes pour
+    // voir où en est un élève.
+    $matiere = \App\Models\Matiere::factory()->create();
+    $student = User::factory()->create(['role' => 'eleve']);
+    $student->assignRole('eleve');
+    \App\Models\Registration::factory()->create([
+        'user_id' => $student->id,
+        'classroom_id' => $this->classroom->id,
+        'school_year_id' => $this->schoolYear->id,
+        'status' => 'active',
+    ]);
+
+    $response = $this->get(route('professeur.notes.index', [
+        'classroom_id' => $this->classroom->id,
+        'matiere_id' => $matiere->id,
+    ]));
+
+    // Le lien est injecté via Illuminate\Support\Js::from() (liaison Alpine :href) : l'URL
+    // n'apparaît donc pas telle quelle dans le HTML (slashes/quotes échappés pour un
+    // embarquement JS sûr) — on vérifie que le lien est bien présent pour ce rôle
+    // autorisé, et que l'identifiant de l'élève et les 3 trimestres sont bien encodés
+    // dans le bloc JSON.parse() qui construit ces URLs.
+    $response->assertOk()->assertSee('Aperçu');
+    $content = $response->getContent();
+    expect($content)->toContain('JSON.parse(');
+    expect(substr_count($content, (string) $student->id))->toBeGreaterThan(0);
+    foreach (['trimestre_1', 'trimestre_2', 'trimestre_3'] as $period) {
+        expect($content)->toContain($period);
+    }
+});

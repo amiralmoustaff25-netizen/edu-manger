@@ -103,11 +103,11 @@
                         </div>
                     </div>
                     
-                    <form action="{{ route('professeur.notes.store') }}" method="POST">
+                    <form action="{{ route('professeur.notes.store') }}" method="POST" x-data="{ periode: 'trimestre_1' }">
                         @csrf
                         <input type="hidden" name="classroom_id" value="{{ request('classroom_id') }}">
                         <input type="hidden" name="matiere_id" value="{{ request('matiere_id') }}">
-                        
+
                         <div class="p-6">
                             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
@@ -120,7 +120,7 @@
                                 </div>
                                 <div>
                                     <label for="periodeSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
-                                    <select name="periode" id="periodeSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <select name="periode" id="periodeSelect" x-model="periode" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="trimestre_1">{{ __('Trimestre 1') }}</option>
                                         <option value="trimestre_2">{{ __('Trimestre 2') }}</option>
                                         <option value="trimestre_3">{{ __('Trimestre 3') }}</option>
@@ -137,6 +137,9 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Matricule') }}</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Note (/20)') }}</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Appréciation') }}</th>
+                                            @can('generer-bulletins')
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ __('Bulletin') }}</th>
+                                            @endcan
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
@@ -159,6 +162,22 @@
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <input type="text" name="grades[{{ $index }}][appreciation]" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="{{ __('Appréciation optionnelle') }}">
                                             </td>
+                                            @can('generer-bulletins')
+                                                {{--
+                                                    Aperçu du bulletin réel (bulletins.show), recalculé en direct à
+                                                    partir des notes déjà enregistrées (pas la saisie en cours ci-dessus,
+                                                    non sauvegardée) — suit la période choisie au-dessus sans recharger
+                                                    la page.
+                                                --}}
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <a target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                       :href="{{ Illuminate\Support\Js::from([
+                                                           'trimestre_1' => route('bulletins.show', [$student, 'trimestre_1']),
+                                                           'trimestre_2' => route('bulletins.show', [$student, 'trimestre_2']),
+                                                           'trimestre_3' => route('bulletins.show', [$student, 'trimestre_3']),
+                                                       ]) }}[periode]">{{ __('Aperçu') }} ↗</a>
+                                                </td>
+                                            @endcan
                                         </tr>
                                         @endforeach
                                     </tbody>
