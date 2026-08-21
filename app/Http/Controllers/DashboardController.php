@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
-use App\Models\Reminder;
+use App\Models\Sanction;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
@@ -47,21 +48,34 @@ class DashboardController extends Controller
         $parent = $user->parentProfile()
             ->with(['students' => function ($query) {
                 $query->with(['latestRegistration.classroom.schoolYear'])
-                    ->withCount(['notes', 'attendances']);
+                    ->withCount(['notes', 'attendances', 'sanctions']);
             }])
             ->firstOrFail();
 
         // parents.dashboard est aussi rendue par ParentPortalController::dashboard()
         // (route parents.dashboard, celle utilisée par le menu) : les deux chemins
-        // doivent fournir les mêmes variables à la vue, ici $reminders.
-        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
-        $reminders = Reminder::pending()
-            ->whereIn('registration_id', $registrationIds)
-            ->with('registration.user')
-            ->orderBy('scheduled_at')
+        // doivent fournir les mêmes variables à la vue.
+        $studentIds = $parent->students->pluck('id');
+
+        $recentAttendances = Attendance::whereIn('user_id', $studentIds)
+            ->with('student')
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->limit(10)
             ->get();
 
-        return view('parents.dashboard', compact('parent', 'reminders'));
+        $sanctions = Sanction::whereIn('user_id', $studentIds)
+            ->with('student')
+            ->orderByDesc('date_incident')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        return view('parents.dashboard', [
+            'parent' => $parent,
+            'recentAttendances' => $recentAttendances,
+            'sanctions' => $sanctions,
+        ]);
     }
 
     private function staffDashboard(): View
