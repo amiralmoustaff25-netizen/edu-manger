@@ -2,6 +2,7 @@
 
 use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
@@ -22,7 +23,7 @@ beforeEach(function () {
     PedagogicalAssignment::create([
         'teacher_id' => $this->teacher->id,
         'classroom_id' => $this->classroom->id,
-        'matiere_id' => \App\Models\Matiere::factory()->create()->id,
+        'matiere_id' => Matiere::factory()->create()->id,
         'school_year_id' => $this->schoolYear->id,
         'volume_horaire_hebdo' => 4,
         'is_active' => true,
@@ -43,7 +44,13 @@ test('teacher can record attendances without a carbon error', function () {
     $attendance = Attendance::where('user_id', $this->student->id)->where('classroom_id', $this->classroom->id)->firstOrFail();
 
     expect($attendance->status)->toBe('present')
-        ->and($attendance->date->toDateString())->toBe(today()->toDateString());
+        ->and($attendance->date->toDateString())->toBe(today()->toDateString())
+        // recorded_by référence users.id (Attendance::recordedBy() -> User), pas
+        // teachers.id : un ancien bug y stockait $teacher->id, provoquant une violation
+        // de clé étrangère dès que cet id ne correspondait à aucun utilisateur existant
+        // (silencieux dans ce test tant que teacher.id coïncidait par hasard avec un id
+        // d'utilisateur valide — d'où cette assertion explicite sur la valeur).
+        ->and($attendance->recorded_by)->toBe($this->teacherUser->id);
 });
 
 test('teacher can only read attendance history for assigned classes', function () {

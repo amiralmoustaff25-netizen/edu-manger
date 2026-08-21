@@ -73,6 +73,10 @@ test('recording a teaching session can also record attendance for the classroom 
         'classroom_id' => $this->assignment->classroom_id,
         'date' => $taughtOn.' 00:00:00',
         'status' => 'absent',
+        // Attendance::recorded_by référence users.id (recordedBy() -> User), pas
+        // teachers.id : un ancien bug y stockait $teacher->id, violant la clé étrangère
+        // dès que cet id ne correspondait à aucun utilisateur existant.
+        'recorded_by' => $this->user->id,
     ]);
 });
 

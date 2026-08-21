@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\TeachingSession;
@@ -35,7 +36,7 @@ class TeachingSessionController extends Controller
         // Effectif de chaque classe affectée, pour permettre de pointer les présences
         // directement depuis le formulaire de pointage de cours (cahier de texte).
         $rosters = $assignments->pluck('classroom_id')->unique()->mapWithKeys(function ($classroomId) {
-            $students = \App\Models\Registration::where('classroom_id', $classroomId)
+            $students = Registration::where('classroom_id', $classroomId)
                 ->where('status', 'active')
                 ->with('user')
                 ->get()
@@ -66,7 +67,7 @@ class TeachingSessionController extends Controller
         // Empêche de marquer présent/absent un utilisateur qui n'est pas réellement
         // inscrit dans cette classe (les clés du tableau attendances viennent du
         // formulaire, donc falsifiables).
-        $enrolledStudentIds = \App\Models\Registration::where('classroom_id', $assignment->classroom_id)
+        $enrolledStudentIds = Registration::where('classroom_id', $assignment->classroom_id)
             ->where('status', 'active')
             ->pluck('user_id');
 
@@ -84,7 +85,7 @@ class TeachingSessionController extends Controller
                     continue;
                 }
 
-                abort_unless($enrolledStudentIds->contains((int) $userId), 403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
+                abort_unless($enrolledStudentIds->contains((int) $userId), 403, 'Un ou plusieurs élèves ne sont pas inscrits dans cette classe.');
 
                 Attendance::updateOrCreate(
                     [
@@ -95,7 +96,9 @@ class TeachingSessionController extends Controller
                     [
                         'status' => $attendance['status'],
                         'notes' => $attendance['notes'] ?? null,
-                        'recorded_by' => $teacher->id,
+                        // Attendance::recorded_by référence users.id (recordedBy() -> User),
+                        // pas teachers.id — voir même correctif dans AttendanceController::store().
+                        'recorded_by' => $teacher->user_id,
                     ]
                 );
             }
