@@ -10,20 +10,27 @@
                     {{ __('Aucune année scolaire active.') }}
                 </div>
             @else
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Choisissez une classe de primaire pour consulter ou modifier son emploi du temps.') }}</p>
-                <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm divide-y dark:divide-slate-700">
-                    @forelse ($classrooms as $classroom)
-                        <a href="{{ route('timetable.edit', $classroom) }}" class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700">
-                            <div>
-                                <p class="font-semibold text-gray-900 dark:text-white">{{ $classroom->name }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('Titulaire') }} : {{ $classroom->teacher?->name ?? __('Aucun') }}</p>
-                            </div>
-                            <span class="text-indigo-600 dark:text-indigo-400 text-sm font-semibold">{{ __('Ouvrir') }} →</span>
-                        </a>
-                    @empty
-                        <p class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">{{ __('Aucune classe de primaire pour cette année scolaire.') }}</p>
-                    @endforelse
-                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Choisissez une classe pour consulter ou modifier son emploi du temps.') }}</p>
+                @forelse ($classrooms as $cycle => $classroomsForCycle)
+                    <div class="space-y-2">
+                        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ ucfirst($cycle) }}</h3>
+                        <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm divide-y dark:divide-slate-700">
+                            @foreach ($classroomsForCycle as $classroom)
+                                <a href="{{ route('timetable.edit', $classroom) }}" class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-700">
+                                    <div>
+                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $classroom->name }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('Titulaire') }} : {{ $classroom->teacher?->name ?? __('Aucun') }}</p>
+                                    </div>
+                                    <span class="text-indigo-600 dark:text-indigo-400 text-sm font-semibold">{{ __('Ouvrir') }} →</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm p-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                        {{ __('Aucune classe pour cette année scolaire.') }}
+                    </div>
+                @endforelse
             @endif
         </div>
     </div>

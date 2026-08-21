@@ -22,9 +22,10 @@ class TimetableController extends Controller
     }
 
     /**
-     * Liste des classes primaire de l'année active, point d'entrée pour un admin/surveillant
-     * qui doit choisir quelle classe éditer (un professeur titulaire, lui, a un lien direct
-     * depuis "Mes Classes" — voir teachers/classes/index.blade.php).
+     * Liste des classes (tous cycles) de l'année active, point d'entrée pour un admin/
+     * surveillant qui doit choisir quelle classe éditer (un professeur titulaire, lui, a un
+     * lien direct depuis "Mes Classes" — voir teachers/classes/index.blade.php). Groupées
+     * par cycle pour la lisibilité, plus long que la version primaire-only initiale.
      */
     public function index()
     {
@@ -32,7 +33,7 @@ class TimetableController extends Controller
 
         $schoolYear = SchoolYear::getActive();
         $classrooms = $schoolYear
-            ? Classroom::where('school_year_id', $schoolYear->id)->where('cycle', 'primaire')->with('teacher')->orderBy('name')->get()
+            ? Classroom::where('school_year_id', $schoolYear->id)->with('teacher')->orderBy('cycle')->orderBy('name')->get()->groupBy('cycle')
             : collect();
 
         return view('timetable.index', compact('classrooms', 'schoolYear'));
@@ -166,7 +167,9 @@ class TimetableController extends Controller
      * Droit de modifier l'emploi du temps : admin/super-admin, surveillant (n'importe quelle
      * classe), ou le professeur titulaire de CETTE classe (Classroom::teacher_id) — voir
      * l'échange avec l'utilisateur du 2026-08-21 ("c'est au professeur principal et au
-     * surveillant de remplir l'emploi du temps").
+     * surveillant de remplir l'emploi du temps"). Vaut pour tous les cycles : au secondaire,
+     * le titulaire n'est pas forcément celui qui enseigne toutes les matières, mais reste
+     * celui qui coordonne l'emploi du temps de sa classe — même règle qu'au primaire.
      */
     private function authorizeManage(Classroom $classroom): void
     {

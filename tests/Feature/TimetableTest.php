@@ -139,6 +139,53 @@ test('the printable PDF is accessible to the titulaire teacher and downloads cor
     expect($response->headers->get('content-type'))->toContain('application/pdf');
 });
 
+test('the timetable index lists classrooms of every cycle, grouped by cycle', function () {
+    $admin = User::factory()->create(['role' => 'super-admin']);
+    $admin->assignRole('super-admin');
+    $college = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college', 'name' => '6ème A']);
+
+    $response = $this->actingAs($admin)->get(route('timetable.index'));
+
+    $response->assertOk()->assertSee($this->classroom->name)->assertSee($college->name)->assertSee('College')->assertSee('Primaire');
+});
+
+test('the titulaire of a college classroom can manage its timetable the same way as for a primaire classroom', function () {
+    $teacherUser = User::factory()->create(['role' => 'professeur']);
+    $teacherUser->assignRole('professeur');
+    $college = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college', 'teacher_id' => $teacherUser->id]);
+
+    $this->actingAs($teacherUser)
+        ->put(route('timetable.update', $college), ['content' => ['Lundi' => ['08h/9h' => 'Français']]])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('timetable_entries', [
+        'classroom_id' => $college->id, 'day' => 'Lundi', 'slot' => '08h/9h', 'content' => 'Français',
+    ]);
+});
+
+test('a student in a college classroom sees the real timetable grid instead of the old subjects/hours list', function () {
+    $teacherUser = User::factory()->create(['role' => 'professeur']);
+    $teacherUser->assignRole('professeur');
+    $college = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college', 'teacher_id' => $teacherUser->id]);
+
+    TimetableEntry::create([
+        'classroom_id' => $college->id, 'school_year_id' => $this->schoolYear->id,
+        'day' => 'Mardi', 'slot' => '9h/10h', 'content' => 'Histoire-Géographie',
+    ]);
+
+    $student = User::factory()->create(['role' => 'eleve']);
+    $student->assignRole('eleve');
+    \App\Models\Registration::factory()->create([
+        'user_id' => $student->id, 'classroom_id' => $college->id,
+        'school_year_id' => $this->schoolYear->id, 'status' => 'active',
+    ]);
+
+    $this->actingAs($student)->get(route('student.timetable'))
+        ->assertOk()
+        ->assertSee('Histoire-Géographie')
+        ->assertDontSee('Heures / semaine');
+});
+
 test('a primaire classroom whose titulaire is set via teacher_id (but has no legacy teacher_classroom pivot) shows its timetable correctly to its students, instead of "no teacher associated"', function () {
     // Régression : students/timetable.blade.php lisait Classroom::teachers() (ancien pivot
     // teacher_classroom), jamais alimenté pour le primaire depuis que teacher_id (titulaire)
