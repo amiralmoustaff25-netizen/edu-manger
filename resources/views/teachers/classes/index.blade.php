@@ -81,6 +81,15 @@
                                         {{ __('Notes') }}
                                     </a>
                                 </div>
+                                @if($classroom->cycle === 'primaire' && $classroom->teacher_id === auth()->id())
+                                    {{-- Seul le professeur principal (titulaire, Classroom::teacher_id) gère
+                                         l'emploi du temps de sa classe — pas les profs de matière spécialisée
+                                         (anglais/musique) qui apparaissent aussi dans cette liste. --}}
+                                    <a href="{{ route('timetable.edit', $classroom) }}" class="mt-2 flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        {{ __('Emploi du temps') }}
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     @endforeach

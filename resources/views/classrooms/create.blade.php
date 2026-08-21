@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 text-gray-900 dark:text-gray-100">
                 
-                <form action="{{ route('classrooms.store') }}" method="POST">
+                <form action="{{ route('classrooms.store') }}" method="POST" x-data="{ level: '{{ old('level', '') }}' }">
                     @csrf
 
                     @if ($errors->any())
@@ -25,7 +25,7 @@
 
                     <div class="mb-4">
                         <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Niveau</label>
-                        <select name="level" id="level" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <select name="level" id="level" x-model="level" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="" disabled {{ old('level') ? '' : 'selected' }}>-- Sélectionnez un niveau --</option>
                             <optgroup label="Primaire">
                                 <option value="CI" @selected(old('level') === 'CI')>CI</option>
@@ -48,6 +48,12 @@
                             </optgroup>
                         </select>
                         <x-input-error :messages="$errors->get('level')" class="mt-2" />
+                    </div>
+
+                    <div class="mb-4" x-show="['Seconde', 'Première', 'Terminale'].includes(level)" x-cloak>
+                        <label for="serie" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Série</label>
+                        <input type="text" name="serie" id="serie" value="{{ old('serie') }}" placeholder="Ex. L, S, ES" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <x-input-error :messages="$errors->get('serie')" class="mt-2" />
                     </div>
 
                     <div class="mb-4">
@@ -74,7 +80,7 @@
                     </div>
 
                     <div class="flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">
-                        <a href="{{ route('classrooms.index') }}" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Annuler</a>
+                        <a href="{{ route('classrooms.index') }}" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Annuler</a>
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Enregistrer</button>
                     </div>
                 </form>

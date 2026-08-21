@@ -55,10 +55,14 @@ return [
             // de textes" dans "Espace Professeur" (mêmes pages, déjà scopées à ses classes
             // côté contrôleur) — ce groupe générique ferait doublon dans son menu.
             'exclude_roles' => ['professeur'],
-            'active_routes' => ['programs.*', 'cahier-textes.*', 'bulletins.*', 'attendances.overview', 'pedagogical-configuration.*'],
+            'active_routes' => ['programs.*', 'cahier-textes.*', 'bulletins.*', 'attendances.overview', 'pedagogical-configuration.*', 'timetable.*'],
             'children' => [
                 ['label' => 'Programmes annuels', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
                 ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
+                // Édition (pas seulement consultation) : super-admin/admin/surveillant, voir
+                // TimetableController::authorizeManage(). Un professeur titulaire, lui, a son
+                // propre accès direct depuis "Mes Classes" (teachers/classes/index.blade.php).
+                ['label' => 'Emploi du temps', 'route' => 'timetable.index', 'roles' => ['super-admin', 'admin', 'surveillant']],
                 // MET-10 : ce lien utilisait par erreur 'voir-programmes' (copié depuis
                 // l'entrée au-dessus), permission sans rapport avec la route réelle
                 // désormais protégée par 'voir-presences' (cf. SEC-02/AttendancePolicy).
