@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
+use App\Models\Reminder;
 use App\Models\Sanction;
 use App\Models\SchoolYear;
 use App\Models\User;
@@ -15,9 +16,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly FeeService $feeService)
-    {
-    }
+    public function __construct(private readonly FeeService $feeService) {}
 
     public function index()
     {
@@ -35,8 +34,12 @@ class DashboardController extends Controller
             return $this->parentDashboard($user);
         }
 
+        if ($user->hasRole('surveillant')) {
+            return redirect()->route('surveillant.dashboard');
+        }
+
         abort_unless(
-            $user->hasAnyRole(['super-admin', 'admin', 'manager-comptable', 'comptable', 'surveillant']),
+            $user->hasAnyRole(['super-admin', 'admin', 'manager-comptable', 'comptable']),
             403
         );
 
@@ -71,10 +74,20 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        // Rappels de paiement : seul canal réel par lequel ils atteignent le parent
+        // concerné (voir ParentPortalController::dashboard(), même règle).
+        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
+        $reminders = Reminder::pending()
+            ->whereIn('registration_id', $registrationIds)
+            ->with('registration.user')
+            ->orderBy('scheduled_at')
+            ->get();
+
         return view('parents.dashboard', [
             'parent' => $parent,
             'recentAttendances' => $recentAttendances,
             'sanctions' => $sanctions,
+            'reminders' => $reminders,
         ]);
     }
 

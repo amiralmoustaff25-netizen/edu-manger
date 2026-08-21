@@ -187,6 +187,27 @@ return [
             ],
         ],
         [
+            // Tableau de bord du surveillant : accès direct en entrée de premier niveau
+            'label' => 'Tableau de bord',
+            'route' => 'surveillant.dashboard',
+            'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+            'roles' => ['surveillant'],
+            'active_routes' => ['surveillant.dashboard'],
+        ],
+        [
+            'label' => 'Espace Surveillant',
+            'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6 4h2',
+            'roles' => ['surveillant'],
+            'heading' => true,
+            'active_routes' => ['surveillant.*', 'attendances.*', 'teacher-attendances.*'],
+            'children' => [
+                ['label' => 'Présences élèves', 'route' => 'surveillant.attendances.index', 'permission' => 'voir-presences'],
+                ['label' => 'Pointage enseignants', 'route' => 'teacher-attendances.index', 'permission' => 'voir-pointage-enseignants'],
+                ['label' => 'Programmes à valider', 'route' => 'programs.index', 'permission' => 'voir-programmes'],
+                ['label' => 'Cahier de textes', 'route' => 'cahier-textes.dashboard.index', 'permission' => 'voir-cahier-textes'],
+            ],
+        ],
+        [
             // Tableau de bord du professeur remonté en entrée de premier niveau (même
             // traitement que "Tableau de bord" + "Vue d'ensemble" pour l'admin) plutôt que
             // simple 1er lien noyé dans "Espace Professeur" ci-dessous.
