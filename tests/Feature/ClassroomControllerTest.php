@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\Matiere;
+use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
+use App\Models\Teacher;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,17 +40,30 @@ class ClassroomControllerTest extends TestCase
     }
 
     /** @test */
-    public function the_classroom_list_links_to_the_multi_teacher_management_page(): void
+    public function the_classroom_list_no_longer_links_to_a_separate_teacher_management_page(): void
     {
-        // Régression Phase 3 (finding M10) : classrooms/index.blade.php ne liait jamais vers
-        // classrooms.teachers, pourtant fonctionnelle (attachTeacher/detachTeacher).
+        // La gestion des enseignants affectés a été intégrée à la page de modification de la
+        // classe (classrooms.edit) : le lien "Enseignants" séparé dans la liste n'a plus de
+        // raison d'exister.
         $classroom = Classroom::factory()->create();
 
         $response = $this->get(route('classrooms.index'));
 
-        $response->assertOk()->assertSee(route('classrooms.teachers', $classroom->id), false);
+        $response->assertOk()->assertDontSee('/classrooms/'.$classroom->id.'/teachers"', false);
+    }
 
-        $this->get(route('classrooms.teachers', $classroom->id))->assertOk();
+    /** @test */
+    public function the_classroom_edit_page_now_exposes_teacher_management(): void
+    {
+        $classroom = Classroom::factory()->create();
+
+        $response = $this->get(route('classrooms.edit', $classroom->id));
+
+        $response->assertOk()
+            ->assertViewIs('classrooms.edit')
+            ->assertViewHas('teachers')
+            ->assertViewHas('matieres')
+            ->assertSee(route('classrooms.attach-teacher', $classroom->id), false);
     }
 
     /** @test */
@@ -74,6 +90,113 @@ class ClassroomControllerTest extends TestCase
         $this->assertDatabaseHas('classrooms', [
             'name' => 'CP A',
             'max_students' => 30,
+        ]);
+    }
+
+    /** @test */
+    public function it_stores_the_serie_for_a_lycee_classroom(): void
+    {
+        SchoolYear::factory()->create(['is_active' => true]);
+
+        $response = $this->post(route('classrooms.store'), [
+            'level' => 'Terminale',
+            'section' => 'A',
+            'serie' => 'S',
+            'max_students' => 30,
+        ]);
+
+        $response->assertRedirect(route('classrooms.index'));
+        $this->assertDatabaseHas('classrooms', [
+            'name' => 'Terminale A',
+            'cycle' => 'lycee',
+            'serie' => 'S',
+        ]);
+    }
+
+    /** @test */
+    public function it_ignores_the_serie_for_a_non_lycee_classroom(): void
+    {
+        // La série n'a de sens qu'au lycée : même envoyée par erreur pour une classe de
+        // primaire/collège, elle ne doit jamais être enregistrée.
+        SchoolYear::factory()->create(['is_active' => true]);
+
+        $this->post(route('classrooms.store'), [
+            'level' => 'CP',
+            'section' => 'A',
+            'serie' => 'S',
+            'max_students' => 30,
+        ]);
+
+        $this->assertDatabaseHas('classrooms', [
+            'name' => 'CP A',
+            'cycle' => 'primaire',
+            'serie' => null,
+        ]);
+    }
+
+    /** @test */
+    public function assigning_a_titulaire_to_a_primaire_classroom_auto_creates_pedagogical_assignments(): void
+    {
+        // Pour le primaire, désigner l'enseignant titulaire (teacher_id) doit suffire : plus
+        // besoin de dupliquer la même information dans "Affectations pédagogiques" pour que
+        // le professeur principal couvre les matières générales de la classe.
+        $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+        $teacher = Teacher::factory()->create();
+        $teacher->user->assignRole('professeur');
+        $matiere = Matiere::factory()->create(['nom' => 'Mathématiques']);
+
+        $response = $this->post(route('classrooms.store'), [
+            'level' => 'CP',
+            'section' => 'A',
+            'teacher_id' => $teacher->user_id,
+            'max_students' => 30,
+        ]);
+
+        $response->assertRedirect(route('classrooms.index'));
+        $classroom = Classroom::where('name', 'CP A')->first();
+
+        $this->assertDatabaseHas('pedagogical_assignments', [
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $teacher->id,
+            'matiere_id' => $matiere->id,
+            'school_year_id' => $schoolYear->id,
+            'is_active' => true,
+        ]);
+    }
+
+    /** @test */
+    public function changing_the_titulaire_of_a_primaire_classroom_deactivates_the_previous_teachers_assignments(): void
+    {
+        $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+        $matiere = Matiere::factory()->create(['nom' => 'Mathématiques']);
+        $oldTeacher = Teacher::factory()->create();
+        $oldTeacher->user->assignRole('professeur');
+        $newTeacher = Teacher::factory()->create();
+        $newTeacher->user->assignRole('professeur');
+        $classroom = Classroom::factory()->create(['cycle' => 'primaire', 'school_year_id' => $schoolYear->id, 'teacher_id' => $oldTeacher->user_id]);
+
+        $oldAssignment = PedagogicalAssignment::create([
+            'teacher_id' => $oldTeacher->id,
+            'classroom_id' => $classroom->id,
+            'matiere_id' => $matiere->id,
+            'school_year_id' => $schoolYear->id,
+            'volume_horaire_hebdo' => 0,
+            'is_active' => true,
+        ]);
+
+        $this->put(route('classrooms.update', $classroom->id), [
+            'level' => 'CP',
+            'section' => explode(' ', $classroom->name)[1] ?? '',
+            'teacher_id' => $newTeacher->user_id,
+            'max_students' => 30,
+        ]);
+
+        $this->assertFalse($oldAssignment->refresh()->is_active);
+        $this->assertDatabaseHas('pedagogical_assignments', [
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $newTeacher->id,
+            'matiere_id' => $matiere->id,
+            'is_active' => true,
         ]);
     }
 

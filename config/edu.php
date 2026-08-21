@@ -24,4 +24,13 @@ return [
     // aléatoire. Le compte reste forcé à le changer à la prochaine connexion
     // (password_must_change=true), tant que force_password_change ci-dessus est actif.
     'default_reset_password' => env('DEFAULT_RESET_PASSWORD', 'password123'),
+
+    // Nombre maximum d'évaluations notées par matière et par période, collège/lycée
+    // uniquement (le primaire n'a qu'une composition par matière et par période, voir
+    // EvaluationTypeScope::allowedFor()) — voir GradeController pour l'application de
+    // cette limite. Configurable pour pouvoir évoluer sans toucher au code.
+    'max_evaluations_per_period' => [
+        'devoir' => 2,
+        'composition' => 1,
+    ],
 ];

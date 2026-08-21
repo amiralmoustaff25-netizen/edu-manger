@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -17,10 +18,13 @@ beforeEach(function () {
     $this->teacher = Teacher::factory()->create(['user_id' => $this->teacherUser->id]);
     $this->schoolYear = SchoolYear::factory()->create(['is_active' => true]);
     $this->classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
-    $this->teacher->classrooms()->attach($this->classroom->id, [
-        'annee_scolaire' => $this->schoolYear->year_string,
-        'matiere_id' => null,
+    PedagogicalAssignment::create([
+        'teacher_id' => $this->teacher->id,
+        'classroom_id' => $this->classroom->id,
+        'matiere_id' => \App\Models\Matiere::factory()->create()->id,
+        'school_year_id' => $this->schoolYear->id,
         'volume_horaire_hebdo' => 4,
+        'is_active' => true,
     ]);
 
     $this->actingAs($this->teacherUser);
@@ -64,13 +68,14 @@ test('teacher can preview a student bulletin directly from the class grade entry
     // Le lien est injecté via Illuminate\Support\Js::from() (liaison Alpine :href) : l'URL
     // n'apparaît donc pas telle quelle dans le HTML (slashes/quotes échappés pour un
     // embarquement JS sûr) — on vérifie que le lien est bien présent pour ce rôle
-    // autorisé, et que l'identifiant de l'élève et les 3 trimestres sont bien encodés
-    // dans le bloc JSON.parse() qui construit ces URLs.
+    // autorisé, et que l'identifiant de l'élève et les périodes du cycle de la classe
+    // (trimestres en primaire, semestres en collège/lycée — voir AcademicPeriods) sont
+    // bien encodés dans le bloc JSON.parse() qui construit ces URLs.
     $response->assertOk()->assertSee('Aperçu');
     $content = $response->getContent();
     expect($content)->toContain('JSON.parse(');
     expect(substr_count($content, (string) $student->id))->toBeGreaterThan(0);
-    foreach (['trimestre_1', 'trimestre_2', 'trimestre_3'] as $period) {
+    foreach (array_keys(\App\Support\AcademicPeriods::forCycle($this->classroom->cycle)) as $period) {
         expect($content)->toContain($period);
     }
 });

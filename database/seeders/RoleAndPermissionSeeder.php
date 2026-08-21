@@ -143,7 +143,6 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-ses-bulletins-enfants',
             'voir-ses-discipline-enfants',
             'voir-emploi-du-temps',
-            'voir-messagerie',
             'voir-calendrier-scolaire',
 
             // --- Logs & Audit ---
@@ -411,7 +410,6 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-ses-bulletins-enfants',
             'voir-ses-discipline-enfants',
             'voir-emploi-du-temps',
-            'voir-messagerie',
             'voir-calendrier-scolaire',
         ]);
 

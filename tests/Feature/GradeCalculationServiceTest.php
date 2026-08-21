@@ -293,3 +293,37 @@ test('the class rank is consistent with the general average shown on the bulleti
     expect($topBulletin['rank'])->toBe(1);
     expect($secondBulletin['rank'])->toBe(2);
 });
+
+test('for collège/lycée, a subject average is (average of devoirs + composition) / 2, each weighing 50%', function () {
+    // Exemple exact du cahier des charges : Devoir 1 = 11, Devoir 2 = 17, Composition = 13.
+    // Moyenne des devoirs = (11+17)/2 = 14, puis (14+13)/2 = 13,5.
+    $classroom = Classroom::create(['name' => '6ème', 'cycle' => 'college', 'school_year_id' => $this->year->id]);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 1]);
+    assignMatiereToClassroom($classroom, $this->year, $math);
+
+    $student = enrollStudentInClassroom($classroom, $this->year);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $classroom->id, 'matiere_id' => $math->id, 'valeur' => 11, 'type_evaluation' => 'devoir', 'evaluation_number' => 1, 'periode' => 'semestre_1']);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $classroom->id, 'matiere_id' => $math->id, 'valeur' => 17, 'type_evaluation' => 'devoir', 'evaluation_number' => 2, 'periode' => 'semestre_1']);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $classroom->id, 'matiere_id' => $math->id, 'valeur' => 13, 'type_evaluation' => 'composition', 'periode' => 'semestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'semestre_1');
+
+    expect($bulletin['subjects'][0]['average'])->toBe(13.5);
+    expect($bulletin['general_average'])->toBe(13.5);
+});
+
+test('for collège/lycée, a subject average relies only on the evaluations already entered when devoirs or composition are missing', function () {
+    $classroom = Classroom::create(['name' => '5ème', 'cycle' => 'lycee', 'school_year_id' => $this->year->id]);
+    $math = Matiere::factory()->create(['nom' => 'Mathématiques', 'coefficient' => 1]);
+    assignMatiereToClassroom($classroom, $this->year, $math);
+
+    $student = enrollStudentInClassroom($classroom, $this->year);
+    // Composition pas encore saisie ce semestre : la moyenne ne doit pas être
+    // artificiellement divisée par deux comme si une composition à 0 existait.
+    Note::create(['user_id' => $student->id, 'classroom_id' => $classroom->id, 'matiere_id' => $math->id, 'valeur' => 10, 'type_evaluation' => 'devoir', 'evaluation_number' => 1, 'periode' => 'semestre_1']);
+    Note::create(['user_id' => $student->id, 'classroom_id' => $classroom->id, 'matiere_id' => $math->id, 'valeur' => 16, 'type_evaluation' => 'devoir', 'evaluation_number' => 2, 'periode' => 'semestre_1']);
+
+    $bulletin = $this->service->getBulletinData($student, 'semestre_1');
+
+    expect($bulletin['subjects'][0]['average'])->toBe(13.0);
+});

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreClassroomRequest;
 use App\Http\Requests\UpdateClassroomRequest;
 use App\Models\Classroom;
 use App\Models\Matiere;
+use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -63,14 +64,17 @@ class ClassroomController extends Controller
         $fullName = $validated['level'].($validated['section'] ? ' '.$validated['section'] : '');
         $activeYear = SchoolYear::where('is_active', true)->firstOrFail();
 
-        Classroom::create([
+        $classroom = Classroom::create([
             'name' => $fullName,
             'cycle' => $cycle,
+            'serie' => $cycle === 'lycee' ? ($validated['serie'] ?? null) : null,
             'ordre' => ClassroomLevel::ordre($validated['level']),
             'school_year_id' => $activeYear->id,
             'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
         ]);
+
+        $this->syncPrimaryTeacherAssignments($classroom, $teacherId);
 
         return redirect()->route('classrooms.index')->with('success', 'Classe créée avec succès.');
     }
@@ -79,7 +83,19 @@ class ClassroomController extends Controller
     {
         Gate::authorize('update', $classroom);
 
-        return view('classrooms.edit', compact('classroom'));
+        // La gestion des enseignants affectés (ex. classrooms.teachers, page séparée) est
+        // désormais intégrée directement à cette page de modification, plutôt qu'un lien
+        // "Enseignants" distinct dans la liste des classes.
+        $classroom->load(['teachers' => function ($query) {
+            $query->with('user')->withPivot('matiere_id', 'volume_horaire_hebdo');
+        }]);
+
+        $teachers = Teacher::with('user')->get();
+        $matieres = Matiere::all();
+        $activeYear = SchoolYear::where('is_active', true)->first();
+        $canManageTeachers = Gate::allows('gerer-enseignants-classe');
+
+        return view('classrooms.edit', compact('classroom', 'teachers', 'matieres', 'activeYear', 'canManageTeachers'));
     }
 
     public function update(UpdateClassroomRequest $request, Classroom $classroom, SchoolYearGuardService $schoolYearGuard)
@@ -98,12 +114,55 @@ class ClassroomController extends Controller
         $classroom->update([
             'name' => $fullName,
             'cycle' => $cycle,
+            'serie' => $cycle === 'lycee' ? ($validated['serie'] ?? null) : null,
             'ordre' => ClassroomLevel::ordre($validated['level']),
             'teacher_id' => $teacherId,
             'max_students' => $validated['max_students'],
         ]);
 
+        $this->syncPrimaryTeacherAssignments($classroom, $teacherId);
+
         return redirect()->route('classrooms.index')->with('success', 'Classe modifiée avec succès.');
+    }
+
+    /**
+     * Pour une classe de primaire, désigner l'enseignant titulaire (Classroom::teacher_id,
+     * qui référence users.id — cf. BaseClassroomRequest) suffit désormais : plus besoin de
+     * dupliquer la même information dans "Affectations pédagogiques" pour que le professeur
+     * principal couvre les matières générales de la classe (nécessaire aux bulletins/notes,
+     * voir PedagogicalAssignment, qui référence teachers.id). On resynchronise ici
+     * automatiquement les PedagogicalAssignment "matières générales" de la classe :
+     * désactivées pour tout autre professeur, créées/réactivées pour le nouveau titulaire.
+     */
+    private function syncPrimaryTeacherAssignments(Classroom $classroom, ?int $titulaireUserId): void
+    {
+        if ($classroom->cycle !== 'primaire' || ! $classroom->school_year_id) {
+            return;
+        }
+
+        $generalMatiereIds = Matiere::generalSubjectIds();
+        if ($generalMatiereIds->isEmpty()) {
+            return;
+        }
+
+        $teacher = $titulaireUserId ? Teacher::where('user_id', $titulaireUserId)->first() : null;
+
+        PedagogicalAssignment::where('classroom_id', $classroom->id)
+            ->where('school_year_id', $classroom->school_year_id)
+            ->whereIn('matiere_id', $generalMatiereIds)
+            ->when($teacher, fn ($query) => $query->where('teacher_id', '!=', $teacher->id))
+            ->update(['is_active' => false, 'deactivated_at' => now()]);
+
+        if (! $teacher) {
+            return;
+        }
+
+        foreach ($generalMatiereIds as $matiereId) {
+            PedagogicalAssignment::updateOrCreate(
+                ['teacher_id' => $teacher->id, 'classroom_id' => $classroom->id, 'matiere_id' => $matiereId, 'school_year_id' => $classroom->school_year_id],
+                ['volume_horaire_hebdo' => 0, 'is_active' => true, 'deactivated_at' => null]
+            );
+        }
     }
 
     public function destroy(Classroom $classroom, SchoolYearGuardService $schoolYearGuard)
@@ -118,21 +177,6 @@ class ClassroomController extends Controller
         $classroom->delete();
 
         return redirect()->route('classrooms.index')->with('success', 'La classe a été supprimée.');
-    }
-
-    public function teachers(Classroom $classroom)
-    {
-        Gate::authorize('gerer-enseignants-classe');
-
-        $classroom->load(['teachers' => function ($query) {
-            $query->with('user')->withPivot('matiere_id', 'volume_horaire_hebdo');
-        }]);
-
-        $teachers = Teacher::with('user')->get();
-        $matieres = Matiere::all();
-        $activeYear = SchoolYear::where('is_active', true)->first();
-
-        return view('classrooms.teachers', compact('classroom', 'teachers', 'matieres', 'activeYear'));
     }
 
     public function attachTeacher(Request $request, Classroom $classroom, SchoolYearGuardService $schoolYearGuard)

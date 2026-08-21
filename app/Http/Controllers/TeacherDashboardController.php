@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\Classroom;
-use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\ProgramAnnual;
+use App\Models\SchoolYear;
 use App\Models\Teacher;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class TeacherDashboardController extends Controller
@@ -19,20 +17,31 @@ class TeacherDashboardController extends Controller
         $teacherModel = Teacher::where('user_id', $teacher->id)->first();
 
         abort_if(! $teacherModel, 403, 'Votre profil enseignant est incomplet. Veuillez contacter un administrateur.');
-        
-        // Récupérer les classes liées au professeur avec les détails
-        $classrooms = $teacherModel->classrooms()
-            ->with(['schoolYear', 'registrations' => function ($query) {
-                $query->where('status', 'active');
-            }])
-            ->withPivot('matiere_id', 'volume_horaire_hebdo', 'annee_scolaire')
+
+        $schoolYear = SchoolYear::getActive();
+
+        // Les classes affectées au professeur proviennent des affectations pédagogiques
+        // (PedagogicalAssignment), pas de l'ancienne table pivot teacher_classroom qui
+        // n'est plus alimentée depuis que les affectations passent par le module
+        // "Configuration pédagogique" — sans ce changement, une nouvelle affectation
+        // n'apparaissait jamais côté professeur.
+        $assignments = $teacherModel->pedagogicalAssignments()
+            ->where('is_active', true)
+            ->when($schoolYear, fn ($query) => $query->where('school_year_id', $schoolYear->id))
+            ->with([
+                'classroom.schoolYear',
+                'classroom.registrations' => fn ($query) => $query->where('status', 'active'),
+                'matiere',
+                'schoolYear',
+            ])
             ->get();
 
-        // Enrichir les classes avec les informations de progression des cours
+        // Enrichir chaque affectation (classe + matière) avec les informations de progression des cours
         $classroomDetails = [];
-        foreach ($classrooms as $classroom) {
-            $matiere = $classroom->pivot->matiere_id ? Matiere::find($classroom->pivot->matiere_id) : null;
-            
+        foreach ($assignments as $assignment) {
+            $classroom = $assignment->classroom;
+            $matiere = $assignment->matiere;
+
             // Récupérer les programmes pour cette classe et matière
             $programs = ProgramAnnual::where('classroom_id', $classroom->id)
                 ->when($matiere, function ($query) use ($matiere) {
@@ -65,14 +74,16 @@ class TeacherDashboardController extends Controller
                 $attendanceRate = (($totalStudents - $absentToday) / $totalStudents) * 100;
             }
 
-            // Calculer la moyenne de la classe
-            $classAverage = Note::where('classroom_id', $classroom->id)->avg('valeur') ?? 0;
+            // Calculer la moyenne de la classe pour cette matière
+            $classAverage = Note::where('classroom_id', $classroom->id)
+                ->when($matiere, fn ($query) => $query->where('matiere_id', $matiere->id))
+                ->avg('valeur') ?? 0;
 
             $classroomDetails[] = [
                 'classroom' => $classroom,
                 'matiere' => $matiere,
-                'volume_horaire' => $classroom->pivot->volume_horaire_hebdo,
-                'annee_scolaire' => $classroom->pivot->annee_scolaire,
+                'volume_horaire' => $assignment->volume_horaire_hebdo,
+                'annee_scolaire' => $assignment->schoolYear->year_string ?? $classroom->schoolYear->year_string ?? null,
                 'total_students' => $totalStudents,
                 'absent_today' => $absentToday,
                 'attendance_rate' => round($attendanceRate, 1),
@@ -82,12 +93,16 @@ class TeacherDashboardController extends Controller
             ];
         }
 
-        // Statistiques globales
+        // Statistiques globales — sur classes uniques pour éviter de compter deux fois
+        // les élèves/présences d'une classe où le professeur enseigne plusieurs matières.
+        $uniqueClassrooms = $assignments->pluck('classroom')->unique('id')->values();
+        $detailsByClassroom = collect($classroomDetails)->unique(fn ($detail) => $detail['classroom']->id)->values();
+
         $stats = [
-            'total_classes' => $classrooms->count(),
-            'total_students' => collect($classroomDetails)->sum('total_students'),
+            'total_classes' => $uniqueClassrooms->count(),
+            'total_students' => $detailsByClassroom->sum('total_students'),
             'total_hours' => collect($classroomDetails)->sum('volume_horaire'),
-            'average_attendance' => collect($classroomDetails)->avg('attendance_rate') ?? 100,
+            'average_attendance' => $detailsByClassroom->avg('attendance_rate') ?? 100,
             'average_progress' => collect($classroomDetails)->avg('average_progress') ?? 0,
         ];
 

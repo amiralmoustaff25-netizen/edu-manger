@@ -2,6 +2,7 @@
 
 use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
@@ -18,7 +19,14 @@ beforeEach(function () {
     $this->teacher = Teacher::factory()->create(['user_id' => $this->teacherUser->id]);
     $this->schoolYear = SchoolYear::factory()->create(['is_active' => true]);
     $this->classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id]);
-    $this->teacher->classrooms()->attach($this->classroom->id, ['annee_scolaire' => $this->schoolYear->year_string, 'matiere_id' => null, 'volume_horaire_hebdo' => 4]);
+    PedagogicalAssignment::create([
+        'teacher_id' => $this->teacher->id,
+        'classroom_id' => $this->classroom->id,
+        'matiere_id' => \App\Models\Matiere::factory()->create()->id,
+        'school_year_id' => $this->schoolYear->id,
+        'volume_horaire_hebdo' => 4,
+        'is_active' => true,
+    ]);
     $this->student = User::factory()->create(['role' => 'eleve']);
     $this->student->assignRole('eleve');
     Registration::factory()->create(['user_id' => $this->student->id, 'classroom_id' => $this->classroom->id, 'school_year_id' => $this->schoolYear->id, 'status' => 'active']);

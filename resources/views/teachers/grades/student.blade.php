@@ -52,7 +52,7 @@
                 @endphp
                 <div class="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="{
                     usesBareme: {{ $usesBaremeSystem ? 'true' : 'false' }},
-                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'bareme' => (float) ($baremes[$a->matiere_id] ?? 20), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_'.$defaultEvaluationType))->valeur)])->toJson() }},
+                    rows: {{ $assignments->values()->map(fn ($a) => ['coef' => (float) ($a->matiere->coefficient ?? 1), 'bareme' => (float) ($baremes[$a->matiere_id] ?? 20), 'valeur' => old('grades.'.$a->matiere_id.'.valeur', optional($existingNotes->get($a->matiere_id.'_'.$defaultEvaluationType.'_1'))->valeur)])->toJson() }},
                     get average() {
                         // Primaire avec barèmes (sunuBulletin) : somme des points obtenus / somme
                         // des barèmes des matières notées × 20 — jamais valeur × barème, qui
@@ -110,7 +110,7 @@
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                                     @foreach($assignments as $index => $assignment)
                                         @php
-                                            $existing = $existingNotes->get($assignment->matiere_id.'_'.$defaultEvaluationType);
+                                            $existing = $existingNotes->get($assignment->matiere_id.'_'.$defaultEvaluationType.'_1');
                                             $maxValeur = $usesBaremeSystem ? (float) ($baremes[$assignment->matiere_id] ?? 20) : 20;
                                         @endphp
                                         <tr>

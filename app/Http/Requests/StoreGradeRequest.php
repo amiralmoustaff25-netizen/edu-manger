@@ -20,6 +20,7 @@ class StoreGradeRequest extends FormRequest
             'classroom_id' => ['required', 'exists:classrooms,id'],
             'matiere_id' => ['required', 'exists:matieres,id'],
             'type_evaluation' => ['required', 'string'],
+            'evaluation_number' => ['nullable', 'integer', 'min:1'],
             'periode' => ['required', 'string'],
             'grades' => ['required', 'array'],
             'grades.*.user_id' => ['required', 'exists:users,id'],

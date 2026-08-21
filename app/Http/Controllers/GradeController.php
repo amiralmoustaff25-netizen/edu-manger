@@ -74,6 +74,8 @@ class GradeController extends Controller
             abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
         }
 
+        $evaluationNumber = $this->resolveEvaluationNumber($classroom->cycle, $validated['type_evaluation'], $validated['evaluation_number'] ?? 1);
+
         // Vérifier que le professeur est assigné à cette classe ET cette matière — via
         // PedagogicalAssignment, seule source de vérité alimentée par l'administration
         // (voir index() ci-dessus, même correctif).
@@ -104,6 +106,7 @@ class GradeController extends Controller
         $hasValidatedNotes = Note::where('classroom_id', $classroom->id)
             ->where('matiere_id', $matiere->id)
             ->where('type_evaluation', $validated['type_evaluation'])
+            ->where('evaluation_number', $evaluationNumber)
             ->where('periode', $validated['periode'])
             ->whereIn('user_id', collect($validated['grades'])->pluck('user_id'))
             ->validated()
@@ -127,6 +130,7 @@ class GradeController extends Controller
                     'classroom_id' => $classroom->id,
                     'matiere_id' => $matiere->id,
                     'type_evaluation' => $validated['type_evaluation'],
+                    'evaluation_number' => $evaluationNumber,
                     'periode' => $validated['periode'],
                 ],
                 [
@@ -141,6 +145,29 @@ class GradeController extends Controller
         return redirect()
             ->route('professeur.notes.index', ['classroom_id' => $classroom->id, 'matiere_id' => $matiere->id])
             ->with('success', "{$savedCount} note(s) enregistrée(s) avec succès.");
+    }
+
+    /**
+     * Numéro d'évaluation (1er devoir, 2e devoir, ...) réellement applicable : le
+     * primaire n'a qu'une seule évaluation par matière/période (composition, voir
+     * EvaluationTypeScope), donc toujours 1 quel que soit ce qui a été soumis. Pour le
+     * collège/lycée, borné à config('edu.max_evaluations_per_period') — "2 devoirs
+     * maximum par matière et par semestre" (cahier des charges), configurable pour
+     * pouvoir évoluer sans toucher au code.
+     */
+    private function resolveEvaluationNumber(?string $cycle, string $typeEvaluation, int $requested): int
+    {
+        if (! in_array($cycle, ['college', 'lycee'], true)) {
+            return 1;
+        }
+
+        $max = (int) (config("edu.max_evaluations_per_period.{$typeEvaluation}") ?? 1);
+
+        if ($requested < 1 || $requested > $max) {
+            abort(422, "Le numéro d'évaluation doit être compris entre 1 et {$max} pour ce type d'évaluation.");
+        }
+
+        return $requested;
     }
 
     /**
@@ -203,7 +230,7 @@ class GradeController extends Controller
                 ->where('periode', $periode)
                 ->whereIn('matiere_id', $assignments->pluck('matiere_id'))
                 ->get()
-                ->keyBy(fn ($note) => $note->matiere_id.'_'.$note->type_evaluation);
+                ->keyBy(fn ($note) => $note->matiere_id.'_'.$note->type_evaluation.'_'.$note->evaluation_number);
 
             // Barème par matière (système "sunuBulletin" du primaire) : la note max saisie
             // et affichée n'est pas toujours /20, voir GradeCalculationService::resolveBareme().
@@ -232,6 +259,7 @@ class GradeController extends Controller
             'grades' => ['required', 'array'],
             'grades.*.matiere_id' => ['required', 'exists:matieres,id'],
             'grades.*.type_evaluation' => ['required', 'string'],
+            'grades.*.evaluation_number' => ['nullable', 'integer', 'min:1'],
             // Pas de max fixe ici : chaque matière peut avoir son propre barème en
             // primaire (ex. Mathématiques /80) — vérifié plus bas une fois la classe
             // résolue, une seule règle statique ne peut pas varier par ligne du tableau.
@@ -296,10 +324,13 @@ class GradeController extends Controller
                 abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
             }
 
+            $evaluationNumber = $this->resolveEvaluationNumber($classroom->cycle, $gradeData['type_evaluation'], $gradeData['evaluation_number'] ?? 1);
+
             $hasValidatedNote = Note::where('user_id', $validated['user_id'])
                 ->where('classroom_id', $classroom->id)
                 ->where('matiere_id', $gradeData['matiere_id'])
                 ->where('type_evaluation', $gradeData['type_evaluation'])
+                ->where('evaluation_number', $evaluationNumber)
                 ->where('periode', $validated['periode'])
                 ->validated()
                 ->exists();
@@ -314,6 +345,7 @@ class GradeController extends Controller
                     'classroom_id' => $classroom->id,
                     'matiere_id' => $gradeData['matiere_id'],
                     'type_evaluation' => $gradeData['type_evaluation'],
+                    'evaluation_number' => $evaluationNumber,
                     'periode' => $validated['periode'],
                 ],
                 [

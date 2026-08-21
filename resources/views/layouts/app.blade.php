@@ -35,13 +35,15 @@
             @endif
         </x-sidebar>
 
-        {{-- Notifications toast (remplace les pages/bandeaux de confirmation).
+        {{-- 
+            Notifications toast (remplace les pages/bandeaux de confirmation).
              Déclenché via un événement 'push-toast' plutôt qu'un x-init : ce conteneur est
              en dehors de <main>, donc son x-init ne se rejouerait jamais après une navigation
              PJAX. Le <script> juste en dessous, lui, est réexécuté à chaque navigation PJAX
              (voir resources/js/pjax.js:executePageScripts, qui parcourt tout le document
              récupéré, pas seulement <main>) — les messages flash restent donc visibles même
-             quand la navigation aboutit ailleurs que prévu (ex. redirection forcée). --}}
+             quand la navigation aboutit ailleurs que prévu (ex. redirection forcée).
+         --}}
         <div
             x-data="{ toasts: [] }"
             x-on:push-toast.window="toasts.push($event.detail); if (! $event.detail.persistent) { setTimeout(() => toasts = toasts.filter(t => t.id !== $event.detail.id), 4000) }"

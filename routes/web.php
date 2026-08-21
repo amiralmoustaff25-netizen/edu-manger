@@ -34,6 +34,7 @@ use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDocumentController;
+use App\Http\Controllers\StudentNotesController;
 use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
@@ -59,7 +60,8 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['show']);
-    Route::get('/classrooms/{classroom}/teachers', [ClassroomController::class, 'teachers'])->name('classrooms.teachers');
+    // La page dédiée classrooms.teachers a été retirée : la gestion des enseignants
+    // affectés est désormais intégrée à classrooms.edit (voir ClassroomController::edit()).
     Route::post('/classrooms/{classroom}/teachers', [ClassroomController::class, 'attachTeacher'])->name('classrooms.attach-teacher');
     Route::delete('/classrooms/{classroom}/teachers/{teacher}', [ClassroomController::class, 'detachTeacher'])->name('classrooms.detach-teacher');
 
@@ -163,12 +165,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
 
     // ✅ CORRIGÉ : plus de doublon
     Route::middleware(['role:eleve'])->group(function () {
-        Route::get('/mon-espace/notes', function () {
-            $user = auth()->user();
-            $notes = $user->notes()->with('matiere')->latest()->get();
-
-            return view('students.notes', compact('user', 'notes'));
-        })->name('student.notes');
+        Route::get('/mon-espace/notes', [StudentNotesController::class, 'show'])->name('student.notes');
 
         Route::get('/mon-espace/emploi-du-temps', function () {
             $user = auth()->user();
@@ -276,7 +273,6 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::get('/children/discipline', [\App\Http\Controllers\ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
         Route::get('/children/timetable', [\App\Http\Controllers\ParentPortalController::class, 'childTimetable'])->name('children.timetable');
         Route::get('/children/payments', [\App\Http\Controllers\ParentPortalController::class, 'childPayments'])->name('children.payments');
-        Route::get('/messaging', [\App\Http\Controllers\ParentPortalController::class, 'messaging'])->name('messaging');
         Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
     });
 

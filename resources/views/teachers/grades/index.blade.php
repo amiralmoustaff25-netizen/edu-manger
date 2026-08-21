@@ -121,7 +121,11 @@
                         </div>
                     </div>
                     
-                    <form action="{{ route('professeur.notes.store') }}" method="POST" x-data="{ periode: 'trimestre_1' }">
+                    @php
+                        $isSecondaryCycle = in_array($selectedClassroom->cycle, ['college', 'lycee'], true);
+                        $maxDevoirs = (int) (config('edu.max_evaluations_per_period.devoir') ?? 1);
+                    @endphp
+                    <form action="{{ route('professeur.notes.store') }}" method="POST" x-data="{ periode: '{{ \App\Support\AcademicPeriods::defaultFor($selectedClassroom->cycle) }}', typeEvaluation: '{{ \App\Support\EvaluationTypeScope::allowedFor($selectedClassroom->cycle)[0] }}' }">
                         @csrf
                         <input type="hidden" name="classroom_id" value="{{ request('classroom_id') }}">
                         <input type="hidden" name="matiere_id" value="{{ request('matiere_id') }}">
@@ -130,7 +134,7 @@
                             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label for="typeEvaluationSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Type d\'évaluation') }}</label>
-                                    <select name="type_evaluation" id="typeEvaluationSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <select name="type_evaluation" id="typeEvaluationSelect" x-model="typeEvaluation" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         @foreach(\App\Support\EvaluationTypeScope::allowedFor($selectedClassroom->cycle) as $type)
                                             <option value="{{ $type }}">{{ __(\App\Support\EvaluationTypeScope::LABELS[$type]) }}</option>
                                         @endforeach
@@ -139,11 +143,21 @@
                                 <div>
                                     <label for="periodeSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('Période') }}</label>
                                     <select name="periode" id="periodeSelect" x-model="periode" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="trimestre_1">{{ __('Trimestre 1') }}</option>
-                                        <option value="trimestre_2">{{ __('Trimestre 2') }}</option>
-                                        <option value="trimestre_3">{{ __('Trimestre 3') }}</option>
+                                        @foreach(\App\Support\AcademicPeriods::forCycle($selectedClassroom->cycle) as $code => $label)
+                                            <option value="{{ $code }}">{{ __($label) }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
+                                @if($isSecondaryCycle && $maxDevoirs > 1)
+                                    <div x-show="typeEvaluation === 'devoir'" x-cloak>
+                                        <label for="evaluationNumberSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ __('N° du devoir') }}</label>
+                                        <select name="evaluation_number" id="evaluationNumberSelect" class="w-full rounded-lg border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            @for($n = 1; $n <= $maxDevoirs; $n++)
+                                                <option value="{{ $n }}">{{ __('Devoir :n', ['n' => $n]) }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="overflow-x-auto">
@@ -189,11 +203,9 @@
                                                 --}}
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                     <a target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline"
-                                                       :href="{{ Illuminate\Support\Js::from([
-                                                           'trimestre_1' => route('bulletins.show', [$student, 'trimestre_1']),
-                                                           'trimestre_2' => route('bulletins.show', [$student, 'trimestre_2']),
-                                                           'trimestre_3' => route('bulletins.show', [$student, 'trimestre_3']),
-                                                       ]) }}[periode]">{{ __('Aperçu') }} ↗</a>
+                                                       :href="{{ Illuminate\Support\Js::from(
+                                                           collect(\App\Support\AcademicPeriods::forCycle($selectedClassroom->cycle))->keys()->mapWithKeys(fn ($code) => [$code => route('bulletins.show', [$student, $code])])->all()
+                                                       ) }}[periode]">{{ __('Aperçu') }} ↗</a>
                                                 </td>
                                             @endcan
                                         </tr>

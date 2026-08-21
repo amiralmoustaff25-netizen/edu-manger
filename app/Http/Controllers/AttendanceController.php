@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\Teacher;
 use App\Notifications\StudentAbsent;
@@ -23,9 +24,7 @@ class AttendanceController extends Controller
             abort(403, 'Profil enseignant non trouvé.');
         }
         
-        $classrooms = $teacher->classrooms()
-            ->with(['schoolYear'])
-            ->get();
+        $classrooms = $this->assignedClassrooms($teacher);
 
         $selectedDate = $request->date ?? today()->format('Y-m-d');
         $selectedClassroom = $request->classroom_id;
@@ -35,9 +34,9 @@ class AttendanceController extends Controller
 
         if ($selectedClassroom) {
             $classroom = Classroom::findOrFail($selectedClassroom);
-            
+
             // Vérifier que le professeur est assigné à cette classe
-            if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {
+            if (!$this->isAssignedToClassroom($teacher, $classroom->id)) {
                 abort(403, 'Vous n\'êtes pas autorisé à gérer les absences de cette classe.');
             }
 
@@ -85,7 +84,7 @@ class AttendanceController extends Controller
         $classroom = Classroom::findOrFail($validated['classroom_id']);
 
         // Vérifier que le professeur est assigné à cette classe
-        if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {
+        if (!$this->isAssignedToClassroom($teacher, $classroom->id)) {
             abort(403, 'Vous n\'êtes pas autorisé à enregistrer les absences pour cette classe.');
         }
 
@@ -144,7 +143,7 @@ class AttendanceController extends Controller
     public function history(Request $request)
     {
         $teacher = Teacher::where('user_id', auth()->id())->firstOrFail();
-        $classrooms = $teacher->classrooms()->with('schoolYear')->get();
+        $classrooms = $this->assignedClassrooms($teacher);
         $selectedClassroom = $request->integer('classroom_id') ?: null;
 
         if ($selectedClassroom && ! $classrooms->contains('id', $selectedClassroom)) {
@@ -182,5 +181,29 @@ class AttendanceController extends Controller
             ->withQueryString();
 
         return view('attendances.overview', compact('attendances', 'classrooms', 'selectedClassroom'));
+    }
+
+    /**
+     * PedagogicalAssignment (écran "Affectations pédagogiques") est la seule source de
+     * vérité des affectations enseignant/classe alimentée par l'administration —
+     * l'ancien pivot teacher_classroom (Teacher::classrooms()) n'est plus jamais
+     * renseigné, voir GradeController::index() pour le même correctif.
+     */
+    private function assignedClassrooms(Teacher $teacher)
+    {
+        $classroomIds = PedagogicalAssignment::where('teacher_id', $teacher->id)
+            ->where('is_active', true)
+            ->pluck('classroom_id')
+            ->unique();
+
+        return Classroom::whereIn('id', $classroomIds)->with('schoolYear')->get();
+    }
+
+    private function isAssignedToClassroom(Teacher $teacher, int $classroomId): bool
+    {
+        return PedagogicalAssignment::where('teacher_id', $teacher->id)
+            ->where('classroom_id', $classroomId)
+            ->where('is_active', true)
+            ->exists();
     }
 }
