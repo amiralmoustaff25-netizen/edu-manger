@@ -31,6 +31,7 @@ use App\Http\Controllers\SchoolYearContextController;
 use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SchoolYearController;
+use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\TeacherClassController;
@@ -176,7 +177,14 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
 
             $matieres = Matiere::all()->keyBy('id');
 
-            return view('students.timetable', compact('user', 'registration', 'matieres'));
+            // Grille horaire réelle (primaire uniquement pour l'instant) : voir
+            // App\Support\TimetableGrid / App\Models\TimetableEntry.
+            $timetableEntries = null;
+            if ($registration?->classroom?->cycle === 'primaire') {
+                $timetableEntries = app(\App\Services\TimetableGridService::class)->grid($registration->classroom);
+            }
+
+            return view('students.timetable', compact('user', 'registration', 'matieres', 'timetableEntries'));
         })->name('student.timetable');
 
         Route::get('/mon-espace/bulletins', function () {
@@ -295,6 +303,8 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             Route::get('/assignments', [PedagogicalConfigurationController::class, 'assignments'])->name('assignments');
             Route::post('/assignments', [PedagogicalConfigurationController::class, 'storeAssignments'])->name('assignments.store');
             Route::patch('/assignments/{assignment}/toggle', [PedagogicalConfigurationController::class, 'toggleAssignment'])->name('assignments.toggle');
+            Route::patch('/assignments/{assignment}', [PedagogicalConfigurationController::class, 'updateAssignment'])->name('assignments.update');
+            Route::delete('/assignments/{assignment}', [PedagogicalConfigurationController::class, 'destroyAssignment'])->name('assignments.destroy');
             Route::post('/periods', [PedagogicalConfigurationController::class, 'storePeriod'])->name('periods.store');
             Route::patch('/periods/{period}/toggle', [PedagogicalConfigurationController::class, 'togglePeriod'])->name('periods.toggle');
             Route::post('/evaluation-types', [PedagogicalConfigurationController::class, 'storeEvaluationType'])->name('evaluation-types.store');
@@ -303,6 +313,14 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             Route::delete('/matieres/{matiere}', [PedagogicalConfigurationController::class, 'destroyMatiere'])->name('matieres.destroy');
             Route::post('/subject-configurations', [PedagogicalConfigurationController::class, 'storeSubjectConfiguration'])->name('subjects.store');
             Route::put('/school-years/{schoolYear}/grade-settings', [PedagogicalConfigurationController::class, 'updateSettings'])->name('settings.update');
+        });
+        Route::prefix('emploi-du-temps')->name('timetable.')->group(function () {
+            Route::get('/', [TimetableController::class, 'index'])->name('index');
+            Route::get('/{classroom}', [TimetableController::class, 'edit'])->name('edit');
+            Route::put('/{classroom}', [TimetableController::class, 'update'])->name('update');
+            Route::get('/{classroom}/modele', [TimetableController::class, 'template'])->name('template');
+            Route::post('/{classroom}/import', [TimetableController::class, 'import'])->name('import');
+            Route::get('/{classroom}/pdf', [TimetableController::class, 'print'])->name('print');
         });
         Route::resource('users', UserController::class)->except(['show']);
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Matiere;
 use App\Models\Reminder;
 use App\Models\User;
+use App\Services\TimetableGridService;
 use Illuminate\Http\Request;
 
 class ParentPortalController extends Controller
@@ -109,7 +110,7 @@ class ParentPortalController extends Controller
         return redirect()->route('parents.dashboard');
     }
 
-    public function childTimetable(Request $request)
+    public function childTimetable(Request $request, TimetableGridService $timetableGrid)
     {
         $student = $this->resolveStudentFromRequest($request);
         if (! $student) {
@@ -120,7 +121,12 @@ class ParentPortalController extends Controller
         $registration?->load(['classroom.teachers.user', 'classroom.schoolYear', 'schoolYear']);
         $matieres = Matiere::all()->keyBy('id');
 
-        return view('students.timetable', ['user' => $student, 'registration' => $registration, 'matieres' => $matieres]);
+        $timetableEntries = null;
+        if ($registration?->classroom?->cycle === 'primaire') {
+            $timetableEntries = $timetableGrid->grid($registration->classroom);
+        }
+
+        return view('students.timetable', ['user' => $student, 'registration' => $registration, 'matieres' => $matieres, 'timetableEntries' => $timetableEntries]);
     }
 
     public function childPayments(Request $request)
