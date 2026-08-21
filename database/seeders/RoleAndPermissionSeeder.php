@@ -190,6 +190,10 @@ class RoleAndPermissionSeeder extends Seeder
             // --- Présences (SEC-02 : idem pour la vue d'ensemble /attendances) ---
             'voir-presences',
 
+            // --- Pointage des enseignants ---
+            'voir-pointage-enseignants',
+            'enregistrer-pointage-enseignant',
+
             // --- Super-Admin ---
             'tout-faire',
         ];
@@ -364,7 +368,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-detail-parent',
         ]);
 
-        // --- Surveillant : validation de programmes ---
+        // --- Surveillant : vie scolaire, présences et pointage ---
         $surveillant->syncPermissions([
             'voir-dashboard',
             'voir-profil',
@@ -375,6 +379,9 @@ class RoleAndPermissionSeeder extends Seeder
             'rejeter-programme',
             'voir-cahier-textes',
             'voir-tableau-bord-cahier-textes',
+            'voir-presences',
+            'voir-pointage-enseignants',
+            'enregistrer-pointage-enseignant',
         ]);
 
         // --- Professeur : pédagogie ---

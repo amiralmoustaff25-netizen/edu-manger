@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminSecurityCodeController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Api\StudentController as ApiStudentController;
-use App\Http\Controllers\AdminSecurityCodeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorAuthenticationController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
-use App\Http\Controllers\SessionController;
 use App\Http\Controllers\BulletinController;
 use App\Http\Controllers\CahierTexteController;
 use App\Http\Controllers\CahierTexteDashboardController;
@@ -21,28 +21,34 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LoginLogController;
 use App\Http\Controllers\ParentController;
-use App\Http\Controllers\PedagogicalConfigurationController;
+use App\Http\Controllers\ParentPortalController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PedagogicalConfigurationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProgramAnnualController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\RegistrationController;
-use App\Http\Controllers\SchoolYearContextController;
-use App\Http\Controllers\RoleAssignmentController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\RoleAssignmentController;
+use App\Http\Controllers\SchoolYearContextController;
 use App\Http\Controllers\SchoolYearController;
-use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\StudentNotesController;
+use App\Http\Controllers\SurveillantAttendanceController;
+use App\Http\Controllers\SurveillantDashboardController;
+use App\Http\Controllers\TeacherAttendanceController;
 use App\Http\Controllers\TeacherClassController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeachingSessionController;
-use App\Http\Controllers\ProgramAnnualController;
+use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserNotificationController;
-use App\Models\Matiere;
+use App\Services\FeeService;
+use App\Services\GradeCalculationService;
+use App\Services\TimetableGridService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -124,11 +130,11 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             Route::post('/reminders/generate-overdue', [ReminderController::class, 'generateOverdue'])->name('reminders.generate-overdue');
             Route::post('/reminders/generate-upcoming', [ReminderController::class, 'generateUpcoming'])->name('reminders.generate-upcoming');
         });
-        
+
         // Factures
         Route::resource('invoices', InvoiceController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
         Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.pdf');
-        
+
         // Types de frais
         Route::resource('fee-types', FeeTypeController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
@@ -175,7 +181,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             // Grille horaire réelle (tous cycles) : voir App\Support\TimetableGrid /
             // App\Models\TimetableEntry.
             $timetableEntries = $registration?->classroom
-                ? app(\App\Services\TimetableGridService::class)->grid($registration->classroom)
+                ? app(TimetableGridService::class)->grid($registration->classroom)
                 : null;
 
             return view('students.timetable', compact('user', 'registration', 'timetableEntries'));
@@ -207,7 +213,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             if ($registration?->classroom) {
                 $latestPeriod = $user->notes()->latest()->value('periode');
                 if ($latestPeriod) {
-                    $moyenne = app(\App\Services\GradeCalculationService::class)
+                    $moyenne = app(GradeCalculationService::class)
                         ->getBulletinData($user, $latestPeriod)['general_average'];
                 }
             }
@@ -220,7 +226,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
             // (cf. AccountingController), ignorait les frais d'inscription, les options
             // (cantine/transport/internat) et les dérogations tarifaires. Le total payé
             // excluait aussi les paiements annulés/rejetés du calcul réel.
-            $situation = $registration ? app(\App\Services\FeeService::class)->getFinancialSituation($registration) : null;
+            $situation = $registration ? app(FeeService::class)->getFinancialSituation($registration) : null;
             $totalPaid = $situation['paid'] ?? 0;
             $remaining = $situation['remaining'] ?? 0;
 
@@ -246,6 +252,19 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::resource('attendances', AttendanceController::class)->only(['index', 'store']);
     });
 
+    // Routes pour les surveillants
+    Route::middleware(['role:surveillant'])->prefix('surveillant')->name('surveillant.')->group(function () {
+        Route::get('/dashboard', [SurveillantDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/attendances', [SurveillantAttendanceController::class, 'index'])->name('attendances.index');
+        Route::get('/attendances/{classroom}', [SurveillantAttendanceController::class, 'class'])->name('attendances.class');
+        Route::get('/attendances/student/{student}', [SurveillantAttendanceController::class, 'student'])->name('attendances.student');
+    });
+
+    Route::middleware(['permission:voir-pointage-enseignants'])->prefix('teacher-attendances')->name('teacher-attendances.')->group(function () {
+        Route::get('/', [TeacherAttendanceController::class, 'index'])->name('index');
+        Route::post('/', [TeacherAttendanceController::class, 'store'])->name('store');
+    });
+
     Route::middleware(['permission:voir-detail-eleve'])->group(function () {
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
         Route::post('/registrations/{registration}/discounts', [DiscountController::class, 'store'])->name('discounts.store');
@@ -264,16 +283,16 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
     // à un seul segment de ce portail (/parents/dashboard, /parents/children, ...)
     // puisque Laravel matche les routes dans leur ordre de déclaration.
     Route::middleware(['role:parent'])->prefix('parents')->name('parents.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\ParentPortalController::class, 'dashboard'])->name('dashboard');
-        Route::get('/children', [\App\Http\Controllers\ParentPortalController::class, 'childrenIndex'])->name('children.index');
-        Route::get('/children/profile', [\App\Http\Controllers\ParentPortalController::class, 'childProfile'])->name('children.profile');
-        Route::get('/children/notes', [\App\Http\Controllers\ParentPortalController::class, 'childNotes'])->name('children.notes');
-        Route::get('/children/bulletins', [\App\Http\Controllers\ParentPortalController::class, 'childBulletins'])->name('children.bulletins');
-        Route::get('/children/attendances', [\App\Http\Controllers\ParentPortalController::class, 'childAttendances'])->name('children.attendances');
-        Route::get('/children/discipline', [\App\Http\Controllers\ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
-        Route::get('/children/timetable', [\App\Http\Controllers\ParentPortalController::class, 'childTimetable'])->name('children.timetable');
-        Route::get('/children/payments', [\App\Http\Controllers\ParentPortalController::class, 'childPayments'])->name('children.payments');
-        Route::get('/calendar', [\App\Http\Controllers\ParentPortalController::class, 'calendar'])->name('calendar');
+        Route::get('/dashboard', [ParentPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/children', [ParentPortalController::class, 'childrenIndex'])->name('children.index');
+        Route::get('/children/profile', [ParentPortalController::class, 'childProfile'])->name('children.profile');
+        Route::get('/children/notes', [ParentPortalController::class, 'childNotes'])->name('children.notes');
+        Route::get('/children/bulletins', [ParentPortalController::class, 'childBulletins'])->name('children.bulletins');
+        Route::get('/children/attendances', [ParentPortalController::class, 'childAttendances'])->name('children.attendances');
+        Route::get('/children/discipline', [ParentPortalController::class, 'childDiscipline'])->name('children.discipline');
+        Route::get('/children/timetable', [ParentPortalController::class, 'childTimetable'])->name('children.timetable');
+        Route::get('/children/payments', [ParentPortalController::class, 'childPayments'])->name('children.payments');
+        Route::get('/calendar', [ParentPortalController::class, 'calendar'])->name('calendar');
     });
 
     // SEC-02 : ce groupe était auparavant verrouillé par le middleware de rôle

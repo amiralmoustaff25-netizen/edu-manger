@@ -152,6 +152,9 @@ return [
         'modifier-cahier-textes' => 'Modifier le cahier de textes',
         'voir-tableau-bord-cahier-textes' => 'Voir le tableau de bord du cahier',
         'voir-historique-cahier-textes' => 'Voir l’historique du cahier',
+        'voir-presences' => 'Voir les présences',
+        'voir-pointage-enseignants' => 'Voir le pointage des enseignants',
+        'enregistrer-pointage-enseignant' => 'Enregistrer le pointage d’un enseignant',
 
         'tout-faire' => 'Tous les droits (Super-Admin)',
     ],
@@ -174,6 +177,7 @@ return [
         'grades' => ['voir-sa-classe', 'saisir-notes', 'valider-notes', 'rouvrir-notes-validees', 'generer-bulletins'],
         'notifications' => ['voir-notifications', 'creer-notification', 'publier-notification', 'programmer-notification', 'modifier-notification', 'archiver-notification', 'voir-historique-notifications', 'voir-statistiques-lecture'],
         'programmes' => ['voir-programmes', 'creer-programme', 'modifier-programme', 'soumettre-programme', 'supprimer-programme', 'valider-programme-surveillant', 'valider-programme-directeur', 'rejeter-programme', 'voir-cahier-textes', 'saisir-cahier-textes', 'modifier-cahier-textes', 'voir-tableau-bord-cahier-textes', 'voir-historique-cahier-textes'],
+        'attendances' => ['voir-presences', 'voir-pointage-enseignants', 'enregistrer-pointage-enseignant'],
         'admin' => ['tout-faire'],
     ],
 
