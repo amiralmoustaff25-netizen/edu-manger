@@ -29,7 +29,7 @@ class EnsurePasswordChanged
                 return $next($request);
             }
 
-           // Permettre la déconnexion
+            // Permettre la déconnexion
             if ($request->is('logout')) {
                 return $next($request);
             }

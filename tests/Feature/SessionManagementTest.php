@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\SessionController;
 use App\Models\Session;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 test('the sessions screen degrades gracefully when the session driver is not database', function () {
     config(['session.driver' => 'array']);
@@ -96,8 +98,8 @@ test('the destroy action refuses to delete the session id matching the current r
         'last_activity' => now()->timestamp,
     ]);
 
-    $controller = app(\App\Http\Controllers\SessionController::class);
-    $request = \Illuminate\Http\Request::create('/sessions/'.$currentId, 'DELETE');
+    $controller = app(SessionController::class);
+    $request = Request::create('/sessions/'.$currentId, 'DELETE');
     $request->setLaravelSession(app('session.store'));
     app()->instance('request', $request);
 

@@ -40,7 +40,7 @@ class AttendancePolicy
         if ($user->hasRole('professeur')) {
             $isAssigned = $user->classrooms()->where('classrooms.id', $attendance->classroom_id)->exists();
             $isRecent = $attendance->date >= now()->subDays(7)->format('Y-m-d');
-            
+
             return $isAssigned && $isRecent;
         }
 

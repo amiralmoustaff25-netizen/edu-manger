@@ -9,6 +9,7 @@ use App\Models\SchoolYear;
 use App\Models\SubjectConfiguration;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\GradeCalculationService;
 
 function createBaremeGradeFixture(): array
 {
@@ -183,7 +184,7 @@ test('an admin can set a barème for a primaire subject via the pedagogical conf
         'bareme' => 40,
     ]);
 
-    expect(app(\App\Services\GradeCalculationService::class)->resolveBareme($matiere, $classroom, $schoolYear->id))->toBe(40.0);
+    expect(app(GradeCalculationService::class)->resolveBareme($matiere, $classroom, $schoolYear->id))->toBe(40.0);
 });
 
 test('the bulletin page shows the barème column and points obtained for a configured primaire subject', function () {

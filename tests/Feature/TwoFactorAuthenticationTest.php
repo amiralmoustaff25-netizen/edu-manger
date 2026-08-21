@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use App\Services\AuditLogService;
 use App\Services\TwoFactorAuthenticationService;
 
 function validTotpCodeFor(string $secret): string

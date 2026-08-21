@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\FeeService;
 use App\Services\SchoolYearContext;
 use App\Services\SchoolYearGuardService;
+use App\Services\StudentPhotoService;
 use App\Services\StudentStatusService;
 use App\Support\StudentStatus;
 use Illuminate\Http\RedirectResponse;
@@ -95,7 +96,7 @@ class StudentController extends Controller
      */
     private function processStudentPhoto($photo, User $user): ?string
     {
-        if (!$photo) {
+        if (! $photo) {
             return null;
         }
 
@@ -104,7 +105,7 @@ class StudentController extends Controller
             Storage::disk('local')->delete($user->profile_photo_path);
         }
 
-        return app(\App\Services\StudentPhotoService::class)->store($photo, $user->matricule);
+        return app(StudentPhotoService::class)->store($photo, $user->matricule);
     }
 
     /**
@@ -207,7 +208,7 @@ class StudentController extends Controller
 
         DB::transaction(function () use ($validated, $student, $request) {
             $updateData = [
-                'name' => $validated['nom'] . ' ' . $validated['prenom'],
+                'name' => $validated['nom'].' '.$validated['prenom'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
                 'cycle' => $validated['cycle'],
@@ -224,7 +225,7 @@ class StudentController extends Controller
             ];
 
             // Handle photo deletion
-            if (!empty($validated['supprimer_photo'])) {
+            if (! empty($validated['supprimer_photo'])) {
                 Gate::authorize('remove-photo-eleve');
                 if ($student->profile_photo_path) {
                     Storage::disk('local')->delete($student->profile_photo_path);
@@ -254,7 +255,7 @@ class StudentController extends Controller
             if (isset($validated['parents'])) {
                 $parentSync = [];
                 foreach ($validated['parents'] as $parentData) {
-                    if (!empty($parentData['parent_id'])) {
+                    if (! empty($parentData['parent_id'])) {
                         $parentSync[$parentData['parent_id']] = [
                             'lien_parente' => $parentData['lien_parente'] ?? null,
                             'est_responsable_financier' => $parentData['est_responsable_financier'] ?? false,
@@ -312,7 +313,7 @@ class StudentController extends Controller
         // dans la machine à états (voir StudentStatus::TRANSITIONS). Pour faire
         // réapparaître l'élève comme actif, utiliser la Réinscription.
         return redirect()->route('students.index')
-            ->with('success', "Élève restauré. Utilisez « Réinscription » pour lui créer une nouvelle inscription active.");
+            ->with('success', 'Élève restauré. Utilisez « Réinscription » pour lui créer une nouvelle inscription active.');
     }
 
     public function transfer(TransferStudentRequest $request, User $student, SchoolYearGuardService $schoolYearGuard)

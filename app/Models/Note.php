@@ -91,6 +91,6 @@ class Note extends Model
     // Accessor pour obtenir la note sur 20 formatée
     public function getFormattedValueAttribute(): string
     {
-        return number_format($this->valeur, 2) . '/20';
+        return number_format($this->valeur, 2).'/20';
     }
 }

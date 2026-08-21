@@ -43,20 +43,25 @@ class StoreUserRequest extends FormRequest
             'is_active' => ['boolean'],
 
             // Fiche professeur (Teacher) : mêmes règles que StoreTeacherRequest, affichées
-            // dynamiquement dans le formulaire quand role=professeur est sélectionné.
-            'date_naissance' => [Rule::requiredIf($isProfesseur), 'date'],
-            'lieu_naissance' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
-            'sexe' => [Rule::requiredIf($isProfesseur), Rule::in(['masculin', 'feminin'])],
-            'nationalite' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
-            'diplomes' => [Rule::requiredIf($isProfesseur), 'string'],
-            'etablissements_formation' => [Rule::requiredIf($isProfesseur), 'string'],
-            'statut' => [Rule::requiredIf($isProfesseur), Rule::in(['fonctionnaire', 'contractuel', 'vacataire'])],
-            'date_recrutement' => [Rule::requiredIf($isProfesseur), 'date'],
-            'specialites' => [Rule::requiredIf($isProfesseur), 'array', 'min:1'],
+            // dynamiquement dans le formulaire quand role=professeur est sélectionné — mais
+            // toujours présents dans le HTML (juste masqués via x-show), donc soumis vides
+            // pour tout autre rôle. 'nullable' est indispensable en plus de requiredIf : sans
+            // lui, une chaîne vide fait quand même échouer 'date'/Rule::in/etc., bloquant la
+            // création de tout compte non-professeur (ex. surveillant) à cause de champs que
+            // l'utilisateur ne voit même pas.
+            'date_naissance' => [Rule::requiredIf($isProfesseur), 'nullable', 'date'],
+            'lieu_naissance' => [Rule::requiredIf($isProfesseur), 'nullable', 'string', 'max:255'],
+            'sexe' => [Rule::requiredIf($isProfesseur), 'nullable', Rule::in(['masculin', 'feminin'])],
+            'nationalite' => [Rule::requiredIf($isProfesseur), 'nullable', 'string', 'max:255'],
+            'diplomes' => [Rule::requiredIf($isProfesseur), 'nullable', 'string'],
+            'etablissements_formation' => [Rule::requiredIf($isProfesseur), 'nullable', 'string'],
+            'statut' => [Rule::requiredIf($isProfesseur), 'nullable', Rule::in(['fonctionnaire', 'contractuel', 'vacataire'])],
+            'date_recrutement' => [Rule::requiredIf($isProfesseur), 'nullable', 'date'],
+            'specialites' => [Rule::requiredIf($isProfesseur), 'nullable', 'array', 'min:1'],
             'specialites.*' => ['required', 'string', 'max:255'],
-            'filiation' => [Rule::requiredIf($isProfesseur), 'string'],
-            'contact_urgence_nom' => [Rule::requiredIf($isProfesseur), 'string', 'max:255'],
-            'contact_urgence_tel' => [Rule::requiredIf($isProfesseur), 'string', 'max:20'],
+            'filiation' => [Rule::requiredIf($isProfesseur), 'nullable', 'string'],
+            'contact_urgence_nom' => [Rule::requiredIf($isProfesseur), 'nullable', 'string', 'max:255'],
+            'contact_urgence_tel' => [Rule::requiredIf($isProfesseur), 'nullable', 'string', 'max:20'],
             'nombre_heures_semaine' => ['nullable', 'integer', 'min:0'],
         ];
     }

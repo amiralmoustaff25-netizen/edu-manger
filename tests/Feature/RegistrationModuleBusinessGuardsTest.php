@@ -5,6 +5,7 @@ use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -72,7 +73,7 @@ test('the database rejects two registrations for the same student and school yea
         'school_year_id' => $this->schoolYear->id,
         'matricule' => 'EDU-TEST-0003',
         'status' => 'pending',
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });
 
 test('reenrolling a non student account is rejected (H4)', function () {

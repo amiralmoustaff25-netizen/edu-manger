@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreGradeRequest;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
@@ -9,8 +10,8 @@ use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\Teacher;
 use App\Models\User;
-use App\Http\Requests\StoreGradeRequest;
 use App\Services\AuditLogService;
+use App\Services\GradeCalculationService;
 use App\Services\SchoolYearGuardService;
 use App\Support\EvaluationTypeScope;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class GradeController extends Controller
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
 
@@ -54,7 +55,7 @@ class GradeController extends Controller
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
 
@@ -70,7 +71,7 @@ class GradeController extends Controller
         // composition) : le formulaire ne propose déjà que les bonnes options, mais
         // cette règle métier doit aussi être imposée côté serveur, pas seulement dans
         // le menu déroulant, sans quoi un envoi direct du formulaire la contournait.
-        if (!in_array($validated['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
+        if (! in_array($validated['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
             abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
         }
 
@@ -85,7 +86,7 @@ class GradeController extends Controller
             ->where('is_active', true)
             ->exists();
 
-        if (!$isAssigned) {
+        if (! $isAssigned) {
             abort(403, 'Vous n\'êtes pas autorisé à saisir des notes pour cette matière dans cette classe.');
         }
 
@@ -96,8 +97,8 @@ class GradeController extends Controller
             ->pluck('user_id');
 
         foreach ($validated['grades'] as $gradeData) {
-            if (!$enrolledStudentIds->contains((int) $gradeData['user_id'])) {
-                abort(403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
+            if (! $enrolledStudentIds->contains((int) $gradeData['user_id'])) {
+                abort(403, 'Un ou plusieurs élèves ne sont pas inscrits dans cette classe.');
             }
         }
 
@@ -120,7 +121,7 @@ class GradeController extends Controller
 
         foreach ($validated['grades'] as $gradeData) {
             // Ignorer les notes vides
-            if (!isset($gradeData['valeur']) || $gradeData['valeur'] === '') {
+            if (! isset($gradeData['valeur']) || $gradeData['valeur'] === '') {
                 continue;
             }
 
@@ -174,11 +175,11 @@ class GradeController extends Controller
      * Rechercher un élève par matricule et afficher directement toutes les matières
      * (avec coefficients) qu'il doit à ce professeur pour la période choisie.
      */
-    public function searchStudent(Request $request, \App\Services\GradeCalculationService $gradeCalculationService)
+    public function searchStudent(Request $request, GradeCalculationService $gradeCalculationService)
     {
         $teacher = Teacher::where('user_id', auth()->id())->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
 
@@ -205,14 +206,14 @@ class GradeController extends Controller
                 })
                 ->first();
 
-            if (!$student) {
+            if (! $student) {
                 return back()->withInput()->with('error', 'Aucun élève ne correspond à ce matricule.');
             }
 
             $registration = $student->latestRegistration;
             $classroom = $registration?->classroom;
 
-            if (!$classroom) {
+            if (! $classroom) {
                 return back()->withInput()->with('error', "Cet élève n'a pas de classe active.");
             }
 
@@ -250,7 +251,7 @@ class GradeController extends Controller
     /**
      * Enregistrer les notes d'un seul élève, toutes matières confondues, pour une période donnée.
      */
-    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard, \App\Services\GradeCalculationService $gradeCalculationService)
+    public function storeForStudent(Request $request, SchoolYearGuardService $schoolYearGuard, GradeCalculationService $gradeCalculationService)
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -269,7 +270,7 @@ class GradeController extends Controller
 
         $teacher = Teacher::where('user_id', auth()->id())->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
 
@@ -291,18 +292,18 @@ class GradeController extends Controller
             ->where('status', 'active')
             ->exists();
 
-        if (!$isEnrolled) {
+        if (! $isEnrolled) {
             abort(403, "Cet élève n'est pas inscrit dans cette classe.");
         }
 
         $savedCount = 0;
 
         foreach ($validated['grades'] as $gradeData) {
-            if (!isset($gradeData['valeur']) || $gradeData['valeur'] === '') {
+            if (! isset($gradeData['valeur']) || $gradeData['valeur'] === '') {
                 continue;
             }
 
-            if (!$assignedMatiereIds->contains((int) $gradeData['matiere_id'])) {
+            if (! $assignedMatiereIds->contains((int) $gradeData['matiere_id'])) {
                 abort(403, "Vous n'êtes pas autorisé à saisir des notes pour une de ces matières dans cette classe.");
             }
 
@@ -320,7 +321,7 @@ class GradeController extends Controller
                 ]);
             }
 
-            if (!in_array($gradeData['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
+            if (! in_array($gradeData['type_evaluation'], EvaluationTypeScope::allowedFor($classroom->cycle), true)) {
                 abort(422, "Ce type d'évaluation n'est pas autorisé pour ce cycle.");
             }
 

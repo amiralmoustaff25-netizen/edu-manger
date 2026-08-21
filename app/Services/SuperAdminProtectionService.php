@@ -20,7 +20,7 @@ class SuperAdminProtectionService
 
         $message = $action
             ? "Seul un super-administrateur peut {$action} un compte super-administrateur."
-            : "Seul un super-administrateur peut agir sur un compte super-administrateur.";
+            : 'Seul un super-administrateur peut agir sur un compte super-administrateur.';
 
         abort_unless(auth()->user()?->hasRole('super-admin'), 403, $message);
     }

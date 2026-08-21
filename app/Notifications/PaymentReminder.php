@@ -8,7 +8,6 @@ use Illuminate\Notifications\Notification;
 
 class PaymentReminder extends Notification
 {
-
     protected $reminder;
 
     /**
@@ -37,12 +36,12 @@ class PaymentReminder extends Notification
         $schoolName = config('app.name', 'École');
         $studentName = $notifiable->name;
         $message = $this->reminder->message;
-        
+
         return (new MailMessage)
             ->subject("Rappel de paiement - {$schoolName}")
             ->greeting("Bonjour {$studentName},")
             ->line($message)
-            ->line("Merci de votre attention.")
+            ->line('Merci de votre attention.')
             ->salutation("L'équipe {$schoolName}");
     }
 

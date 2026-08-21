@@ -5,19 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkToggleRequest;
 use App\Http\Requests\StoreChapterCompletionRequest;
 use App\Models\ChapterCompletion;
+use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
 use App\Models\ProgramChapter;
 use App\Models\ProgramHistory;
 use App\Services\CahierTexteService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CahierTexteController extends Controller
 {
-    public function __construct(private readonly CahierTexteService $service)
-    {
-    }
+    public function __construct(private readonly CahierTexteService $service) {}
 
     public function index(Request $request): View
     {
@@ -32,7 +33,7 @@ class CahierTexteController extends Controller
         // markLessonDone ci-dessous) — sans ceci, il pouvait lire n'importe quelle
         // classe en changeant classroom_id/subject_id dans l'URL.
         if (! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
-            $hasAssignment = \App\Models\PedagogicalAssignment::where('classroom_id', $request->classroom_id)
+            $hasAssignment = PedagogicalAssignment::where('classroom_id', $request->classroom_id)
                 ->where('matiere_id', $request->subject_id)
                 ->where('is_active', true)
                 ->whereHas('teacher', fn ($q) => $q->where('user_id', auth()->id()))
@@ -59,7 +60,7 @@ class CahierTexteController extends Controller
         return view('cahier-textes.select');
     }
 
-    public function toggle(StoreChapterCompletionRequest $request): \Illuminate\Http\JsonResponse
+    public function toggle(StoreChapterCompletionRequest $request): JsonResponse
     {
         $chapter = ProgramChapter::findOrFail($request->chapter_id);
         $this->authorize('create', ChapterCompletion::class);
@@ -69,7 +70,7 @@ class CahierTexteController extends Controller
             abort(403);
         }
 
-        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
+        $date = Carbon::parse($request->date)->toDateString();
 
         return DB::transaction(function () use ($chapter, $date, $program) {
             $existing = ChapterCompletion::where('program_chapter_id', $chapter->id)
@@ -96,11 +97,11 @@ class CahierTexteController extends Controller
         });
     }
 
-    public function bulkToggle(BulkToggleRequest $request): \Illuminate\Http\JsonResponse
+    public function bulkToggle(BulkToggleRequest $request): JsonResponse
     {
         $this->authorize('create', ChapterCompletion::class);
 
-        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
+        $date = Carbon::parse($request->date)->toDateString();
         $program = ProgramChapter::findOrFail($request->chapter_ids[0])->program;
 
         if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
@@ -125,11 +126,11 @@ class CahierTexteController extends Controller
         return response()->json(['ok' => true, 'progress' => $this->service->computeProgress($program)]);
     }
 
-    public function markLessonDone(Request $request): \Illuminate\Http\JsonResponse
+    public function markLessonDone(Request $request): JsonResponse
     {
         $request->validate([
             'date' => ['required', 'date', 'before_or_equal:today'],
-            'lesson_id' => ['required', 'exists:program_chapters,id']
+            'lesson_id' => ['required', 'exists:program_chapters,id'],
         ]);
 
         $this->authorize('create', ChapterCompletion::class);
@@ -143,7 +144,7 @@ class CahierTexteController extends Controller
 
         $chapterIds = collect([$lesson->id])
             ->merge($lesson->children()->pluck('id'));
-        $date = \Illuminate\Support\Carbon::parse($request->date)->toDateString();
+        $date = Carbon::parse($request->date)->toDateString();
 
         foreach ($chapterIds as $chapterId) {
             ChapterCompletion::firstOrCreate(
@@ -155,7 +156,7 @@ class CahierTexteController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function updateRemark(Request $request, ChapterCompletion $completion): \Illuminate\Http\JsonResponse
+    public function updateRemark(Request $request, ChapterCompletion $completion): JsonResponse
     {
         $this->authorize('update', $completion);
 

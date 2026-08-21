@@ -8,13 +8,13 @@ use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class StudentController extends Controller
 {
     public function getByMatricule($matricule): JsonResponse
     {
-        \Illuminate\Support\Facades\Gate::authorize('enregistrer-paiement');
+        Gate::authorize('enregistrer-paiement');
 
         // 1. Recherche par le matricule de l'élève (User) — rôle coloîne OU rôle Spatie
         $student = User::query()
@@ -29,7 +29,7 @@ class StudentController extends Controller
             ->first();
 
         // 2. Fallback par matricule d'inscription (Registration) ou par matricule utilisateur
-        if (!$student) {
+        if (! $student) {
             $registration = Registration::with(['user', 'classroom', 'schoolYear', 'payments'])
                 ->where(function ($query) use ($matricule) {
                     $query->where('matricule', $matricule)
@@ -46,7 +46,7 @@ class StudentController extends Controller
             }
         }
 
-        if (!$student) {
+        if (! $student) {
             return response()->json(['error' => 'Élève non trouvé. Vérifiez le matricule.'], 404);
         }
 
@@ -60,11 +60,11 @@ class StudentController extends Controller
             ->latest()
             ->first();
 
-        if (!$registration) {
+        if (! $registration) {
             return response()->json(['error' => 'Aucune inscription en cours pour cet élève.'], 404);
         }
 
-        $feeService = new FeeService();
+        $feeService = new FeeService;
 
         // Réponse volontairement réduite au strict nécessaire pour
         // accounting/payments/create.blade.php (recherche par matricule avant
@@ -83,7 +83,7 @@ class StudentController extends Controller
 
     public function getStudentFees($registrationId, FeeService $feeService): JsonResponse
     {
-        \Illuminate\Support\Facades\Gate::authorize('enregistrer-paiement');
+        Gate::authorize('enregistrer-paiement');
 
         $registration = Registration::with(['classroom', 'schoolYear', 'payments'])
             ->findOrFail($registrationId);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Classroom;
 use App\Models\Registration;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -45,7 +46,7 @@ class TransferStudentRequest extends FormRequest
         // champs incohérents entre eux.
         $validator->after(function ($validator) {
             $registration = Registration::find($this->input('registration_id'));
-            $classroom = \App\Models\Classroom::find($this->input('classroom_id'));
+            $classroom = Classroom::find($this->input('classroom_id'));
 
             if ($registration && $classroom && $classroom->school_year_id !== $registration->school_year_id) {
                 $validator->errors()->add('classroom_id', "Cette classe n'appartient pas à l'année scolaire de l'inscription à transférer.");

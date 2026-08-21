@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\MatiereFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -12,6 +11,7 @@ class Matiere extends Model
     use HasFactory;
 
     protected $fillable = ['nom', 'coefficient', 'bareme'];
+
     public function notes()
     {
         return $this->hasMany(Note::class);

@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\DB;
+
 /**
  * Statuts explicites du cycle de vie d'une année scolaire, avec les transitions
  * valides entre eux. Centralise la règle métier pour éviter les changements de statut
@@ -54,7 +56,7 @@ class SchoolYearStatus
     public static function migrateLegacyValues(): void
     {
         foreach (self::LEGACY_MAPPING as $legacy => $current) {
-            \Illuminate\Support\Facades\DB::table('school_years')->where('status', $legacy)->update(['status' => $current]);
+            DB::table('school_years')->where('status', $legacy)->update(['status' => $current]);
         }
     }
 

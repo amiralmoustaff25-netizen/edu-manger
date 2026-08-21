@@ -2,10 +2,13 @@
 
 use App\Models\Announcement;
 use App\Models\Classroom;
+use App\Models\ParentModel;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
 use App\Services\AnnouncementService;
+use Illuminate\Support\Str;
 
 it('allows a super admin to publish an announcement to specific users', function () {
     $admin = User::factory()->create(['role' => 'super-admin'])->assignRole('super-admin');
@@ -48,7 +51,7 @@ it('isolates classroom targeted announcements by role', function () {
     $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
 
     $student = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id,
         'classroom_id' => $classroom->id,
         'status' => 'active',
@@ -56,7 +59,7 @@ it('isolates classroom targeted announcements by role', function () {
 
     $otherClassStudent = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
     $otherClassroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $otherClassStudent->id,
         'classroom_id' => $otherClassroom->id,
         'status' => 'active',
@@ -97,14 +100,14 @@ it('notifies parents (not just students/teachers) on a classroom announcement wi
     $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
 
     $student = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id,
         'classroom_id' => $classroom->id,
         'status' => 'active',
     ]);
 
     $parentUser = User::factory()->create(['role' => 'parent', 'is_active' => true])->assignRole('parent');
-    $parent = \App\Models\ParentModel::factory()->create(['user_id' => $parentUser->id]);
+    $parent = ParentModel::factory()->create(['user_id' => $parentUser->id]);
     $parent->students()->attach($student->id);
 
     $announcement = Announcement::create([
@@ -178,7 +181,7 @@ it('blocks users from viewing other users notifications', function () {
     $userB = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
 
     $notification = $userA->notifications()->create([
-        'id' => (string) \Illuminate\Support\Str::uuid(),
+        'id' => (string) Str::uuid(),
         'type' => AnnouncementPublished::class,
         'data' => ['title' => 'Test'],
     ]);

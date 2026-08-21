@@ -5,6 +5,7 @@ use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
 
 function createValidatedPaymentFixture(string $status = 'complet'): array
 {
@@ -120,12 +121,12 @@ test('a cancelled payment is excluded from the financial situation totals', func
 
     [$registration, $payment] = createValidatedPaymentFixture('complet');
 
-    $before = app(App\Services\FeeService::class)->getFinancialSituation($registration->fresh());
+    $before = app(FeeService::class)->getFinancialSituation($registration->fresh());
     expect($before['paid'])->toBe(15000.0);
 
     $payment->cancel($manager->id, 'Annulation test');
 
-    $after = app(App\Services\FeeService::class)->getFinancialSituation($registration->fresh());
+    $after = app(FeeService::class)->getFinancialSituation($registration->fresh());
     expect($after['paid'])->toBe(0.0);
 });
 

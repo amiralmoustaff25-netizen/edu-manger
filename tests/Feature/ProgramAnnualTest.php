@@ -9,6 +9,7 @@ use App\Models\Teacher;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -133,9 +134,9 @@ test('it_blocks_importing_a_program_for_a_classroom_the_teacher_is_not_assigned_
     $context = createProgramContext();
     $otherTeacherUser = User::factory()->create();
     $otherTeacherUser->assignRole('professeur');
-    \App\Models\Teacher::factory()->create(['user_id' => $otherTeacherUser->id]);
+    Teacher::factory()->create(['user_id' => $otherTeacherUser->id]);
 
-    $file = \Illuminate\Http\UploadedFile::fake()->createWithContent(
+    $file = UploadedFile::fake()->createWithContent(
         'programme.csv',
         "Chapitre,Leçon,Sous-partie,Titre,Objectifs,Volume horaire\nChap1,Lecon1,SP1,Titre,Obj,2\n"
     );
@@ -155,7 +156,7 @@ test('it_blocks_importing_a_program_for_a_classroom_the_teacher_is_not_assigned_
 test('it_imports_a_program_for_the_teachers_own_assignment', function () {
     $context = createProgramContext();
 
-    $file = \Illuminate\Http\UploadedFile::fake()->createWithContent(
+    $file = UploadedFile::fake()->createWithContent(
         'programme.csv',
         "Chapitre,Leçon,Sous-partie,Titre,Objectifs,Volume horaire\nChap1,Lecon1,SP1,Titre,Obj,2\n"
     );

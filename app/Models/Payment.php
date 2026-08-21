@@ -6,6 +6,7 @@ use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 
 class Payment extends Model
@@ -16,6 +17,7 @@ class Payment extends Model
     {
         return PaymentFactory::new();
     }
+
     /**
      * Les attributs mass-assignables.
      */
@@ -99,7 +101,7 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
-    public function invoices(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function invoices(): BelongsToMany
     {
         return $this->belongsToMany(Invoice::class, 'payment_invoice')
             ->withPivot('amount_applied')

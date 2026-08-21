@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\ChapterCompletion;
 use App\Models\ProgramAnnual;
+use App\Models\ProgramChapter;
+use App\Models\SchoolYear;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,11 +29,11 @@ test('it_returns_real_completion_volume_in_the_timeline_not_a_flat_zero_stub', f
     $teacher = User::factory()->create();
     $teacher->assignRole('professeur');
     $program = ProgramAnnual::factory()->create(['teacher_id' => $teacher->id, 'status' => 'valide_surveillant']);
-    $chapter = \App\Models\ProgramChapter::factory()->create([
+    $chapter = ProgramChapter::factory()->create([
         'program_annual_id' => $program->id,
         'volume_horaire_prevu' => 4,
     ]);
-    \App\Models\ChapterCompletion::create([
+    ChapterCompletion::create([
         'program_chapter_id' => $chapter->id,
         'date_traitement' => now()->toDateString(),
         'completed_by' => $teacher->id,
@@ -80,8 +83,8 @@ test('it_only_shows_programs_of_the_active_school_year_by_default', function () 
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $activeYear = \App\Models\SchoolYear::factory()->create(['is_active' => true]);
-    $oldYear = \App\Models\SchoolYear::factory()->create(['is_active' => false]);
+    $activeYear = SchoolYear::factory()->create(['is_active' => true]);
+    $oldYear = SchoolYear::factory()->create(['is_active' => false]);
 
     $currentProgram = ProgramAnnual::factory()->create(['school_year_id' => $activeYear->id, 'status' => 'valide_surveillant']);
     $staleProgram = ProgramAnnual::factory()->create(['school_year_id' => $oldYear->id, 'status' => 'valide_surveillant']);

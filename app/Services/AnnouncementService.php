@@ -33,7 +33,7 @@ class AnnouncementService
         $ids = array_filter($announcement->target_user_ids ?? []);
 
         if (empty($ids)) {
-            return new Collection();
+            return new Collection;
         }
 
         return User::whereIn('id', $ids)->where('is_active', true)->get();
@@ -47,7 +47,7 @@ class AnnouncementService
         $roles = array_filter($roles ?? []);
 
         if (empty($roles)) {
-            return new Collection();
+            return new Collection;
         }
 
         return User::query()
@@ -70,10 +70,10 @@ class AnnouncementService
         $classroom = $announcement->classroom;
 
         if (! $classroom) {
-            return new Collection();
+            return new Collection;
         }
 
-        $recipients = new Collection();
+        $recipients = new Collection;
 
         $roleSet = empty($roles) ? ['eleve', 'professeur', 'parent'] : $roles;
 

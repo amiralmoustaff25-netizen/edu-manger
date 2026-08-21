@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classroom;
 use App\Models\FeeType;
+use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Services\FeeService;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AccountingController extends Controller
 {
@@ -56,9 +63,9 @@ class AccountingController extends Controller
             'complete_payments' => $scopedToActiveYear(Payment::where('status', 'complet')->notCancelled())->count(),
             'partial_payments' => $scopedToActiveYear(Payment::where('status', 'partiel')->notCancelled())->count(),
             'remaining_balance' => $remainingBalance,
-            'total_invoices' => $scopedToActiveYear(\App\Models\Invoice::query())->count(),
-            'paid_invoices' => $scopedToActiveYear(\App\Models\Invoice::where('status', 'paid'))->count(),
-            'pending_invoices' => $scopedToActiveYear(\App\Models\Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue']))->count(),
+            'total_invoices' => $scopedToActiveYear(Invoice::query())->count(),
+            'paid_invoices' => $scopedToActiveYear(Invoice::where('status', 'paid'))->count(),
+            'pending_invoices' => $scopedToActiveYear(Invoice::whereIn('status', ['draft', 'sent', 'partial', 'overdue']))->count(),
         ];
 
         // Revenus par mois de l'année scolaire active : une année scolaire (ex. octobre à
@@ -68,7 +75,7 @@ class AccountingController extends Controller
         // réelle de l'année active (ex. janvier à septembre avant le début de l'année).
         $monthlyRevenue = [];
         if ($activeYear && $activeYear->start_date && $activeYear->end_date) {
-            $period = \Carbon\CarbonPeriod::create($activeYear->start_date->startOfMonth(), '1 month', $activeYear->end_date->startOfMonth());
+            $period = CarbonPeriod::create($activeYear->start_date->startOfMonth(), '1 month', $activeYear->end_date->startOfMonth());
 
             foreach ($period as $monthStart) {
                 $monthlyRevenue[] = [
@@ -83,7 +90,7 @@ class AccountingController extends Controller
         } else {
             for ($i = 1; $i <= 12; $i++) {
                 $monthlyRevenue[] = [
-                    'month' => \Carbon\Carbon::create(now()->year, $i, 1)->translatedFormat('F'),
+                    'month' => Carbon::create(now()->year, $i, 1)->translatedFormat('F'),
                     'year' => now()->year,
                     'amount' => $scopedToActiveYear(Payment::whereIn('status', ['complet', 'partiel'])->notCancelled())
                         ->whereMonth('created_at', $i)
@@ -160,7 +167,7 @@ class AccountingController extends Controller
      * Requête de paiements filtrée par période/classe/type de frais, partagée entre
      * l'écran de rapport et son export Excel pour qu'ils restent toujours cohérents.
      */
-    private function filteredPaymentsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function filteredPaymentsQuery(Request $request): Builder
     {
         $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
@@ -246,7 +253,7 @@ class AccountingController extends Controller
         $paymentTypeBreakdown = $payments->groupBy('payment_type')
             ->map(fn ($group) => ['count' => $group->count(), 'total' => $group->sum('amount')]);
 
-        $classrooms = \App\Models\Classroom::all();
+        $classrooms = Classroom::all();
         $feeTypes = FeeType::all();
 
         return view('accounting.advanced-reports', compact(
@@ -277,12 +284,12 @@ class AccountingController extends Controller
 
         $payments = $this->filteredPaymentsQuery($request)->latest()->get();
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         // En-têtes
         $sheet->setCellValue('A1', 'Rapport Financier Avancé');
-        $sheet->setCellValue('A2', 'Du: ' . $startDate . ' Au: ' . $endDate);
+        $sheet->setCellValue('A2', 'Du: '.$startDate.' Au: '.$endDate);
         $sheet->setCellValue('A4', 'Date');
         $sheet->setCellValue('B4', 'Reçu');
         $sheet->setCellValue('C4', 'Élève');
@@ -295,14 +302,14 @@ class AccountingController extends Controller
         // Données
         $row = 5;
         foreach ($payments as $payment) {
-            $sheet->setCellValue('A' . $row, $payment->payment_date->format('d/m/Y'));
-            $sheet->setCellValue('B' . $row, $this->escapeCellValue($payment->receipt_number));
-            $sheet->setCellValue('C' . $row, $this->escapeCellValue($payment->registration->user->name));
-            $sheet->setCellValue('D' . $row, $this->escapeCellValue($payment->registration->classroom?->name ?? 'Non assigné'));
-            $sheet->setCellValue('E' . $row, $payment->amount);
-            $sheet->setCellValue('F' . $row, $this->escapeCellValue(ucfirst($payment->status)));
-            $sheet->setCellValue('G' . $row, $this->escapeCellValue(ucfirst($payment->payment_method)));
-            $sheet->setCellValue('H' . $row, $this->escapeCellValue(ucfirst($payment->payment_type)));
+            $sheet->setCellValue('A'.$row, $payment->payment_date->format('d/m/Y'));
+            $sheet->setCellValue('B'.$row, $this->escapeCellValue($payment->receipt_number));
+            $sheet->setCellValue('C'.$row, $this->escapeCellValue($payment->registration->user->name));
+            $sheet->setCellValue('D'.$row, $this->escapeCellValue($payment->registration->classroom?->name ?? 'Non assigné'));
+            $sheet->setCellValue('E'.$row, $payment->amount);
+            $sheet->setCellValue('F'.$row, $this->escapeCellValue(ucfirst($payment->status)));
+            $sheet->setCellValue('G'.$row, $this->escapeCellValue(ucfirst($payment->payment_method)));
+            $sheet->setCellValue('H'.$row, $this->escapeCellValue(ucfirst($payment->payment_type)));
             $row++;
         }
 
@@ -310,10 +317,10 @@ class AccountingController extends Controller
         $sheet->getStyle('A4:H4')->getFont()->setBold(true);
         $sheet->getStyle('A1:H1')->getFont()->setBold(true)->setSize(14);
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        
-        $filename = 'rapport-financier-' . now()->format('Y-m-d') . '.xlsx';
-        
+        $writer = new Xlsx($spreadsheet);
+
+        $filename = 'rapport-financier-'.now()->format('Y-m-d').'.xlsx';
+
         return response()->streamDownload(
             function () use ($writer) {
                 $writer->save('php://output');
@@ -329,7 +336,7 @@ class AccountingController extends Controller
         }
 
         if (preg_match('/^[\+\-=\\t\\r\\n@]/', $value)) {
-            return "'" . $value;
+            return "'".$value;
         }
 
         return $value;
@@ -374,7 +381,7 @@ class AccountingController extends Controller
             ->filter(fn (array $entry) => $entry['total_remaining'] > 0);
 
         // Factures en retard
-        $overdueInvoices = \App\Models\Invoice::with(['registration.user', 'registration.classroom'])
+        $overdueInvoices = Invoice::with(['registration.user', 'registration.classroom'])
             ->whereIn('status', ['sent', 'partial', 'overdue'])
             ->where('due_date', '<', now())
             ->where('remaining_balance', '>', 0)
@@ -393,6 +400,7 @@ class AccountingController extends Controller
             ->get()
             ->map(function ($registration) {
                 $lastPayment = $registration->payments()->latest()->first();
+
                 return [
                     'student' => $registration->user,
                     'classroom' => $registration->classroom,

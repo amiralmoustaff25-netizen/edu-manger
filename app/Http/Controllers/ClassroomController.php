@@ -9,7 +9,6 @@ use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
-use App\Models\User;
 use App\Services\SchoolYearContext;
 use App\Services\SchoolYearGuardService;
 use App\Support\ClassroomLevel;

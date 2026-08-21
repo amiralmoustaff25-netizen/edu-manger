@@ -10,7 +10,6 @@ use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -25,8 +24,7 @@ class RoleAssignmentController extends Controller
     public function __construct(
         private readonly SuperAdminProtectionService $superAdminProtection,
         private readonly UserPermissionService $permissionService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -95,7 +93,7 @@ class RoleAssignmentController extends Controller
         $this->ensureBusinessRoleTransitionIsSafe($user, $requestedRoles);
 
         if ($requestedRoles->contains('super-admin') && ! $user->hasRole('super-admin')) {
-            abort_unless(auth()->user()->hasRole('super-admin'), 403, "Seul un super-administrateur peut attribuer le rôle Super-Admin.");
+            abort_unless(auth()->user()->hasRole('super-admin'), 403, 'Seul un super-administrateur peut attribuer le rôle Super-Admin.');
 
             if ($request->input('confirm_super_admin') !== '1') {
                 return back()->withErrors(['confirm_super_admin' => 'L’attribution du rôle Super-Admin nécessite une confirmation renforcée.'])->withInput();
@@ -183,7 +181,7 @@ class RoleAssignmentController extends Controller
         }
     }
 
-    private function ensureLastSuperAdminNotRemoved(User $user, \Illuminate\Support\Collection $requestedRoles): void
+    private function ensureLastSuperAdminNotRemoved(User $user, Collection $requestedRoles): void
     {
         if (! $user->hasRole('super-admin')) {
             return;

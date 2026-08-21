@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\Classroom;
 use App\Models\User;
 use App\Services\AnnouncementService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,9 +15,7 @@ use Spatie\Permission\Models\Role;
 
 class AnnouncementController extends Controller
 {
-    public function __construct(protected AnnouncementService $service)
-    {
-    }
+    public function __construct(protected AnnouncementService $service) {}
 
     public function index(Request $request): View
     {
@@ -244,7 +243,7 @@ class AnnouncementController extends Controller
         }
 
         $publishedAt = $request->input('published_at')
-            ? \Carbon\Carbon::parse($request->input('published_at'))
+            ? Carbon::parse($request->input('published_at'))
             : now();
 
         if ($status === 'scheduled' && $publishedAt->isFuture()) {

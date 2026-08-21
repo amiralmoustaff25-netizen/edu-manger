@@ -68,8 +68,14 @@ class PedagogicalConfigurationController extends Controller
         $query = PedagogicalAssignment::with(['teacher.user', 'classroom', 'matiere', 'schoolYear'])
             ->whereHas('classroom')->whereHas('teacher')->whereHas('matiere')
             ->latest('updated_at');
-        if ($schoolYear) { $query->where('school_year_id', $schoolYear->id); }
-        foreach (['teacher_id', 'classroom_id', 'matiere_id'] as $filter) { if ($request->filled($filter)) { $query->where($filter, $request->integer($filter)); } }
+        if ($schoolYear) {
+            $query->where('school_year_id', $schoolYear->id);
+        }
+        foreach (['teacher_id', 'classroom_id', 'matiere_id'] as $filter) {
+            if ($request->filled($filter)) {
+                $query->where($filter, $request->integer($filter));
+            }
+        }
 
         // Pour griser côté formulaire les classes primaire qu'un professeur ne peut pas
         // se voir attribuer (règle "professeur principal" déjà appliquée côté serveur dans
@@ -214,7 +220,9 @@ class PedagogicalConfigurationController extends Controller
                     if (! $assignment->wasRecentlyCreated) {
                         $assignment->update(['volume_horaire_hebdo' => $volume, 'is_active' => true]);
                     }
-                    if ($assignment->wasRecentlyCreated) { $created++; }
+                    if ($assignment->wasRecentlyCreated) {
+                        $created++;
+                    }
                 }
             }
         });
@@ -250,6 +258,7 @@ class PedagogicalConfigurationController extends Controller
 
         $isActive = ! $assignment->is_active;
         $assignment->update(['is_active' => $isActive, 'deactivated_at' => $isActive ? null : now(), 'deactivated_by' => $isActive ? null : auth()->id()]);
+
         return back()->with('success', 'Statut de l’affectation mis à jour.');
     }
 
@@ -326,6 +335,7 @@ class PedagogicalConfigurationController extends Controller
         $data['code'] = Str::slug($data['name'], '_');
         $data['position'] = AcademicPeriod::where('school_year_id', $data['school_year_id'])->max('position') + 1;
         AcademicPeriod::updateOrCreate(['school_year_id' => $data['school_year_id'], 'code' => $data['code']], $data);
+
         return back()->with('success', 'Période enregistrée.');
     }
 
@@ -335,6 +345,7 @@ class PedagogicalConfigurationController extends Controller
 
         $isOpen = ! $period->grade_entry_open;
         $period->update(['grade_entry_open' => $isOpen, 'status' => $isOpen ? 'open' : 'closed']);
+
         return back()->with('success', 'Accès de saisie mis à jour.');
     }
 
@@ -344,6 +355,7 @@ class PedagogicalConfigurationController extends Controller
         $data['code'] = Str::slug($data['name'], '_');
         $data['position'] = EvaluationType::max('position') + 1;
         EvaluationType::create($data);
+
         return back()->with('success', 'Type d’évaluation ajouté.');
     }
 
@@ -352,8 +364,11 @@ class PedagogicalConfigurationController extends Controller
         $schoolYearGuard->assertNotLocked($schoolYear);
 
         $data = $request->validate(['organization_mode' => ['required', 'in:trimesters,semesters'], 'default_scale' => ['required', 'integer', 'in:10,20,40,100'], 'minimum_grade' => ['required', 'numeric', 'min:0'], 'allow_decimals' => ['nullable', 'boolean'], 'decimal_places' => ['required', 'integer', 'min:0', 'max:2'], 'allow_appreciations' => ['nullable', 'boolean'], 'allow_edit_after_submission' => ['nullable', 'boolean'], 'administrative_validation_required' => ['nullable', 'boolean'], 'lock_after_validation' => ['nullable', 'boolean']]);
-        foreach (['allow_decimals', 'allow_appreciations', 'allow_edit_after_submission', 'administrative_validation_required', 'lock_after_validation'] as $key) { $data[$key] = $request->boolean($key); }
+        foreach (['allow_decimals', 'allow_appreciations', 'allow_edit_after_submission', 'administrative_validation_required', 'lock_after_validation'] as $key) {
+            $data[$key] = $request->boolean($key);
+        }
         GradeSetting::updateOrCreate(['school_year_id' => $schoolYear->id], $data);
+
         return back()->with('success', 'Règles de notes enregistrées.');
     }
 
@@ -456,6 +471,7 @@ class PedagogicalConfigurationController extends Controller
         $data['cycle'] = $data['cycle'] ?? null;
         $data['serie'] = $data['cycle'] === 'lycee' ? ($data['serie'] ?? null) : null;
         SubjectConfiguration::updateOrCreate(['school_year_id' => $data['school_year_id'], 'matiere_id' => $data['matiere_id'], 'cycle' => $data['cycle'], 'serie' => $data['serie'], 'classroom_id' => null], $data);
+
         return back()->with('success', 'Coefficient de matière enregistré.');
     }
 }

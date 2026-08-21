@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\UserPermissionOverride;
 use App\Models\UserRoleHistory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

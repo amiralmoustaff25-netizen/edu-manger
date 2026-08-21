@@ -19,9 +19,7 @@ use Illuminate\View\View;
  */
 class StudentNotesController extends Controller
 {
-    public function __construct(private GradeCalculationService $gradeService)
-    {
-    }
+    public function __construct(private GradeCalculationService $gradeService) {}
 
     public function show(Request $request, ?User $student = null): View
     {

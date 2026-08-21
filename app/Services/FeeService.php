@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\ClassroomFee;
-use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use Carbon\Carbon;
@@ -33,7 +32,7 @@ class FeeService
             $feeType = $classroomFee['fee_type'];
             $code = $feeType['code'] ?? $this->normalizeCode($feeType['name'] ?? '');
 
-            if (!$this->isFeeApplicable($registration, $code, $feeType['is_optional'] ?? false)) {
+            if (! $this->isFeeApplicable($registration, $code, $feeType['is_optional'] ?? false)) {
                 continue;
             }
 
@@ -164,7 +163,7 @@ class FeeService
         $hasInscription = collect($configured)->contains(fn ($f) => ($f['fee_type']['code'] ?? '') === 'inscription');
         $hasMensualite = collect($configured)->contains(fn ($f) => ($f['fee_type']['code'] ?? '') === 'mensualite');
 
-        if (!$hasInscription && $registration->registration_fee_paid > 0) {
+        if (! $hasInscription && $registration->registration_fee_paid > 0) {
             $configured[] = [
                 'fee_type' => [
                     'id' => 'inscription',
@@ -177,7 +176,7 @@ class FeeService
             ];
         }
 
-        if (!$hasMensualite && $registration->monthly_fee > 0) {
+        if (! $hasMensualite && $registration->monthly_fee > 0) {
             $configured[] = [
                 'fee_type' => [
                     'id' => 'mensualite',
@@ -251,6 +250,7 @@ class FeeService
                         $paid += (float) ($item['amount_paid'] ?? $item['amount'] ?? 0);
                     }
                 }
+
                 continue;
             }
 
@@ -281,7 +281,7 @@ class FeeService
             return true;
         }
 
-        if (!$isOptional) {
+        if (! $isOptional) {
             return true;
         }
 
@@ -299,6 +299,7 @@ class FeeService
             $parts = explode('-', $monthKey);
             $yearPart = $parts[0] ?? $year;
             $monthNumber = $parts[1] ?? now()->month;
+
             return Carbon::createFromDate((int) $yearPart, (int) $monthNumber, 1)->endOfMonth()->toDateString();
         }
 
@@ -315,6 +316,7 @@ class FeeService
                 if ($target->lessThan($base)) {
                     $target->addYear();
                 }
+
                 return $target->endOfMonth()->toDateString();
             }
         }
@@ -377,6 +379,7 @@ class FeeService
     {
         $value = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
         $value = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $value));
+
         return trim($value, '_');
     }
 }

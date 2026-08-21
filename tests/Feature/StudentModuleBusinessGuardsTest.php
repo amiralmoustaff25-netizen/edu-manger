@@ -1,12 +1,15 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\StudentClassHistory;
 use App\Models\StudentDocument;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Support\StudentDocumentType;
+use App\Support\StudentStatus;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -106,7 +109,7 @@ test('archiving a student with an active registration withdraws the registration
 
     $this->actingAs($this->admin)->delete(route('students.destroy', $student))->assertRedirect();
 
-    expect($registration->fresh()->status)->toBe(\App\Support\StudentStatus::WITHDRAWN);
+    expect($registration->fresh()->status)->toBe(StudentStatus::WITHDRAWN);
     expect(User::withTrashed()->find($student->id)->is_active)->toBeFalse();
 });
 
@@ -115,7 +118,7 @@ test('archiving a student with a pending registration cancels it instead of leav
 
     $this->actingAs($this->admin)->delete(route('students.destroy', $student))->assertRedirect();
 
-    expect($registration->fresh()->status)->toBe(\App\Support\StudentStatus::CANCELLED);
+    expect($registration->fresh()->status)->toBe(StudentStatus::CANCELLED);
 });
 
 test('a teacher not assigned to the student classroom cannot download the student documents (H6)', function () {
@@ -124,7 +127,7 @@ test('a teacher not assigned to the student classroom cannot download the studen
 
     $document = StudentDocument::create([
         'user_id' => $student->id,
-        'type' => \App\Support\StudentDocumentType::values()[0],
+        'type' => StudentDocumentType::values()[0],
         'original_filename' => 'test.pdf',
         'path' => 'student-documents/'.$student->id.'/test.pdf',
         'mime_type' => 'application/pdf',
@@ -150,7 +153,7 @@ test('a teacher assigned to the student classroom can download the student docum
 
     $document = StudentDocument::create([
         'user_id' => $student->id,
-        'type' => \App\Support\StudentDocumentType::values()[0],
+        'type' => StudentDocumentType::values()[0],
         'original_filename' => 'test.pdf',
         'path' => 'student-documents/'.$student->id.'/test.pdf',
         'mime_type' => 'application/pdf',
@@ -228,7 +231,7 @@ test('editing a student saves emergency contact and medical fields (M4)', functi
 test('editing a student with more than two linked parents does not silently drop the third link (H5)', function () {
     [, $classroom, $student] = studentFixture();
 
-    $parents = \App\Models\ParentModel::factory()->count(3)->create(['statut' => 'actif']);
+    $parents = ParentModel::factory()->count(3)->create(['statut' => 'actif']);
     foreach ($parents as $p) {
         $student->parents()->attach($p->id, ['lien_parente' => 'Tuteur', 'est_responsable_financier' => false, 'est_contact_urgence' => false]);
     }

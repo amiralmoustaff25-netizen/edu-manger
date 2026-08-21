@@ -79,7 +79,7 @@ class TeacherController extends Controller
         Gate::authorize('create', Teacher::class);
 
         return view('teachers.create', [
-            'teacher' => new Teacher(),
+            'teacher' => new Teacher,
             'canViewRib' => $this->authorizeCanViewRib(),
         ]);
     }

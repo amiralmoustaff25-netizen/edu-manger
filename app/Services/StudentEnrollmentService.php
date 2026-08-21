@@ -11,7 +11,6 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StudentEnrollmentService
@@ -20,9 +19,7 @@ class StudentEnrollmentService
 
     public ?string $studentTemporaryPassword = null;
 
-    public function __construct(private readonly StudentPhotoService $photoService)
-    {
-    }
+    public function __construct(private readonly StudentPhotoService $photoService) {}
 
     public function getParentCredentials(): ?array
     {
@@ -170,7 +167,7 @@ class StudentEnrollmentService
         $parentPassword = Str::random(12);
 
         $parentUser = User::create([
-            'name' => trim($data['parent_nom'] . ' ' . $data['parent_prenom']),
+            'name' => trim($data['parent_nom'].' '.$data['parent_prenom']),
             'prenom' => $data['parent_prenom'],
             'email' => $data['parent_email'],
             'password' => Hash::make($parentPassword),
@@ -214,7 +211,7 @@ class StudentEnrollmentService
         $sequence = ParentModel::withTrashed()->where('matricule_parent', 'like', 'PAR-%')->count() + 1;
 
         do {
-            $matricule = 'PAR-' . date('y') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $matricule = 'PAR-'.date('y').'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
         } while (ParentModel::withTrashed()->where('matricule_parent', $matricule)->exists());
 

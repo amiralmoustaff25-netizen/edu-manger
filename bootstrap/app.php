@@ -6,6 +6,7 @@ use App\Http\Middleware\RequireTwoFactorVerification;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Session\TokenMismatchException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -31,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Une session expirée (ex. déconnexion après inactivité, token CSRF
         // désormais périmé) ne doit pas afficher la page d'erreur 419 brute :
         // l'utilisateur doit simplement retomber sur la page de connexion.
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+        $exceptions->render(function (TokenMismatchException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Session expirée, veuillez vous reconnecter.'], 419);
             }

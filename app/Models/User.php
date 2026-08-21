@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\ParentModel;
-use App\Models\Teacher;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,6 +25,7 @@ class User extends Authenticatable
      * Cache des permissions effectives pour la requête en cours.
      */
     protected ?Collection $effectivePermissionsCache = null;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, SoftDeletes {
         HasRoles::hasPermissionTo as private originalHasPermissionTo;
@@ -390,6 +389,7 @@ class User extends Authenticatable
             'admin' => 'ADM',
             'manager-comptable' => 'MCO',
             'comptable' => 'CPT',
+            'surveillant' => 'SURV',
             'professeur' => 'PROF',
             'parent' => 'PAR',
             'eleve' => 'ELE',
@@ -421,7 +421,7 @@ class User extends Authenticatable
 
         // Default avatar: initials
         $initials = collect(explode(' ', $this->name))
-            ->map(fn($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))
             ->join('');
 
         return 'https://ui-avatars.com/api/?name='.urlencode($initials).'&color=FFFFFF&background=4F46E5';
