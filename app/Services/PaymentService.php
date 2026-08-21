@@ -2,16 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\CreditNote;
+use App\Models\Credit;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Registration;
 
 class PaymentService
 {
-    public function __construct(private AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private AuditLogService $auditLogService) {}
 
     /**
      * Applique un paiement aux factures en attente de l'inscription.
@@ -63,7 +61,7 @@ class PaymentService
             return;
         }
 
-        \App\Models\Credit::create([
+        Credit::create([
             'registration_id' => $payment->registration_id,
             'payment_id' => $payment->id,
             'amount' => $amount,

@@ -5,6 +5,7 @@ use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -65,7 +66,7 @@ test('dashboard alerts reflect real partial payments and are not tied to the unu
     expect($alerts['partial_payments'])->toBe(1);
     expect($stats['partial_payments'])->toBe(1);
 
-    $expectedRemaining = app(\App\Services\FeeService::class)->getFinancialSituation($registration)['remaining'];
+    $expectedRemaining = app(FeeService::class)->getFinancialSituation($registration)['remaining'];
     expect((float) $stats['remaining_balance'])->toBe((float) $expectedRemaining);
 });
 

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -58,7 +59,7 @@ class ProfileController extends Controller
         if ($request->hasFile('profile_photo')) {
             // Supprimer l'ancienne photo si elle existe
             if ($user->profile_photo_path) {
-                \Illuminate\Support\Facades\Storage::disk('local')->delete($user->profile_photo_path);
+                Storage::disk('local')->delete($user->profile_photo_path);
             }
 
             // Stocker la nouvelle photo

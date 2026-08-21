@@ -11,7 +11,18 @@ class SubjectConfiguration extends Model
 
     protected $casts = ['coefficient' => 'decimal:2', 'bareme' => 'decimal:2', 'is_active' => 'boolean'];
 
-    public function matiere(): BelongsTo { return $this->belongsTo(Matiere::class); }
-    public function schoolYear(): BelongsTo { return $this->belongsTo(SchoolYear::class); }
-    public function classroom(): BelongsTo { return $this->belongsTo(Classroom::class); }
+    public function matiere(): BelongsTo
+    {
+        return $this->belongsTo(Matiere::class);
+    }
+
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function classroom(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class);
+    }
 }

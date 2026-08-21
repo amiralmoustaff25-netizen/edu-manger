@@ -2,6 +2,4 @@
 
 namespace App\Http\Requests;
 
-class UpdateClassroomRequest extends BaseClassroomRequest
-{
-}
+class UpdateClassroomRequest extends BaseClassroomRequest {}

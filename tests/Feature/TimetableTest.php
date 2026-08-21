@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\TimetableEntry;
@@ -10,6 +12,7 @@ use App\Support\TimetableGrid;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -66,7 +69,7 @@ test('a teacher who is not the titulaire of a primaire classroom cannot manage i
     $specialistTeacherUser = User::factory()->create(['role' => 'professeur']);
     $specialistTeacherUser->assignRole('professeur');
     $specialistTeacher = Teacher::factory()->create(['user_id' => $specialistTeacherUser->id]);
-    $matiere = \App\Models\Matiere::factory()->create(['nom' => 'Anglais']);
+    $matiere = Matiere::factory()->create(['nom' => 'Anglais']);
     PedagogicalAssignment::create([
         'teacher_id' => $specialistTeacher->id, 'classroom_id' => $this->classroom->id, 'matiere_id' => $matiere->id,
         'school_year_id' => $this->schoolYear->id, 'volume_horaire_hebdo' => 0, 'is_active' => true,
@@ -94,11 +97,11 @@ test('the timetable can be imported from an Excel file matching the grid shape',
     $admin = User::factory()->create(['role' => 'super-admin']);
     $admin->assignRole('super-admin');
 
-    $spreadsheet = new Spreadsheet();
+    $spreadsheet = new Spreadsheet;
     $sheet = $spreadsheet->getActiveSheet();
     $sheet->setCellValue('A1', 'Horaire');
     foreach (TimetableGrid::DAYS as $i => $day) {
-        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2).'1', $day);
+        $sheet->setCellValue(Coordinate::stringFromColumnIndex($i + 2).'1', $day);
     }
     foreach (TimetableGrid::SLOTS as $i => $slot) {
         $sheet->setCellValue('A'.($i + 2), $slot);
@@ -106,7 +109,7 @@ test('the timetable can be imported from an Excel file matching the grid shape',
     // Lundi (colonne B), premier créneau (ligne 2) = "Français".
     $sheet->setCellValue('B2', 'Français');
     // Samedi (dernière colonne), dernier créneau (dernière ligne) = "Sport".
-    $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count(TimetableGrid::DAYS) + 1);
+    $lastCol = Coordinate::stringFromColumnIndex(count(TimetableGrid::DAYS) + 1);
     $lastRow = count(TimetableGrid::SLOTS) + 1;
     $sheet->setCellValue($lastCol.$lastRow, 'Sport');
 
@@ -175,7 +178,7 @@ test('a student in a college classroom sees the real timetable grid instead of t
 
     $student = User::factory()->create(['role' => 'eleve']);
     $student->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id, 'classroom_id' => $college->id,
         'school_year_id' => $this->schoolYear->id, 'status' => 'active',
     ]);
@@ -201,7 +204,7 @@ test('a primaire classroom whose titulaire is set via teacher_id (but has no leg
 
     $student = User::factory()->create(['role' => 'eleve']);
     $student->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id, 'classroom_id' => $this->classroom->id,
         'school_year_id' => $this->schoolYear->id, 'status' => 'active',
     ]);

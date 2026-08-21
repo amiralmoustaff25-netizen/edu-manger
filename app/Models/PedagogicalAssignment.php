@@ -11,9 +11,28 @@ class PedagogicalAssignment extends Model
 
     protected $casts = ['is_active' => 'boolean', 'deactivated_at' => 'datetime'];
 
-    public function teacher(): BelongsTo { return $this->belongsTo(Teacher::class); }
-    public function classroom(): BelongsTo { return $this->belongsTo(Classroom::class); }
-    public function matiere(): BelongsTo { return $this->belongsTo(Matiere::class); }
-    public function schoolYear(): BelongsTo { return $this->belongsTo(SchoolYear::class); }
-    public function teachingSessions() { return $this->hasMany(TeachingSession::class); }
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(Teacher::class);
+    }
+
+    public function classroom(): BelongsTo
+    {
+        return $this->belongsTo(Classroom::class);
+    }
+
+    public function matiere(): BelongsTo
+    {
+        return $this->belongsTo(Matiere::class);
+    }
+
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
+    }
+
+    public function teachingSessions()
+    {
+        return $this->hasMany(TeachingSession::class);
+    }
 }

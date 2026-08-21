@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Classroom;
+use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
+use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -78,6 +81,45 @@ test('admin can create a user with a generated matricule and temporary password'
     expect($user->password_must_change)->toBeTrue();
     expect($user->created_by)->toBe($admin->id);
     expect($user->hasRole('comptable'))->toBeTrue();
+});
+
+test('admin can create a surveillant account even though hidden professeur fiche fields are submitted empty', function () {
+    // Régression : la section "Fiche professeur" du formulaire générique
+    // (_form.blade.php) reste dans le DOM (masquée via x-show, pas x-if) quel que
+    // soit le rôle choisi, donc un vrai navigateur soumet ces champs vides pour tout
+    // rôle non-professeur — ex. date_naissance="", sexe="". Sans 'nullable' en plus
+    // de Rule::requiredIf(false) dans StoreUserRequest, ces chaînes vides faisaient
+    // échouer 'date'/Rule::in et bloquaient silencieusement la création de tout
+    // compte non-professeur (surveillant, comptable...) depuis un vrai navigateur.
+    $admin = User::factory()->create(['role' => 'admin']);
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('users.store'), [
+            'nom' => 'Ndiaye',
+            'prenom' => 'Ousmane',
+            'email' => '',
+            'role' => 'surveillant',
+            'is_active' => '1',
+            'date_naissance' => '',
+            'lieu_naissance' => '',
+            'sexe' => '',
+            'nationalite' => '',
+            'diplomes' => '',
+            'etablissements_formation' => '',
+            'statut' => '',
+            'date_recrutement' => '',
+            'specialites' => '',
+            'filiation' => '',
+            'contact_urgence_nom' => '',
+            'contact_urgence_tel' => '',
+        ])
+        ->assertRedirect(route('users.index'));
+
+    $user = User::where('name', 'Ndiaye Ousmane')->firstOrFail();
+
+    expect($user->matricule)->toStartWith('SURV-');
+    expect($user->hasRole('surveillant'))->toBeTrue();
 });
 
 test('admin can create a professeur account with its fiche métier from the generic user form', function () {
@@ -266,9 +308,9 @@ test('admin cannot change the role of a professeur with active pedagogical assig
 
     PedagogicalAssignment::create([
         'teacher_id' => $teacher->id,
-        'classroom_id' => \App\Models\Classroom::factory()->create()->id,
-        'matiere_id' => \App\Models\Matiere::factory()->create()->id,
-        'school_year_id' => \App\Models\SchoolYear::factory()->create(['is_active' => true])->id,
+        'classroom_id' => Classroom::factory()->create()->id,
+        'matiere_id' => Matiere::factory()->create()->id,
+        'school_year_id' => SchoolYear::factory()->create(['is_active' => true])->id,
         'volume_horaire_hebdo' => 4,
         'is_active' => true,
     ]);

@@ -36,7 +36,7 @@ test('a profile photo can be uploaded and replaces the previous one', function (
     $pngContent = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
     $tmpPath = tempnam(sys_get_temp_dir(), 'avatar').'.png';
     file_put_contents($tmpPath, $pngContent);
-    $photo = new \Illuminate\Http\UploadedFile($tmpPath, 'avatar.png', 'image/png', null, true);
+    $photo = new UploadedFile($tmpPath, 'avatar.png', 'image/png', null, true);
 
     $this->actingAs($user)->patch(route('profile.update'), [
         'name' => $user->name,

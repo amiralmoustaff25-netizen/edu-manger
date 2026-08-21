@@ -8,7 +8,6 @@ use App\Models\Teacher;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);

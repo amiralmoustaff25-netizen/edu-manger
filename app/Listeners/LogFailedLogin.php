@@ -5,9 +5,10 @@ namespace App\Listeners;
 use App\Models\LoginLog;
 use App\Support\UserAgentParser;
 use Illuminate\Auth\Events\Failed;
+use Illuminate\Events\AsEventListener;
 use Illuminate\Support\Facades\Request;
 
-#[\Illuminate\Events\AsEventListener]
+#[AsEventListener]
 class LogFailedLogin
 {
     /**

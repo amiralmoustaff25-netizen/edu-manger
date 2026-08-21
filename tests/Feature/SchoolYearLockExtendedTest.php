@@ -5,6 +5,7 @@ use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -39,7 +40,7 @@ test('a teacher cannot record a grade in a locked school year', function () {
     $classroom->teachers()->attach($teacher->id, ['annee_scolaire' => $year->year_string, 'matiere_id' => $matiere->id, 'volume_horaire_hebdo' => 4]);
 
     $student = User::factory()->create(['role' => 'eleve']);
-    \App\Models\Registration::create([
+    Registration::create([
         'user_id' => $student->id, 'classroom_id' => $classroom->id, 'school_year_id' => $year->id,
         'registration_fee_paid' => 0, 'monthly_fee' => 0, 'registration_date' => now()->toDateString(),
         'academic_year' => $year->year_string, 'matricule' => 'ELE-TEST-0001', 'status' => 'active',

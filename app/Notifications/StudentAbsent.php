@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use App\Models\Attendance;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class StudentAbsent extends Notification
@@ -35,7 +34,7 @@ class StudentAbsent extends Notification
             'type' => 'important',
             'priority' => 'high',
             'category' => 'attendance',
-            'content' => "Votre enfant {$student->name} a été marqué(e) absent(e) le " . ($this->attendance->date?->format('d/m/Y') ?? 'DATE') . ".",
+            'content' => "Votre enfant {$student->name} a été marqué(e) absent(e) le ".($this->attendance->date?->format('d/m/Y') ?? 'DATE').'.',
         ];
     }
 }

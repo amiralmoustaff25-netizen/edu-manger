@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Services\TwoFactorAuthenticationService;
 
 beforeEach(function () {
@@ -84,7 +85,7 @@ test('recovery codes are unique and follow the expected format', function () {
 });
 
 test('the provisioning URI includes the app name, user email and secret', function () {
-    $user = App\Models\User::factory()->make(['email' => 'super-admin@example.com']);
+    $user = User::factory()->make(['email' => 'super-admin@example.com']);
     $secret = $this->service->generateSecretKey();
 
     $uri = $this->service->getProvisioningUri($user, $secret);

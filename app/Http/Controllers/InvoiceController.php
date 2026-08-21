@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FeeType;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Registration;
 use App\Models\SchoolYear;
-use App\Models\FeeType;
 use App\Services\SchoolYearGuardService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InvoiceController extends Controller
@@ -84,10 +85,10 @@ class InvoiceController extends Controller
         // Génération du numéro de facture : verrouillage pessimiste pour éviter qu'une
         // double soumission concurrente ne calcule le même numéro (même schéma que
         // Payment::receipt_number, voir Payment::booted()).
-        $invoiceNumber = \Illuminate\Support\Facades\DB::transaction(function () {
+        $invoiceNumber = DB::transaction(function () {
             $count = Invoice::whereYear('created_at', now()->year)->lockForUpdate()->count();
 
-            return 'FAC-' . now()->year . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            return 'FAC-'.now()->year.'-'.str_pad($count + 1, 4, '0', STR_PAD_LEFT);
         });
 
         $totalAmount = collect($validated['items'])->sum(function ($item) {
@@ -181,7 +182,7 @@ class InvoiceController extends Controller
         $invoice->load(['registration.user', 'registration.classroom', 'items.feeType']);
 
         $pdf = \PDF::loadView('accounting.invoices.pdf', compact('invoice'));
-        
-        return $pdf->download('facture-' . $invoice->invoice_number . '.pdf');
+
+        return $pdf->download('facture-'.$invoice->invoice_number.'.pdf');
     }
 }

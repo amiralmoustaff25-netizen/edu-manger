@@ -1,10 +1,12 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\Credit;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 
 test('first payment activates a pending registration and inactive student account', function () {
     $manager = User::factory()->create();
@@ -116,7 +118,7 @@ test('an overpayment credited to the student keeps the full amount tendered as r
 
     $payment = Payment::first();
     expect((float) $payment->amount)->toBe(20000.0);
-    expect(\App\Models\Credit::where('payment_id', $payment->id)->sum('amount'))->toEqual(5000);
+    expect(Credit::where('payment_id', $payment->id)->sum('amount'))->toEqual(5000);
 });
 
 test('a user without valider-paiement-partiel can still register a partial payment, pending validation', function () {
@@ -128,7 +130,7 @@ test('a user without valider-paiement-partiel can still register a partial payme
     // Révocation individuelle via le mécanisme réel de l'app (UserPermissionOverride),
     // pas Spatie::revokePermissionTo() qui ne retire pas une permission héritée du rôle.
     $comptableWithoutValidation->permissionOverrides()->create([
-        'permission_id' => \Spatie\Permission\Models\Permission::findByName('valider-paiement-partiel')->id,
+        'permission_id' => Permission::findByName('valider-paiement-partiel')->id,
         'type' => 'revoke',
     ]);
     $comptableWithoutValidation->forgetPermissionCache();

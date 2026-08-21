@@ -6,6 +6,7 @@ use App\Models\ChapterCompletion;
 use App\Models\Classroom;
 use App\Models\ProgramAnnual;
 use App\Services\SchoolYearContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -39,7 +40,7 @@ class CahierTexteDashboardController extends Controller
         return view('cahier-textes.dashboard', compact('programs', 'classrooms', 'selectedClassroomId'));
     }
 
-    public function progress(ProgramAnnual $program): \Illuminate\Http\JsonResponse
+    public function progress(ProgramAnnual $program): JsonResponse
     {
         $this->authorize('view', $program);
 
@@ -60,7 +61,7 @@ class CahierTexteDashboardController extends Controller
      * derniers mois, pour ce programme. Auparavant un stub qui renvoyait toujours des
      * zéros (aucun graphique réel ne pouvait donc jamais s'afficher).
      */
-    public function timeline(ProgramAnnual $program): \Illuminate\Http\JsonResponse
+    public function timeline(ProgramAnnual $program): JsonResponse
     {
         $this->authorize('view', $program);
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Classroom;
+use App\Models\ClassroomFee;
 use App\Models\FeeType;
 use App\Models\Matiere;
 use App\Models\Note;
@@ -71,7 +72,7 @@ class SchoolYearClosureChecklistServiceTest extends TestCase
         $registration = $this->activeRegistration($classroom);
 
         $feeType = FeeType::create(['name' => 'Mensualité', 'code' => 'mensualite']);
-        \App\Models\ClassroomFee::create([
+        ClassroomFee::create([
             'classroom_id' => $classroom->id,
             'fee_type_id' => $feeType->id,
             'school_year_id' => $this->schoolYear->id,

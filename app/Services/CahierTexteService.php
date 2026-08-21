@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Cache;
 
 class CahierTexteService
 {
-    public function __construct(private ProgramProgressService $programProgressService)
-    {
-    }
+    public function __construct(private ProgramProgressService $programProgressService) {}
 
     public function computeProgress(ProgramAnnual $program): array
     {

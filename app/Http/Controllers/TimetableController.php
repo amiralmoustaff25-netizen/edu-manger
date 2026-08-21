@@ -10,6 +10,7 @@ use App\Support\TimetableGrid;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -17,9 +18,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class TimetableController extends Controller
 {
-    public function __construct(private readonly TimetableGridService $grid)
-    {
-    }
+    public function __construct(private readonly TimetableGridService $grid) {}
 
     /**
      * Liste des classes (tous cycles) de l'année active, point d'entrée pour un admin/
@@ -59,7 +58,7 @@ class TimetableController extends Controller
         $this->authorizeManage($classroom);
 
         $schoolYear = $classroom->schoolYear ?? SchoolYear::getActive();
-        abort_unless($schoolYear, 422, "Aucune année scolaire associée à cette classe.");
+        abort_unless($schoolYear, 422, 'Aucune année scolaire associée à cette classe.');
 
         $content = $request->input('content', []);
 
@@ -90,7 +89,7 @@ class TimetableController extends Controller
 
         $entries = $this->grid->grid($classroom);
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Emploi du temps');
 
@@ -107,7 +106,7 @@ class TimetableController extends Controller
         }
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'emploi_du_temps_'.\Illuminate\Support\Str::slug($classroom->name).'.xlsx';
+        $filename = 'emploi_du_temps_'.Str::slug($classroom->name).'.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -121,7 +120,7 @@ class TimetableController extends Controller
         $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls']]);
 
         $schoolYear = $classroom->schoolYear ?? SchoolYear::getActive();
-        abort_unless($schoolYear, 422, "Aucune année scolaire associée à cette classe.");
+        abort_unless($schoolYear, 422, 'Aucune année scolaire associée à cette classe.');
 
         $spreadsheet = IOFactory::load($request->file('file')->getRealPath());
         $sheet = $spreadsheet->getActiveSheet();
@@ -160,7 +159,7 @@ class TimetableController extends Controller
             'slots' => TimetableGrid::SLOTS,
         ]);
 
-        return $pdf->download('emploi_du_temps_'.\Illuminate\Support\Str::slug($classroom->name).'.pdf');
+        return $pdf->download('emploi_du_temps_'.Str::slug($classroom->name).'.pdf');
     }
 
     /**

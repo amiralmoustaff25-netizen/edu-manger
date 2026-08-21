@@ -2,6 +2,7 @@
 
 use App\Models\Announcement;
 use App\Models\Classroom;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
@@ -40,7 +41,7 @@ it('shows classroom targeted notifications to a student', function () {
     $classroom = Classroom::factory()->create(['school_year_id' => $schoolYear->id]);
 
     $student = User::factory()->create(['role' => 'eleve', 'is_active' => true])->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id,
         'classroom_id' => $classroom->id,
         'status' => 'active',

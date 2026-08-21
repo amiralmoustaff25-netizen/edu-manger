@@ -8,10 +8,7 @@ use Illuminate\Notifications\Notification;
 
 class AnnouncementPublished extends Notification
 {
-
-    public function __construct(public Announcement $announcement)
-    {
-    }
+    public function __construct(public Announcement $announcement) {}
 
     public function via(object $notifiable): array
     {
@@ -38,7 +35,7 @@ class AnnouncementPublished extends Notification
     {
         return (new MailMessage)
             ->subject($this->announcement->title)
-            ->greeting('Bonjour ' . $notifiable->name . ',')
+            ->greeting('Bonjour '.$notifiable->name.',')
             ->line($this->announcement->title)
             ->line(strip_tags($this->announcement->content))
             ->action('Voir la notification', route('notifications.show', ['notification' => $this->id]))

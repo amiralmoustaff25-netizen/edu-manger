@@ -6,6 +6,7 @@ use App\Models\PedagogicalAssignment;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\GradeCalculationService;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -334,14 +335,14 @@ test('a newly created matière defaults to a base barème of 20, editable and us
     expect((float) $matiere->bareme)->toBe(20.0);
 
     $classroom = Classroom::factory()->create(['school_year_id' => $this->schoolYear->id, 'cycle' => 'college']);
-    expect(app(\App\Services\GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(20.0);
+    expect(app(GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(20.0);
 
     $this->patch(route('pedagogical-configuration.matieres.update', $matiere), [
         'nom' => 'Philosophie', 'coefficient' => 2, 'bareme' => 100,
     ])->assertSessionDoesntHaveErrors();
 
     expect((float) $matiere->refresh()->bareme)->toBe(100.0);
-    expect(app(\App\Services\GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(100.0);
+    expect(app(GradeCalculationService::class)->resolveBareme($matiere, $classroom, $this->schoolYear->id))->toBe(100.0);
 });
 
 test('renaming a matière to a name already used by another matière is rejected', function () {

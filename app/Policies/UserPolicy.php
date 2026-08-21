@@ -30,5 +30,4 @@ class UserPolicy
 
         return $user->hasPermissionTo('voir-detail-eleve');
     }
-
 }

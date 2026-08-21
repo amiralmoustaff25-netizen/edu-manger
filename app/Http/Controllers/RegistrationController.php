@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReenrollmentRequest;
+use App\Http\Requests\StoreRegistrationRequest;
 use App\Models\Classroom;
 use App\Models\ParentModel;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
-use App\Http\Requests\StoreRegistrationRequest;
-use App\Http\Requests\StoreReenrollmentRequest;
 use App\Services\FeeService;
 use App\Services\StudentEnrollmentService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class RegistrationController extends Controller
 {
@@ -65,7 +65,7 @@ class RegistrationController extends Controller
                 auth()->id(),
                 $request->user()->hasAnyRole(['super-admin', 'manager-comptable'])
             );
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return back()
                 ->withErrors(['error' => "Une erreur est survenue lors de l'enregistrement, probablement due à une double soumission. Vérifiez que l'élève n'a pas déjà été inscrit avant de réessayer."])
                 ->withInput();
@@ -217,7 +217,7 @@ class RegistrationController extends Controller
             );
         } catch (\RuntimeException $e) {
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return back()
                 ->withErrors(['error' => "Cet élève est déjà inscrit pour l'année scolaire active (probablement une double soumission)."])
                 ->withInput();

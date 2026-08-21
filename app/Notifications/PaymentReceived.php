@@ -5,11 +5,9 @@ namespace App\Notifications;
 use App\Models\Payment;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Storage;
 
 class PaymentReceived extends Notification
 {
-
     protected $payment;
 
     /**
@@ -43,14 +41,14 @@ class PaymentReceived extends Notification
         $mail = (new MailMessage)
             ->subject("Reçu de paiement - {$schoolName}")
             ->greeting("Bonjour {$notifiable->name},")
-            ->line("Nous confirmons avoir reçu un paiement de **" . number_format($this->payment->amount, 0) . " FCFA** pour l'élève **{$studentName}**.")
-            ->line("**Détails du paiement :**")
+            ->line('Nous confirmons avoir reçu un paiement de **'.number_format($this->payment->amount, 0)." FCFA** pour l'élève **{$studentName}**.")
+            ->line('**Détails du paiement :**')
             ->line("- Mois : {$this->payment->month}")
             ->line("- Date : {$this->payment->payment_date->format('d/m/Y')}")
             ->line("- Mode : {$this->payment->payment_method}")
             ->line("- Classe : {$className}")
             ->line("- Numéro de reçu : {$this->payment->receipt_number}")
-            ->line("Merci pour votre confiance.")
+            ->line('Merci pour votre confiance.')
             ->salutation("L'équipe {$schoolName}");
 
         // Attacher le reçu PDF si disponible
@@ -83,7 +81,7 @@ class PaymentReceived extends Notification
             'type' => 'information',
             'priority' => 'normal',
             'category' => 'administrative',
-            'content' => "Un paiement de " . number_format($this->payment->amount, 0) . " FCFA a été reçu pour l'élève " . $student->name . " (reçu n° " . $this->payment->receipt_number . ").",
+            'content' => 'Un paiement de '.number_format($this->payment->amount, 0)." FCFA a été reçu pour l'élève ".$student->name.' (reçu n° '.$this->payment->receipt_number.').',
         ];
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Reminder;
-use App\Models\Registration;
 use App\Notifications\PaymentReminder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -31,11 +30,12 @@ class SendPaymentReminders extends Command
     public function handle()
     {
         $this->info('Recherche des rappels à envoyer...');
-        
+
         $reminders = Reminder::pending()->get();
-        
+
         if ($reminders->isEmpty()) {
             $this->info('Aucun rappel à envoyer.');
+
             return Command::SUCCESS;
         }
 
@@ -44,10 +44,11 @@ class SendPaymentReminders extends Command
         foreach ($reminders as $reminder) {
             try {
                 $registration = $reminder->registration;
-                
-                if (!$registration || !$registration->user) {
+
+                if (! $registration || ! $registration->user) {
                     $this->warn("Rappel #{$reminder->id}: Inscription ou utilisateur introuvable.");
                     $reminder->markAsFailed();
+
                     continue;
                 }
 
@@ -67,7 +68,7 @@ class SendPaymentReminders extends Command
 
                 $recipientCount = 1 + $parentUsers->count();
                 $this->info("✓ Rappel #{$reminder->id} envoyé à {$registration->user->name} ({$recipientCount} destinataire(s))");
-                
+
             } catch (\Exception $e) {
                 $this->error("✗ Erreur lors de l'envoi du rappel #{$reminder->id}: {$e->getMessage()}");
                 $reminder->markAsFailed();
@@ -79,6 +80,7 @@ class SendPaymentReminders extends Command
         }
 
         $this->info('Tous les rappels ont été traités.');
+
         return Command::SUCCESS;
     }
 }

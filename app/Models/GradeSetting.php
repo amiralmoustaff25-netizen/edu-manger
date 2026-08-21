@@ -11,5 +11,8 @@ class GradeSetting extends Model
 
     protected $casts = ['minimum_grade' => 'decimal:2', 'allow_decimals' => 'boolean', 'allow_appreciations' => 'boolean', 'allow_edit_after_submission' => 'boolean', 'administrative_validation_required' => 'boolean', 'lock_after_validation' => 'boolean'];
 
-    public function schoolYear(): BelongsTo { return $this->belongsTo(SchoolYear::class); }
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
+    }
 }

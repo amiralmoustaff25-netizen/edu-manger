@@ -11,5 +11,8 @@ class AcademicPeriod extends Model
 
     protected $casts = ['starts_at' => 'date', 'ends_at' => 'date', 'grade_entry_starts_at' => 'date', 'grade_entry_ends_at' => 'date', 'grade_entry_open' => 'boolean'];
 
-    public function schoolYear(): BelongsTo { return $this->belongsTo(SchoolYear::class); }
+    public function schoolYear(): BelongsTo
+    {
+        return $this->belongsTo(SchoolYear::class);
+    }
 }

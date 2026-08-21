@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Notifications\AnnouncementPublished;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Announcement extends Model
 {
@@ -132,8 +134,8 @@ class Announcement extends Model
      */
     public function notificationsRecipientCount(): int
     {
-        return \Illuminate\Support\Facades\DB::table('notifications')
-            ->where('type', \App\Notifications\AnnouncementPublished::class)
+        return DB::table('notifications')
+            ->where('type', AnnouncementPublished::class)
             ->whereJsonContains('data->announcement_id', $this->id)
             ->count();
     }
@@ -143,8 +145,8 @@ class Announcement extends Model
      */
     public function notificationsReadCount(): int
     {
-        return \Illuminate\Support\Facades\DB::table('notifications')
-            ->where('type', \App\Notifications\AnnouncementPublished::class)
+        return DB::table('notifications')
+            ->where('type', AnnouncementPublished::class)
             ->whereJsonContains('data->announcement_id', $this->id)
             ->whereNotNull('read_at')
             ->count();

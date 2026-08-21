@@ -2,15 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Reminder;
 use App\Models\Registration;
+use App\Models\Reminder;
 use Carbon\Carbon;
 
 class ReminderService
 {
-    public function __construct(private FeeService $feeService)
-    {
-    }
+    public function __construct(private FeeService $feeService) {}
 
     /**
      * Générer des rappels automatiques pour les paiements en retard.
@@ -44,7 +42,7 @@ class ReminderService
                     ->whereJsonContains('metadata->month', $fee['month'])
                     ->exists();
 
-                if (!$existingReminder) {
+                if (! $existingReminder) {
                     $this->createReminder($registration, 'overdue', $fee['month'], null, $fee['remaining_amount']);
                 }
             }
@@ -74,7 +72,7 @@ class ReminderService
                 ->whereJsonContains('metadata->month', $nextMonthName)
                 ->exists();
 
-            if (!$existingReminder) {
+            if (! $existingReminder) {
                 $scheduledAt = Carbon::now()->addDays(7); // Rappel 7 jours avant
                 $this->createReminder($registration, 'payment_due', $nextMonthName, $scheduledAt);
             }
@@ -87,12 +85,12 @@ class ReminderService
     protected function createReminder(Registration $registration, string $type, string $month, ?Carbon $scheduledAt = null, ?float $amount = null): void
     {
         $scheduledAt = $scheduledAt ?? Carbon::now();
-        $amountText = $amount ? ' (' . number_format($amount, 0, ',', ' ') . ' FCFA restants)' : '';
+        $amountText = $amount ? ' ('.number_format($amount, 0, ',', ' ').' FCFA restants)' : '';
 
-        $message = match($type) {
+        $message = match ($type) {
             'overdue' => "Votre paiement pour le mois de {$month} est en retard{$amountText}. Veuillez régulariser votre situation au plus vite.",
             'payment_due' => "Rappel: Le paiement pour le mois de {$month} est dû prochainement.",
-            default => "Rappel de paiement."
+            default => 'Rappel de paiement.'
         };
 
         Reminder::create([

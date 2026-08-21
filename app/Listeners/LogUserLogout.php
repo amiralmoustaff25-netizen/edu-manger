@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Models\LoginLog;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Events\AsEventListener;
 
 /**
  * Renseigne logout_at sur l'entrée du Journal des connexions correspondant à
@@ -17,7 +18,7 @@ use Illuminate\Auth\Events\Logout;
  * une approximation raisonnable pour un tableau de bord de sécurité, pas une
  * garantie d'exactitude par session dans le cas multi-appareils.
  */
-#[\Illuminate\Events\AsEventListener]
+#[AsEventListener]
 class LogUserLogout
 {
     public function handle(Logout $event): void

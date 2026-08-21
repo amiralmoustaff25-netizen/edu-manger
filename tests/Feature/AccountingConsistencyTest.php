@@ -1,11 +1,15 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\Invoice;
 use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\User;
+use App\Services\FeeService;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 function createAccountingFixture(): array
 {
@@ -175,7 +179,7 @@ test('remaining balance on the dashboard matches FeeService, not a naive sum of 
         'validated_by' => $manager->id,
     ]);
 
-    $expectedRemaining = app(\App\Services\FeeService::class)->getFinancialSituation($registration)['remaining'];
+    $expectedRemaining = app(FeeService::class)->getFinancialSituation($registration)['remaining'];
 
     $response = $this->actingAs($manager)->get(route('accounting.dashboard'));
 
@@ -405,8 +409,8 @@ test('the monthly revenue chart spans the active school year date range, not a f
         'validated_by' => $manager->id,
     ]);
 
-    \Illuminate\Support\Facades\DB::table('payments')->where('id', $novemberPayment->id)->update(['created_at' => '2025-11-15 10:00:00']);
-    \Illuminate\Support\Facades\DB::table('payments')->where('id', $junePayment->id)->update(['created_at' => '2026-06-10 10:00:00']);
+    DB::table('payments')->where('id', $novemberPayment->id)->update(['created_at' => '2025-11-15 10:00:00']);
+    DB::table('payments')->where('id', $junePayment->id)->update(['created_at' => '2026-06-10 10:00:00']);
 
     $response = $this->actingAs($manager)->get(route('accounting.dashboard'));
     $response->assertOk();
@@ -417,8 +421,8 @@ test('the monthly revenue chart spans the active school year date range, not a f
     expect($monthlyRevenue->first())->toMatchArray(['year' => 2025]);
     expect($monthlyRevenue->last())->toMatchArray(['year' => 2026]);
 
-    $novemberLabel = \Illuminate\Support\Carbon::create(2025, 11, 1)->translatedFormat('F');
-    $juneLabel = \Illuminate\Support\Carbon::create(2026, 6, 1)->translatedFormat('F');
+    $novemberLabel = Carbon::create(2025, 11, 1)->translatedFormat('F');
+    $juneLabel = Carbon::create(2026, 6, 1)->translatedFormat('F');
 
     $novemberEntry = $monthlyRevenue->firstWhere(fn ($entry) => $entry['month'] === $novemberLabel && $entry['year'] === 2025);
     $juneEntry = $monthlyRevenue->firstWhere(fn ($entry) => $entry['month'] === $juneLabel && $entry['year'] === 2026);
@@ -474,7 +478,7 @@ test('the accounting alerts page only reflects the active school year, not stale
         'payment_type' => 'mensualité',
         'validated_by' => $manager->id,
     ]);
-    $oldInvoice = \App\Models\Invoice::create([
+    $oldInvoice = Invoice::create([
         'registration_id' => $oldRegistration->id,
         'invoice_number' => 'FAC-OLD-0001',
         'total_amount' => 15000,
@@ -591,7 +595,7 @@ test('parent dashboard remaining balance is not the naive sum of remaining_balan
         ]],
     ]);
 
-    $expectedRemaining = app(\App\Services\FeeService::class)->getFinancialSituation($registration)['remaining'];
+    $expectedRemaining = app(FeeService::class)->getFinancialSituation($registration)['remaining'];
 
     $response = $this->actingAs($admin)->get(route('parents.show', $parent));
 

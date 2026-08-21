@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::table('payments', function (Blueprint $table) {
             // Ajouter validated_at seulement s'il n'existe pas
-            if (!Schema::hasColumn('payments', 'validated_at')) {
+            if (! Schema::hasColumn('payments', 'validated_at')) {
                 $table->timestamp('validated_at')->nullable()->after('validated_by');
             }
-            
+
             // receipt_number existe déjà, on ne l'ajoute pas
-            
+
             // Modifier le statut pour inclure 'rejected'
             $table->enum('status', ['complet', 'partiel', 'rejected'])->default('complet')->change();
         });

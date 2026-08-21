@@ -18,9 +18,7 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly SuperAdminProtectionService $superAdminProtection)
-    {
-    }
+    public function __construct(private readonly SuperAdminProtectionService $superAdminProtection) {}
 
     public function index(Request $request): View
     {
@@ -84,7 +82,7 @@ class UserController extends Controller
         $validated = $request->validated();
 
         // Combiner nom et prénom pour le champ name
-        $validated['name'] = trim($validated['nom'] . ' ' . $validated['prenom']);
+        $validated['name'] = trim($validated['nom'].' '.$validated['prenom']);
 
         $role = $validated['role'];
         unset($validated['role']);
@@ -293,5 +291,4 @@ class UserController extends Controller
             ->with('temp_password', $temporaryPassword)
             ->with('warning', 'Ce mot de passe temporaire est affiché une seule fois. Notez-le avant de quitter la page.');
     }
-
 }

@@ -5,6 +5,7 @@ use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\StudentDocument;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 function createDocumentFixture(): array
@@ -28,12 +29,12 @@ function createDocumentFixture(): array
     return [$year, $classroom, $student];
 }
 
-function fakePdf(string $name = 'acte.pdf'): \Illuminate\Http\UploadedFile
+function fakePdf(string $name = 'acte.pdf'): UploadedFile
 {
     $tmpPath = tempnam(sys_get_temp_dir(), 'doc').'.pdf';
     file_put_contents($tmpPath, "%PDF-1.4\n%fake pdf content for tests\n");
 
-    return new \Illuminate\Http\UploadedFile($tmpPath, $name, 'application/pdf', null, true);
+    return new UploadedFile($tmpPath, $name, 'application/pdf', null, true);
 }
 
 beforeEach(function () {
@@ -90,7 +91,7 @@ test('uploading rejects disallowed file types', function () {
 
     $tmpPath = tempnam(sys_get_temp_dir(), 'doc').'.exe';
     file_put_contents($tmpPath, 'MZ fake executable');
-    $file = new \Illuminate\Http\UploadedFile($tmpPath, 'malware.exe', 'application/x-msdownload', null, true);
+    $file = new UploadedFile($tmpPath, 'malware.exe', 'application/x-msdownload', null, true);
 
     $this->actingAs($admin)
         ->post(route('students.documents.store', $student), [

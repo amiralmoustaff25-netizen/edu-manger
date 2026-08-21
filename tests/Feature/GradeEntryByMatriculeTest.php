@@ -2,6 +2,7 @@
 
 use App\Models\Classroom;
 use App\Models\Matiere;
+use App\Models\Note;
 use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
@@ -140,7 +141,7 @@ test('a previously saved composition grade pre-fills on the search-by-matricule 
     // sous 'devoir'.
     [$teacherUser, $classroom, $matiere, $student] = createMatriculeGradeFixture('primaire');
 
-    \App\Models\Note::create([
+    Note::create([
         'user_id' => $student->id,
         'classroom_id' => $classroom->id,
         'matiere_id' => $matiere->id,

@@ -26,7 +26,7 @@ class StoreProgramAnnualRequest extends FormRequest
             'chapters.*.children.*.titre' => ['required', 'string', 'max:255'],
             'chapters.*.children.*.volume_horaire_prevu' => ['required', 'numeric', 'min:0.5'],
             'chapters.*.children.*.academic_period_id' => ['nullable', 'exists:academic_periods,id'],
-            'chapters.*.children.*.planned_at' => ['nullable', 'date'], 
+            'chapters.*.children.*.planned_at' => ['nullable', 'date'],
         ];
     }
 

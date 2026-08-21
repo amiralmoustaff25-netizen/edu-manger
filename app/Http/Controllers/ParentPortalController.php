@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Reminder;
 use App\Models\Sanction;
 use App\Models\User;
+use App\Services\FeeService;
 use App\Services\TimetableGridService;
 use Illuminate\Http\Request;
 
@@ -35,10 +37,23 @@ class ParentPortalController extends Controller
             ->limit(10)
             ->get();
 
+        // Rappels de paiement des enfants de ce parent : les rappels générés
+        // (ReminderService) n'étaient jusqu'ici visibles que via la page "Rappels"
+        // interne (super-admin/manager-comptable), jamais transmis au parent
+        // concerné — aucun canal d'envoi réel (email/SMS) n'est en place, seul
+        // ce tableau de bord les rend effectivement visibles au bon destinataire.
+        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
+        $reminders = Reminder::pending()
+            ->whereIn('registration_id', $registrationIds)
+            ->with('registration.user')
+            ->orderBy('scheduled_at')
+            ->get();
+
         return view('parents.dashboard', [
             'parent' => $parent,
             'recentAttendances' => $recentAttendances,
             'sanctions' => $sanctions,
+            'reminders' => $reminders,
         ]);
     }
 
@@ -72,7 +87,7 @@ class ParentPortalController extends Controller
     {
         $student = $this->resolveStudentFromRequest($request);
         if ($student) {
-            return app(\App\Http\Controllers\StudentController::class)->show($student, app(\App\Services\FeeService::class));
+            return app(StudentController::class)->show($student, app(FeeService::class));
         }
 
         return redirect()->route('parents.dashboard');
@@ -82,7 +97,7 @@ class ParentPortalController extends Controller
     {
         $student = $this->resolveStudentFromRequest($request);
         if ($student) {
-            return app(\App\Http\Controllers\StudentNotesController::class)->show($request, $student);
+            return app(StudentNotesController::class)->show($request, $student);
         }
 
         return redirect()->route('parents.dashboard');

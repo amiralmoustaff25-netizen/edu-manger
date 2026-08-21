@@ -2,7 +2,6 @@
 
 use App\Models\Classroom;
 use App\Models\Matiere;
-use App\Models\ParentModel;
 use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;

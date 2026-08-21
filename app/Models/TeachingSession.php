@@ -11,7 +11,18 @@ class TeachingSession extends Model
 
     protected $casts = ['taught_on' => 'date', 'duration_hours' => 'decimal:2'];
 
-    public function assignment(): BelongsTo { return $this->belongsTo(PedagogicalAssignment::class, 'pedagogical_assignment_id'); }
-    public function lesson(): BelongsTo { return $this->belongsTo(ProgramChapter::class, 'program_chapter_id'); }
-    public function recordedBy(): BelongsTo { return $this->belongsTo(User::class, 'recorded_by'); }
+    public function assignment(): BelongsTo
+    {
+        return $this->belongsTo(PedagogicalAssignment::class, 'pedagogical_assignment_id');
+    }
+
+    public function lesson(): BelongsTo
+    {
+        return $this->belongsTo(ProgramChapter::class, 'program_chapter_id');
+    }
+
+    public function recordedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
 }

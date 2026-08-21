@@ -28,7 +28,7 @@ class RegistrationFactory extends Factory
             'monthly_fee' => $this->faker->numberBetween(50000, 150000),
             'registration_date' => $this->faker->date(),
             'academic_year' => $this->faker->year(),
-            'matricule' => 'ELE-' . date('y') . '-' . str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
+            'matricule' => 'ELE-'.date('y').'-'.str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'status' => $this->faker->randomElement(['active', 'pending']),
         ];
     }

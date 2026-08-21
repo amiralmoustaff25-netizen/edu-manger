@@ -8,9 +8,9 @@ use App\Http\Requests\UpdateProgramAnnualRequest;
 use App\Models\AcademicPeriod;
 use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
-use App\Models\ProgramChapter;
 use App\Models\ProgramHistory;
 use App\Support\ProgramStatus;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -76,7 +76,7 @@ class ProgramAnnualController extends Controller
         return view('programs.create', compact('assignments', 'periods', 'assignmentsMeta'));
     }
 
-    public function store(StoreProgramAnnualRequest $request): \Illuminate\Http\RedirectResponse
+    public function store(StoreProgramAnnualRequest $request): RedirectResponse
     {
         $this->authorize('create', ProgramAnnual::class);
         $assignment = PedagogicalAssignment::with('teacher')->whereKey($request->integer('pedagogical_assignment_id'))->where('is_active', true)->firstOrFail();
@@ -120,7 +120,7 @@ class ProgramAnnualController extends Controller
         return view('programs.edit', compact('program'));
     }
 
-    public function update(UpdateProgramAnnualRequest $request, ProgramAnnual $program): \Illuminate\Http\RedirectResponse
+    public function update(UpdateProgramAnnualRequest $request, ProgramAnnual $program): RedirectResponse
     {
         $this->authorize('update', $program);
 
@@ -138,7 +138,7 @@ class ProgramAnnualController extends Controller
         });
     }
 
-    public function submit(ProgramAnnual $program): \Illuminate\Http\RedirectResponse
+    public function submit(ProgramAnnual $program): RedirectResponse
     {
         $this->authorize('update', $program);
 
@@ -152,7 +152,7 @@ class ProgramAnnualController extends Controller
         return redirect()->back()->with('success', 'Programme soumis avec succès.');
     }
 
-    public function validateDirecteur(ProgramAnnual $program): \Illuminate\Http\RedirectResponse
+    public function validateDirecteur(ProgramAnnual $program): RedirectResponse
     {
         $this->authorize('validateDirecteur', $program);
 
@@ -162,7 +162,7 @@ class ProgramAnnualController extends Controller
         return redirect()->back()->with('success', 'Programme validé par l’administrateur.');
     }
 
-    public function reject(Request $request, ProgramAnnual $program): \Illuminate\Http\RedirectResponse
+    public function reject(Request $request, ProgramAnnual $program): RedirectResponse
     {
         $this->authorize('reject', $program);
         $request->validate(['motif' => ['required', 'string', 'min:10']]);
@@ -173,7 +173,7 @@ class ProgramAnnualController extends Controller
         return redirect()->back()->with('success', 'Programme rejeté.');
     }
 
-    public function destroy(ProgramAnnual $program): \Illuminate\Http\RedirectResponse
+    public function destroy(ProgramAnnual $program): RedirectResponse
     {
         $this->authorize('delete', $program);
 
@@ -182,7 +182,7 @@ class ProgramAnnualController extends Controller
         return redirect()->route('programs.index')->with('success', 'Programme supprimé.');
     }
 
-    public function importExcel(ImportProgramRequest $request): \Illuminate\Http\RedirectResponse
+    public function importExcel(ImportProgramRequest $request): RedirectResponse
     {
         $this->authorize('create', ProgramAnnual::class);
 

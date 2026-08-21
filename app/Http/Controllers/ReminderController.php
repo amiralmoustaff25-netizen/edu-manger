@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reminder;
 use App\Models\Registration;
+use App\Models\Reminder;
 use App\Services\ReminderService;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -48,7 +50,7 @@ class ReminderController extends Controller
     /**
      * Créer un rappel manuel
      */
-    public function store(Request $Request): \Illuminate\Http\RedirectResponse
+    public function store(Request $Request): RedirectResponse
     {
         $validated = $Request->validate([
             'registration_id' => 'required|exists:registrations,id',
@@ -57,11 +59,11 @@ class ReminderController extends Controller
         ]);
 
         $registration = Registration::findOrFail($validated['registration_id']);
-        
+
         $this->reminderService->createCustomReminder(
             $registration,
             $validated['message'],
-            \Carbon\Carbon::parse($validated['scheduled_at'])
+            Carbon::parse($validated['scheduled_at'])
         );
 
         return redirect()->route('reminders.index')
@@ -71,7 +73,7 @@ class ReminderController extends Controller
     /**
      * Supprimer un rappel
      */
-    public function destroy(Reminder $reminder): \Illuminate\Http\RedirectResponse
+    public function destroy(Reminder $reminder): RedirectResponse
     {
         if ($reminder->status === 'sent') {
             return back()->with('error', 'Impossible de supprimer un rappel déjà envoyé.');
@@ -85,7 +87,7 @@ class ReminderController extends Controller
     /**
      * Générer automatiquement les rappels de retard
      */
-    public function generateOverdue(): \Illuminate\Http\RedirectResponse
+    public function generateOverdue(): RedirectResponse
     {
         $this->reminderService->generateOverdueReminders();
 
@@ -95,7 +97,7 @@ class ReminderController extends Controller
     /**
      * Générer automatiquement les rappels d'échéances
      */
-    public function generateUpcoming(): \Illuminate\Http\RedirectResponse
+    public function generateUpcoming(): RedirectResponse
     {
         $this->reminderService->generateUpcomingReminders();
 

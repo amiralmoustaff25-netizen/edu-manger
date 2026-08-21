@@ -3,12 +3,14 @@
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\Note;
-use App\Models\PedagogicalAssignment;
 use App\Models\Payment;
+use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\FeeService;
+use Illuminate\Support\Facades\Hash;
 
 test("the remaining balance on the student's own dashboard matches FeeService, not monthly_fee times a fixed month count", function () {
     $year = SchoolYear::create(['year_string' => '2026-2027', 'is_active' => true]);
@@ -56,7 +58,7 @@ test("the remaining balance on the student's own dashboard matches FeeService, n
     // Le paiement rejeté (999999) ne doit surtout pas apparaître comme "payé".
     expect((float) $response->viewData('totalPaid'))->toBe(15000.0);
 
-    $expectedSituation = app(\App\Services\FeeService::class)->getFinancialSituation($registration->fresh());
+    $expectedSituation = app(FeeService::class)->getFinancialSituation($registration->fresh());
     expect((float) $response->viewData('remaining'))->toBe((float) $expectedSituation['remaining']);
 });
 
@@ -69,7 +71,7 @@ test('a student not yet re-enrolled in the new active school year can still log 
     // (RegistrationController::reenrollSearch) plutôt que d'en recréer un.
     $oldYear = SchoolYear::create(['year_string' => '2025-2026', 'is_active' => false, 'status' => 'closed']);
     $oldClassroom = Classroom::create(['name' => 'CM1 A', 'cycle' => 'primaire', 'school_year_id' => $oldYear->id]);
-    $student = User::factory()->create(['role' => 'eleve', 'password' => \Illuminate\Support\Facades\Hash::make('password')]);
+    $student = User::factory()->create(['role' => 'eleve', 'password' => Hash::make('password')]);
     $student->assignRole('eleve');
     $oldRegistration = Registration::create([
         'user_id' => $student->id,

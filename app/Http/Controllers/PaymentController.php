@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
+use App\Models\ClassroomFee;
 use App\Models\Payment;
 use App\Models\Registration;
 use App\Notifications\PaymentReceived;
@@ -152,8 +153,8 @@ class PaymentController extends Controller
         $payment->load(['registration.user', 'registration.classroom', 'validatedBy']);
 
         $pdf = \PDF::loadView('accounting.payments.receipt', compact('payment'));
-        
-        return $pdf->download('recu-' . $payment->receipt_number . '.pdf');
+
+        return $pdf->download('recu-'.$payment->receipt_number.'.pdf');
     }
 
     public function store(StorePaymentRequest $request, FeeService $feeService, PaymentService $paymentService, SchoolYearGuardService $schoolYearGuard): RedirectResponse|JsonResponse
@@ -170,13 +171,13 @@ class PaymentController extends Controller
 
             $selectedFees = $this->decodeSelectedFees($validated['selected_fees'] ?? null);
 
-            if (!empty($selectedFees)) {
+            if (! empty($selectedFees)) {
                 $breakdown = $this->buildMultipleFeeBreakdown($registration, $feeService, $selectedFees);
             } else {
                 $breakdown = $this->buildSimpleFeeBreakdown($registration, $feeService, $validated, $amountPaid);
             }
 
-            if (!empty($breakdown['error'])) {
+            if (! empty($breakdown['error'])) {
                 return back()->withErrors(['selected_fees' => $breakdown['error']])->withInput();
             }
 
@@ -249,7 +250,7 @@ class PaymentController extends Controller
                 if (config('edu.overpayment_mode', 'change') === 'credit') {
                     $paymentService->recordSurplusCredit($payment, $surplus);
                 } else {
-                    $payment->comment = trim(($payment->comment ?? '') . ' [Monnaie rendue: ' . number_format($surplus, 2) . ' FCFA]');
+                    $payment->comment = trim(($payment->comment ?? '').' [Monnaie rendue: '.number_format($surplus, 2).' FCFA]');
                     $payment->save();
                 }
             }
@@ -274,7 +275,7 @@ class PaymentController extends Controller
             }
 
             return redirect()->route('payments.show', $payment)->with([
-                'success' => 'Paiement enregistré avec succès. Reçu : ' . $payment->receipt_number,
+                'success' => 'Paiement enregistré avec succès. Reçu : '.$payment->receipt_number,
                 'payment_receipt' => $payment->id,
             ]);
         });
@@ -284,6 +285,7 @@ class PaymentController extends Controller
     {
         if (is_string($selectedFees)) {
             $decoded = json_decode($selectedFees, true);
+
             return is_array($decoded) ? $decoded : [];
         }
 
@@ -299,13 +301,13 @@ class PaymentController extends Controller
         foreach ($selectedFees as $input) {
             $id = $input['id'] ?? null;
 
-            if (!$id || !$pendingFees->has($id)) {
+            if (! $id || ! $pendingFees->has($id)) {
                 return ['items' => [], 'total_expected' => 0, 'error' => 'Un frais sélectionné est invalide ou a déjà été payé.'];
             }
 
             $fee = $pendingFees->get($id);
 
-            if ($fee['status'] === 'paid' && !auth()->user()->hasAnyRole(['super-admin', 'manager-comptable'])) {
+            if ($fee['status'] === 'paid' && ! auth()->user()->hasAnyRole(['super-admin', 'manager-comptable'])) {
                 return ['items' => [], 'total_expected' => 0, 'error' => "Frais déjà payé : {$fee['description']}"];
             }
 
@@ -375,7 +377,7 @@ class PaymentController extends Controller
 
     private function getOptionalFeeAmount(Registration $registration, string $code): float
     {
-        $classroomFee = \App\Models\ClassroomFee::with('feeType')
+        $classroomFee = ClassroomFee::with('feeType')
             ->where('classroom_id', $registration->classroom_id)
             ->where('school_year_id', $registration->school_year_id)
             ->whereHas('feeType', fn ($q) => $q->where('code', $code))
@@ -495,7 +497,7 @@ class PaymentController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        $payment->comment = ($payment->comment ?? '') . ' [REJETÉ: ' . $request->reason . ']';
+        $payment->comment = ($payment->comment ?? '').' [REJETÉ: '.$request->reason.']';
         $payment->status = 'rejected';
         $payment->validated_by = auth()->id();
         $payment->validated_at = now();

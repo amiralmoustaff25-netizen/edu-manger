@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Classroom;
 use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
@@ -262,7 +263,7 @@ class ClassroomControllerTest extends TestCase
         $student = User::factory()->create();
         $student->assignRole('eleve');
 
-        \App\Models\Registration::factory()->create([
+        Registration::factory()->create([
             'user_id' => $student->id,
             'classroom_id' => $classroom->id,
             'school_year_id' => $schoolYear->id,

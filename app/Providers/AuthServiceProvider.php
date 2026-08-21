@@ -15,6 +15,7 @@ use App\Models\ParentModel;
 use App\Models\Payment;
 use App\Models\ProgramAnnual;
 use App\Models\SchoolYear;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Policies\AttendancePolicy;
 use App\Policies\AuditLogPolicy;
@@ -29,6 +30,7 @@ use App\Policies\ParentPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\ProgramAnnualPolicy;
 use App\Policies\SchoolYearPolicy;
+use App\Policies\TeacherPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -45,7 +47,7 @@ class AuthServiceProvider extends ServiceProvider
         ParentModel::class => ParentPolicy::class,
         ProgramAnnual::class => ProgramAnnualPolicy::class,
         ChapterCompletion::class => ChapterCompletionPolicy::class,
-        \App\Models\Teacher::class => \App\Policies\TeacherPolicy::class,
+        Teacher::class => TeacherPolicy::class,
         Classroom::class => ClassroomPolicy::class,
         Attendance::class => AttendancePolicy::class,
         Note::class => NotePolicy::class,

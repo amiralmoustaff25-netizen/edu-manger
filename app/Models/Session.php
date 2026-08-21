@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -36,9 +37,9 @@ class Session extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function getLastActivityAtAttribute(): \Carbon\Carbon
+    public function getLastActivityAtAttribute(): Carbon
     {
-        return \Carbon\Carbon::createFromTimestamp($this->last_activity);
+        return Carbon::createFromTimestamp($this->last_activity);
     }
 
     /**
