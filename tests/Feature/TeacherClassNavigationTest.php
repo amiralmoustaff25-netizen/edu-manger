@@ -1,10 +1,13 @@
 <?php
 
 use App\Models\Classroom;
+use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
+use App\Models\Registration;
 use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Support\AcademicPeriods;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -21,7 +24,7 @@ beforeEach(function () {
     PedagogicalAssignment::create([
         'teacher_id' => $this->teacher->id,
         'classroom_id' => $this->classroom->id,
-        'matiere_id' => \App\Models\Matiere::factory()->create()->id,
+        'matiere_id' => Matiere::factory()->create()->id,
         'school_year_id' => $this->schoolYear->id,
         'volume_horaire_hebdo' => 4,
         'is_active' => true,
@@ -50,10 +53,10 @@ test('teacher can preview a student bulletin directly from the class grade entry
     // Aperçu basé sur les notes/matières déjà enregistrées (bulletins.show, recalculé en
     // direct par GradeCalculationService) — pas besoin de quitter la saisie de notes pour
     // voir où en est un élève.
-    $matiere = \App\Models\Matiere::factory()->create();
+    $matiere = Matiere::factory()->create();
     $student = User::factory()->create(['role' => 'eleve']);
     $student->assignRole('eleve');
-    \App\Models\Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $student->id,
         'classroom_id' => $this->classroom->id,
         'school_year_id' => $this->schoolYear->id,
@@ -75,7 +78,7 @@ test('teacher can preview a student bulletin directly from the class grade entry
     $content = $response->getContent();
     expect($content)->toContain('JSON.parse(');
     expect(substr_count($content, (string) $student->id))->toBeGreaterThan(0);
-    foreach (array_keys(\App\Support\AcademicPeriods::forCycle($this->classroom->cycle)) as $period) {
+    foreach (array_keys(AcademicPeriods::forCycle($this->classroom->cycle)) as $period) {
         expect($content)->toContain($period);
     }
 });

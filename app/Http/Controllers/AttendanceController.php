@@ -10,8 +10,8 @@ use App\Models\Teacher;
 use App\Notifications\StudentAbsent;
 use App\Services\SchoolYearGuardService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 class AttendanceController extends Controller
 {
@@ -19,11 +19,11 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
+
         $classrooms = $this->assignedClassrooms($teacher);
 
         $selectedDate = $request->date ?? today()->format('Y-m-d');
@@ -36,7 +36,7 @@ class AttendanceController extends Controller
             $classroom = Classroom::findOrFail($selectedClassroom);
 
             // Vérifier que le professeur est assigné à cette classe
-            if (!$this->isAssignedToClassroom($teacher, $classroom->id)) {
+            if (! $this->isAssignedToClassroom($teacher, $classroom->id)) {
                 abort(403, 'Vous n\'êtes pas autorisé à gérer les absences de cette classe.');
             }
 
@@ -76,15 +76,15 @@ class AttendanceController extends Controller
 
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
+
         $classroom = Classroom::findOrFail($validated['classroom_id']);
 
         // Vérifier que le professeur est assigné à cette classe
-        if (!$this->isAssignedToClassroom($teacher, $classroom->id)) {
+        if (! $this->isAssignedToClassroom($teacher, $classroom->id)) {
             abort(403, 'Vous n\'êtes pas autorisé à enregistrer les absences pour cette classe.');
         }
 
@@ -103,8 +103,8 @@ class AttendanceController extends Controller
             ->pluck('user_id');
 
         foreach ($validated['attendances'] as $attendanceData) {
-            if (!$enrolledStudentIds->contains((int) $attendanceData['user_id'])) {
-                abort(403, "Un ou plusieurs élèves ne sont pas inscrits dans cette classe.");
+            if (! $enrolledStudentIds->contains((int) $attendanceData['user_id'])) {
+                abort(403, 'Un ou plusieurs élèves ne sont pas inscrits dans cette classe.');
             }
         }
 
@@ -119,7 +119,10 @@ class AttendanceController extends Controller
 
             $attendance->status = $attendanceData['status'];
             $attendance->notes = $attendanceData['notes'] ?? null;
-            $attendance->recorded_by = $teacher->id;
+            // recorded_by référence users.id (Attendance::recordedBy() -> User), pas
+            // teachers.id : $teacher->id (fiche enseignant) provoquait une violation de
+            // clé étrangère dès que son id ne correspondait à aucun utilisateur existant.
+            $attendance->recorded_by = $user->id;
             $attendance->save();
 
             if ($attendance->status === 'absent' && $previousStatus !== 'absent') {
@@ -184,16 +187,20 @@ class AttendanceController extends Controller
     }
 
     /**
-     * PedagogicalAssignment (écran "Affectations pédagogiques") est la seule source de
-     * vérité des affectations enseignant/classe alimentée par l'administration —
-     * l'ancien pivot teacher_classroom (Teacher::classrooms()) n'est plus jamais
-     * renseigné, voir GradeController::index() pour le même correctif.
+     * Les classes du professeur proviennent soit de ses affectations pédagogiques
+     * actives (PedagogicalAssignment) quand il y enseigne une matière, soit du fait
+     * qu'il en est le titulaire (Classroom.teacher_id) même sans matière assignée —
+     * le pointage des présences est une responsabilité du professeur principal, pas
+     * seulement de qui enseigne une matière donnée (même règle que
+     * TeacherClassController et l'emploi du temps). L'ancien pivot teacher_classroom
+     * (Teacher::classrooms()) n'est lui plus jamais renseigné.
      */
     private function assignedClassrooms(Teacher $teacher)
     {
         $classroomIds = PedagogicalAssignment::where('teacher_id', $teacher->id)
             ->where('is_active', true)
             ->pluck('classroom_id')
+            ->merge(Classroom::where('teacher_id', $teacher->user_id)->pluck('id'))
             ->unique();
 
         return Classroom::whereIn('id', $classroomIds)->with('schoolYear')->get();
@@ -204,6 +211,7 @@ class AttendanceController extends Controller
         return PedagogicalAssignment::where('teacher_id', $teacher->id)
             ->where('classroom_id', $classroomId)
             ->where('is_active', true)
-            ->exists();
+            ->exists()
+            || Classroom::where('id', $classroomId)->where('teacher_id', $teacher->user_id)->exists();
     }
 }

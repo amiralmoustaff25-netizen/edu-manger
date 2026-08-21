@@ -340,7 +340,7 @@ class GradeCalculationService
         $registration = $student->latestRegistration;
         $classroom = $registration?->classroom;
 
-        if (!$classroom) {
+        if (! $classroom) {
             throw new \Exception('L\'élève n\'est pas inscrit dans une classe.');
         }
 
