@@ -526,11 +526,11 @@
                 <div class="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Bulletins scolaires</h3>
                     <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        @foreach(['trimestre_1' => 'Trimestre 1', 'trimestre_2' => 'Trimestre 2', 'trimestre_3' => 'Trimestre 3'] as $period => $label)
+                        @foreach(\App\Support\AcademicPeriods::forCycle($student->latestRegistration?->classroom?->cycle) as $period => $label)
                             <div class="rounded-md border border-gray-200 dark:border-slate-700 p-4">
                                 <p class="font-medium text-gray-800 dark:text-gray-200 mb-3">{{ $label }}</p>
                                 <div class="flex flex-wrap gap-2">
-                                    <a href="{{ route('bulletins.show', [$student, $period]) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">
+                                    <a href="{{ route('bulletins.show', [$student, $period]) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">
                                         Voir
                                     </a>
                                     <a href="{{ route('bulletins.pdf', [$student, $period]) }}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">

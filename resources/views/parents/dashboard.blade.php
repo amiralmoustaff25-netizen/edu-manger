@@ -30,32 +30,66 @@
 
             <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Rappels de paiement</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Échéances et retards de paiement pour vos enfants.</p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Dernières présences</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Présences, absences et retards récents de vos enfants.</p>
                 </div>
                 <div class="divide-y divide-gray-200 dark:divide-slate-700">
-                    @forelse($reminders as $reminder)
+                    @forelse($recentAttendances as $attendance)
                         <div class="px-6 py-4 sm:flex sm:items-start sm:justify-between gap-4">
                             <div class="min-w-0">
                                 <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                    {{ $reminder->registration->user->name ?? 'Élève' }}
+                                    {{ $attendance->student->name ?? 'Élève' }}
                                 </p>
-                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $reminder->message }}</p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $attendance->notes }}</p>
                             </div>
                             <div class="mt-2 sm:mt-0 flex items-center gap-2 shrink-0">
                                 <span @class([
                                     'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
-                                    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' => $reminder->type === 'overdue',
-                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' => $reminder->type !== 'overdue',
+                                    'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' => $attendance->status === 'present',
+                                    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' => $attendance->status === 'absent',
+                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' => $attendance->status === 'late',
+                                    'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' => $attendance->status === 'excused',
                                 ])>
-                                    {{ $reminder->type === 'overdue' ? 'Retard' : 'À venir' }}
+                                    {{ $attendance->status_label }}
                                 </span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $reminder->scheduled_at->format('d/m/Y') }}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $attendance->date->format('d/m/Y') }}</span>
                             </div>
                         </div>
                     @empty
                         <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                            Aucun rappel de paiement en attente.
+                            Aucune présence enregistrée pour le moment.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="rounded-lg bg-white dark:bg-slate-800 shadow-sm ring-1 ring-gray-200 dark:ring-slate-700 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-slate-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Mes sanctions</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Sanctions disciplinaires récentes concernant vos enfants.</p>
+                </div>
+                <div class="divide-y divide-gray-200 dark:divide-slate-700">
+                    @forelse($sanctions as $sanction)
+                        <div class="px-6 py-4 sm:flex sm:items-start sm:justify-between gap-4">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ $sanction->student->name ?? 'Élève' }}
+                                </p>
+                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ $sanction->description }}</p>
+                                @if($sanction->mesure)
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Mesure : {{ $sanction->mesure }}</p>
+                                @endif
+                            </div>
+                            <div class="mt-2 sm:mt-0 flex items-center gap-2 shrink-0">
+                                <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                    {{ $sanction->type_label }}
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $sanction->date_incident->format('d/m/Y') }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                            Aucune sanction enregistrée pour le moment.
                         </div>
                     @endforelse
                 </div>

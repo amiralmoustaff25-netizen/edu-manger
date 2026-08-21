@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Matiere;
-use App\Models\Reminder;
+use App\Models\Attendance;
+use App\Models\Sanction;
 use App\Models\User;
 use App\Services\TimetableGridService;
 use Illuminate\Http\Request;
@@ -17,21 +17,29 @@ class ParentPortalController extends Controller
             ->with(['students.latestRegistration.classroom.schoolYear'])
             ->firstOrFail();
 
-        $parent->setRelation('students', $parent->students->loadCount('notes', 'attendances'));
+        $parent->setRelation('students', $parent->students->loadCount('notes', 'attendances', 'sanctions'));
 
-        // Rappels de paiement des enfants de ce parent : les rappels générés
-        // (ReminderService) n'étaient jusqu'ici visibles que via la page "Rappels"
-        // interne (super-admin/manager-comptable), jamais transmis au parent
-        // concerné — aucun canal d'envoi réel (email/SMS) n'est en place, seul
-        // ce tableau de bord les rend effectivement visibles au bon destinataire.
-        $registrationIds = $parent->students->pluck('latestRegistration.id')->filter();
-        $reminders = Reminder::pending()
-            ->whereIn('registration_id', $registrationIds)
-            ->with('registration.user')
-            ->orderBy('scheduled_at')
+        $studentIds = $parent->students->pluck('id');
+
+        $recentAttendances = Attendance::whereIn('user_id', $studentIds)
+            ->with('student')
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->limit(10)
             ->get();
 
-        return view('parents.dashboard', compact('parent', 'reminders'));
+        $sanctions = Sanction::whereIn('user_id', $studentIds)
+            ->with('student')
+            ->orderByDesc('date_incident')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        return view('parents.dashboard', [
+            'parent' => $parent,
+            'recentAttendances' => $recentAttendances,
+            'sanctions' => $sanctions,
+        ]);
     }
 
     public function childrenIndex(Request $request)
@@ -74,7 +82,7 @@ class ParentPortalController extends Controller
     {
         $student = $this->resolveStudentFromRequest($request);
         if ($student) {
-            return redirect()->route('parents.children.profile', ['student' => $student->id])->with('focus', 'notes');
+            return app(\App\Http\Controllers\StudentNotesController::class)->show($request, $student);
         }
 
         return redirect()->route('parents.dashboard');
@@ -135,11 +143,6 @@ class ParentPortalController extends Controller
         }
 
         return redirect()->route('parents.dashboard');
-    }
-
-    public function messaging(Request $request)
-    {
-        return view('parents.messaging');
     }
 
     public function calendar(Request $request)
