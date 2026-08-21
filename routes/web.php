@@ -173,18 +173,15 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::get('/mon-espace/emploi-du-temps', function () {
             $user = auth()->user();
             $registration = $user->latestRegistration;
-            $registration?->load(['classroom.teachers.user', 'classroom.schoolYear', 'schoolYear']);
+            $registration?->load(['classroom.schoolYear', 'schoolYear']);
 
-            $matieres = Matiere::all()->keyBy('id');
+            // Grille horaire réelle (tous cycles) : voir App\Support\TimetableGrid /
+            // App\Models\TimetableEntry.
+            $timetableEntries = $registration?->classroom
+                ? app(\App\Services\TimetableGridService::class)->grid($registration->classroom)
+                : null;
 
-            // Grille horaire réelle (primaire uniquement pour l'instant) : voir
-            // App\Support\TimetableGrid / App\Models\TimetableEntry.
-            $timetableEntries = null;
-            if ($registration?->classroom?->cycle === 'primaire') {
-                $timetableEntries = app(\App\Services\TimetableGridService::class)->grid($registration->classroom);
-            }
-
-            return view('students.timetable', compact('user', 'registration', 'matieres', 'timetableEntries'));
+            return view('students.timetable', compact('user', 'registration', 'timetableEntries'));
         })->name('student.timetable');
 
         Route::get('/mon-espace/bulletins', function () {

@@ -118,15 +118,13 @@ class ParentPortalController extends Controller
         }
 
         $registration = $student->latestRegistration;
-        $registration?->load(['classroom.teachers.user', 'classroom.schoolYear', 'schoolYear']);
-        $matieres = Matiere::all()->keyBy('id');
+        $registration?->load(['classroom.schoolYear', 'schoolYear']);
 
-        $timetableEntries = null;
-        if ($registration?->classroom?->cycle === 'primaire') {
-            $timetableEntries = $timetableGrid->grid($registration->classroom);
-        }
+        $timetableEntries = $registration?->classroom
+            ? $timetableGrid->grid($registration->classroom)
+            : null;
 
-        return view('students.timetable', ['user' => $student, 'registration' => $registration, 'matieres' => $matieres, 'timetableEntries' => $timetableEntries]);
+        return view('students.timetable', ['user' => $student, 'registration' => $registration, 'timetableEntries' => $timetableEntries]);
     }
 
     public function childPayments(Request $request)
