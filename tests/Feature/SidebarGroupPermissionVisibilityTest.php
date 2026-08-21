@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleAndPermissionSeeder;
 
 // Régression : config/sidebar.php gatait les groupes École/Pédagogie/Finance/Administration
 // avec un 'roles' => ['super-admin', 'admin'] au niveau du GROUPE. filterVisible()
@@ -64,4 +65,30 @@ test('a manager-comptable with no Administration permission at all still cannot 
 
     $response->assertOk();
     $response->assertDontSee(route('admin.dashboard'), false);
+});
+
+// Régression : le groupe générique 'Pédagogie' et le lien générique 'Tableau de bord'
+// n'excluaient pas le rôle 'surveillant', alors que celui-ci a par ailleurs (via
+// RoleAndPermissionSeeder) les permissions 'voir-programmes'/'voir-cahier-textes'/
+// 'voir-presences' que ce groupe expose aussi — 'Tableau de bord', 'Programmes annuels'/
+// 'Programmes à valider' et 'Cahier de textes' apparaissaient donc chacun deux fois dans
+// le menu (une fois dans 'Pédagogie', une fois dans 'Espace Surveillant').
+test('a surveillant does not see duplicate sidebar links between the generic Pédagogie group and Espace Surveillant', function () {
+    $this->seed(RoleAndPermissionSeeder::class);
+
+    $user = User::factory()->create(['role' => 'surveillant']);
+    $user->assignRole('surveillant');
+
+    $response = $this->actingAs($user)->get(route('surveillant.dashboard'));
+
+    $response->assertOk();
+    $html = $response->getContent();
+    $navStart = strpos($html, 'id="sidebar-nav"');
+    $nav = substr($html, $navStart, strpos($html, '</nav>', $navStart) - $navStart);
+
+    // route('dashboard') est exclu de ce comptage : le logo EduManager, hors de la nav
+    // et commun à tous les rôles, y pointe toujours.
+    expect(preg_match_all('/>\s*Tableau de bord\s*</', $nav))->toBe(1);
+    expect(substr_count($nav, 'href="'.route('programs.index').'"'))->toBe(1);
+    expect(substr_count($nav, 'href="'.route('cahier-textes.dashboard.index').'"'))->toBe(1);
 });
