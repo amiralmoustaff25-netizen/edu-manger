@@ -129,12 +129,16 @@ class UserController extends Controller
     private function storeProfesseur(array $validated, string $temporaryPassword, bool $isActive): RedirectResponse
     {
         $teacher = DB::transaction(function () use ($validated, $temporaryPassword, $isActive) {
+            // Même matricule partagé entre le compte et la fiche enseignant que dans
+            // TeacherController::store() — voir le commentaire là-bas.
+            $matricule = Teacher::generateMatricule();
+
             $user = User::create([
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
                 'password' => Hash::make($temporaryPassword),
-                'matricule' => User::generateMatricule('professeur'),
+                'matricule' => $matricule,
                 'telephone' => $validated['telephone'] ?? null,
                 'date_naissance' => $validated['date_naissance'],
                 'specialite' => implode(', ', $validated['specialites']),
@@ -148,7 +152,7 @@ class UserController extends Controller
 
             return Teacher::create([
                 'user_id' => $user->id,
-                'matricule' => Teacher::generateMatricule(),
+                'matricule' => $matricule,
                 'date_naissance' => $validated['date_naissance'],
                 'lieu_naissance' => $validated['lieu_naissance'],
                 'sexe' => $validated['sexe'],

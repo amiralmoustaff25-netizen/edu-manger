@@ -11,7 +11,7 @@ class Note extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'classroom_id', 'matiere_id', 'valeur', 'type_evaluation', 'periode', 'appreciation', 'validated_at', 'validated_by'];
+    protected $fillable = ['user_id', 'classroom_id', 'matiere_id', 'valeur', 'type_evaluation', 'evaluation_number', 'periode', 'appreciation', 'validated_at', 'validated_by'];
 
     protected $casts = ['validated_at' => 'datetime'];
 

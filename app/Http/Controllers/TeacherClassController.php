@@ -13,14 +13,22 @@ class TeacherClassController extends Controller
     {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
+
         if (!$teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
-        $classrooms = $teacher->classrooms()
+
+        // Les classes du professeur proviennent de ses affectations pédagogiques
+        // actives (PedagogicalAssignment), pas de l'ancienne table pivot
+        // teacher_classroom qui n'est plus alimentée — voir TeacherDashboardController.
+        $classroomIds = $teacher->pedagogicalAssignments()
+            ->where('is_active', true)
+            ->pluck('classroom_id')
+            ->unique();
+
+        $classrooms = Classroom::whereIn('id', $classroomIds)
             ->with(['schoolYear', 'teacher'])
-            ->withCount('registrations')
+            ->withCount(['registrations' => fn ($query) => $query->where('status', 'active')])
             ->get();
 
         return view('teachers.classes.index', compact('classrooms'));
@@ -30,13 +38,18 @@ class TeacherClassController extends Controller
     {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
-        
+
         if (!$teacher) {
             abort(403, 'Profil enseignant non trouvé.');
         }
-        
+
         // Vérifier que le professeur est bien assigné à cette classe
-        if (!$teacher->classrooms()->where('classrooms.id', $classroom->id)->exists()) {
+        $isAssigned = $teacher->pedagogicalAssignments()
+            ->where('is_active', true)
+            ->where('classroom_id', $classroom->id)
+            ->exists();
+
+        if (! $isAssigned) {
             abort(403, 'Vous n\'êtes pas autorisé à accéder à cette classe.');
         }
 

@@ -162,6 +162,13 @@ class Teacher extends Model
         }
     }
 
+    /**
+     * Le compte utilisateur et la fiche enseignant d'un même professeur partagent
+     * toujours ce matricule (voir TeacherController::store() et
+     * UserController::storeProfesseur()) — vérifier aussi contre `users` évite de
+     * régénérer un matricule déjà pris par un compte si les deux tables venaient à
+     * nouveau à diverger (ex. suppression manuelle d'une seule des deux lignes).
+     */
     public static function generateMatricule(): string
     {
         $year = date('y');
@@ -170,7 +177,10 @@ class Teacher extends Model
         do {
             $matricule = 'PROF-'.$year.'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             $sequence++;
-        } while (self::withTrashed()->where('matricule', $matricule)->exists());
+        } while (
+            self::withTrashed()->where('matricule', $matricule)->exists()
+            || User::withTrashed()->where('matricule', $matricule)->exists()
+        );
 
         return $matricule;
     }

@@ -270,14 +270,6 @@ return [
             'active_routes' => ['parents.children.*'],
         ],
         [
-            'label' => 'Messagerie',
-            'route' => 'parents.messaging',
-            'icon' => 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 3.866-3.134 7-7 7H7l-4 4V5c0-1.105.895-2 2-2h12c3.866 0 7 3.134 7 7z',
-            'roles' => ['parent'],
-            'permission' => 'voir-messagerie',
-            'active_routes' => ['parents.messaging'],
-        ],
-        [
             'label' => 'Calendrier scolaire',
             'route' => 'parents.calendar',
             'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',

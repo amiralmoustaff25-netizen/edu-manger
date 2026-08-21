@@ -23,7 +23,11 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $uniqueId = random_int(1, 99999);
+        // unique() (pas random_int() seul) : sans garantie d'unicité, une collision sur
+        // matricule (contrainte unique en base) devenait statistiquement probable au fil
+        // d'une suite de tests créant des centaines d'utilisateurs — même défaut que
+        // SchoolYearFactory::$yearCounter avant correctif.
+        $uniqueId = $this->faker->unique()->numberBetween(1, 99999);
 
         return [
             'matricule' => sprintf('MAT-%05d', $uniqueId),

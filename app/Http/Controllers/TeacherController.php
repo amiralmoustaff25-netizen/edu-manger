@@ -92,12 +92,20 @@ class TeacherController extends Controller
         $temporaryPassword = Str::password(12);
 
         $teacher = DB::transaction(function () use ($validated, $temporaryPassword) {
+            // Le compte utilisateur et la fiche enseignant d'un même professeur doivent
+            // partager le même matricule (c'est ce qui les identifie comme la même
+            // personne dans les écrans "Utilisateurs" et "Affectations pédagogiques") —
+            // générer deux matricules indépendamment (un par User::generateMatricule(),
+            // un par Teacher::generateMatricule()) les a fait diverger silencieusement
+            // pour tous les professeurs créés depuis un ancien enregistrement legacy.
+            $matricule = Teacher::generateMatricule();
+
             $user = User::create([
                 'name' => $validated['nom'].' '.$validated['prenom'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
                 'password' => Hash::make($temporaryPassword),
-                'matricule' => User::generateMatricule('professeur'),
+                'matricule' => $matricule,
                 'telephone' => $validated['telephone'] ?? null,
                 'date_naissance' => $validated['date_naissance'],
                 'specialite' => implode(', ', $validated['specialites']),
@@ -111,7 +119,7 @@ class TeacherController extends Controller
 
             return Teacher::create([
                 'user_id' => $user->id,
-                'matricule' => Teacher::generateMatricule(),
+                'matricule' => $matricule,
                 'date_naissance' => $validated['date_naissance'],
                 'lieu_naissance' => $validated['lieu_naissance'],
                 'sexe' => $validated['sexe'],

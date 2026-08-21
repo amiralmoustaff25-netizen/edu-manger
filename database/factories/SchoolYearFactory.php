@@ -14,10 +14,17 @@ class SchoolYearFactory extends Factory
 
     public function definition(): array
     {
-        $year = static::$yearCounter++;
+        // Le compteur statique persiste sur toute la durée du run de tests (il n'est
+        // pas réinitialisé par RefreshDatabase). L'ancien code réassignait $year en même
+        // temps que static::$yearCounter lors du rebouclage 2099→2020, ce qui renvoyait
+        // la même année à deux appels consécutifs — deux SchoolYear créés coup sur coup
+        // (ex. dans un même setUp()) au moment du rebouclage obtenaient alors le même
+        // year_string, violant sa contrainte unique.
+        $year = static::$yearCounter;
+        static::$yearCounter++;
 
-        if ($year > 2099) {
-            $year = static::$yearCounter = 2020;
+        if (static::$yearCounter > 2099) {
+            static::$yearCounter = 2020;
         }
 
         return [

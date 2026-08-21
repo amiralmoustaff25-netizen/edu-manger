@@ -30,6 +30,32 @@ class GradeCalculationService
     }
 
     /**
+     * Moyenne d'une matière pour le collège/lycée : (moyenne des devoirs + note de
+     * composition) / 2, chacun pesant 50 %. Si un seul type d'évaluation est renseigné
+     * (composition pas encore saisie, ou devoirs seuls en cours de période), la moyenne
+     * repose uniquement sur les notes disponibles plutôt que de diviser artificiellement
+     * par deux une moyenne partielle. Retourne null si aucune note.
+     */
+    public function calculateWeightedSubjectAverage(Collection $notes): ?float
+    {
+        $devoirs = $notes->where('type_evaluation', 'devoir')->pluck('valeur');
+        $compositions = $notes->where('type_evaluation', 'composition')->pluck('valeur');
+
+        $devoirsAverage = $devoirs->isNotEmpty() ? $devoirs->avg() : null;
+        $compositionAverage = $compositions->isNotEmpty() ? $compositions->avg() : null;
+
+        if ($devoirsAverage === null && $compositionAverage === null) {
+            return null;
+        }
+
+        if ($devoirsAverage !== null && $compositionAverage !== null) {
+            return round(($devoirsAverage + $compositionAverage) / 2, 2);
+        }
+
+        return round($devoirsAverage ?? $compositionAverage, 2);
+    }
+
+    /**
      * Matières réellement affectées à une classe (via PedagogicalAssignment), pour une
      * année scolaire donnée. Source de vérité unique du périmètre d'un bulletin : ne
      * jamais utiliser Matiere::all() qui inclurait des matières d'autres cycles/classes.
@@ -91,6 +117,7 @@ class GradeCalculationService
         $subjectsData = [];
         $totalCoefficients = 0.0;
         $totalWeighted = 0.0;
+        $useWeightedFormula = in_array($classroom->cycle, ['college', 'lycee'], true);
 
         foreach ($this->classroomSubjects($classroom, $schoolYearId) as $matiere) {
             $notes = Note::where('user_id', $student->id)
@@ -100,7 +127,12 @@ class GradeCalculationService
 
             $coefficient = $this->resolveCoefficient($matiere, $classroom, $schoolYearId);
             $hasNotes = $notes->isNotEmpty();
-            $average = $hasNotes ? round($notes->avg('valeur'), 2) : 0.0;
+            $average = 0.0;
+            if ($hasNotes) {
+                $average = $useWeightedFormula
+                    ? ($this->calculateWeightedSubjectAverage($notes) ?? 0.0)
+                    : round($notes->avg('valeur'), 2);
+            }
             $weightedAverage = $hasNotes ? round($average * $coefficient, 2) : 0.0;
 
             $subjectsData[] = [
@@ -190,7 +222,7 @@ class GradeCalculationService
      * historique conservé pour ne pas casser les bulletins d'années sans configuration
      * dédiée.
      */
-    private function resolveCoefficient(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
+    public function resolveCoefficient(Matiere $matiere, Classroom $classroom, ?int $schoolYearId): float
     {
         if ($schoolYearId) {
             $configurations = SubjectConfiguration::where('matiere_id', $matiere->id)
@@ -263,6 +295,26 @@ class GradeCalculationService
             ->count();
 
         return $betterCount + 1;
+    }
+
+    /**
+     * Bande de couleur/appréciation pour le tableau de bord élève/parent (code couleur
+     * du cahier des charges : 0-9,99 Insuffisant, 10-11,99 Passable, 12-13,99 Assez
+     * bien, 14-15,99 Bien, 16-20 Très Bien/Excellent). Distinct de getMention() (utilisé
+     * par les bulletins officiels, seuils différents) : ne pas fusionner, ce sont deux
+     * échelles différentes utilisées à des fins différentes.
+     *
+     * @return array{label: string, color: string}
+     */
+    public function getPerformanceColorBand(float $average): array
+    {
+        return match (true) {
+            $average >= 16 => ['label' => 'Très Bien / Excellent', 'color' => '#2563eb'],
+            $average >= 14 => ['label' => 'Bien', 'color' => '#16a34a'],
+            $average >= 12 => ['label' => 'Assez Bien', 'color' => '#ca8a04'],
+            $average >= 10 => ['label' => 'Passable', 'color' => '#ea580c'],
+            default => ['label' => 'Insuffisant', 'color' => '#dc2626'],
+        };
     }
 
     /**

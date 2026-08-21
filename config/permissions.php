@@ -125,7 +125,6 @@ return [
         'voir-ses-bulletins-enfants' => 'Voir les bulletins de ses enfants',
         'voir-ses-discipline-enfants' => 'Voir la discipline de ses enfants',
         'voir-emploi-du-temps' => 'Voir l’emploi du temps de ses enfants',
-        'voir-messagerie' => 'Accéder à la messagerie',
         'voir-calendrier-scolaire' => 'Voir le calendrier scolaire',
 
         'voir-logs-connexion' => 'Voir les logs de connexion',
@@ -163,7 +162,7 @@ return [
         'students' => ['voir-eleves', 'voir-detail-eleve', 'modifier-eleve', 'supprimer-eleve', 'transferer-eleve', 'modifier-statut-eleve', 'upload-photo-eleve', 'gerer-documents-eleve'],
         'registrations' => ['voir-inscriptions', 'creer-inscription', 'promouvoir-eleves'],
         'parents' => ['voir-parents', 'creer-parent', 'modifier-parent', 'voir-detail-parent', 'archiver-parent', 'restaurer-parent', 'supprimer-parent', 'associer-eleve-parent', 'dissocier-eleve-parent', 'reinitialiser-mot-de-passe-parent'],
-        'family' => ['voir-ses-enfants', 'voir-ses-paiements-enfants', 'voir-ses-notes-enfants', 'voir-ses-bulletins-enfants', 'voir-ses-discipline-enfants', 'voir-emploi-du-temps', 'voir-messagerie', 'voir-calendrier-scolaire'],
+        'family' => ['voir-ses-enfants', 'voir-ses-paiements-enfants', 'voir-ses-notes-enfants', 'voir-ses-bulletins-enfants', 'voir-ses-discipline-enfants', 'voir-emploi-du-temps', 'voir-calendrier-scolaire'],
         'classrooms' => ['voir-classes', 'creer-classe', 'modifier-classe', 'supprimer-classe', 'affecter-professeur', 'gerer-enseignants-classe'],
         'teachers' => ['voir-professeurs', 'creer-professeur', 'modifier-professeur', 'supprimer-professeur', 'voir-rib-professeur'],
         'school-years' => ['voir-annees-scolaires', 'creer-annee-scolaire', 'modifier-annee-scolaire', 'supprimer-annee-scolaire', 'activer-annee-scolaire', 'cloturer-annee-scolaire', 'deverrouiller-annee-scolaire'],

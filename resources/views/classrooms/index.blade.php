@@ -62,12 +62,6 @@
                                                     Modifier
                                                 </a>
 
-                                                @can('gerer-enseignants-classe')
-                                                    <a href="{{ route('classrooms.teachers', $classroom->id) }}" class="text-indigo-500 hover:text-indigo-600 font-medium transition">
-                                                        Enseignants
-                                                    </a>
-                                                @endcan
-
                                                 <form action="{{ route('classrooms.destroy', $classroom->id) }}" method="POST" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Supprimer la classe', message: 'La classe {{ addslashes($classroom->name) }} et ses associations seront supprimées. Vérifiez les inscriptions avant de confirmer.', confirmLabel: 'Supprimer' })">
                                                     @csrf
                                                     @method('DELETE')

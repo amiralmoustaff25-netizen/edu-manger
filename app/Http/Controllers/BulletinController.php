@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Models\PedagogicalAssignment;
 use App\Models\User;
 use App\Services\GradeCalculationService;
 use App\Services\SchoolYearContext;
@@ -111,7 +112,7 @@ class BulletinController extends Controller
         $classroomId = optional($student->latestRegistration)->classroom_id;
 
         abort_unless(
-            $teacher && $classroomId && $teacher->classrooms()->where('classrooms.id', $classroomId)->exists(),
+            $teacher && $classroomId && $this->isAssignedToClassroom($teacher, $classroomId),
             403,
             'Vous n\'êtes pas affecté à la classe de cet élève.'
         );
@@ -126,10 +127,24 @@ class BulletinController extends Controller
         $teacher = $user->teacher;
 
         abort_unless(
-            $teacher && $teacher->classrooms()->where('classrooms.id', $classroom->id)->exists(),
+            $teacher && $this->isAssignedToClassroom($teacher, $classroom->id),
             403,
             'Vous n\'êtes pas affecté à cette classe.'
         );
+    }
+
+    /**
+     * PedagogicalAssignment (écran "Affectations pédagogiques") est la seule source de
+     * vérité des affectations enseignant/classe alimentée par l'administration —
+     * l'ancien pivot teacher_classroom (Teacher::classrooms()) n'est plus jamais
+     * renseigné, voir GradeController::index() pour le même correctif.
+     */
+    private function isAssignedToClassroom($teacher, int $classroomId): bool
+    {
+        return PedagogicalAssignment::where('teacher_id', $teacher->id)
+            ->where('classroom_id', $classroomId)
+            ->where('is_active', true)
+            ->exists();
     }
 
     /**
