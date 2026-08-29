@@ -373,15 +373,28 @@ class User extends Authenticatable
      * Cette colonne est en cours de migration vers Spatie ; l'assignation via
      * forceFill est protégée car elle n'est pas exposée au mass assignment.
      */
-    public function syncPrimaryRoleColumn(): void
+    /**
+     * $preferred : rôle à privilégier comme "principal" s'il fait partie des rôles
+     * actuels de l'utilisateur (ex. premier élément de la liste soumise par un
+     * formulaire d'attribution multi-rôles — seul l'appelant connaît cet ordre
+     * voulu). Sans $preferred, on conserve le rôle déjà stocké s'il est toujours
+     * valide plutôt que de le redéterminer via $this->roles->first() :
+     * model_has_roles est une table pivot sans colonne id/timestamp, l'ordre de
+     * lecture n'est donc garanti par aucun moteur de BDD — MySQL et SQLite
+     * pouvaient renvoyer un ordre différent pour les mêmes données, rendant le
+     * rôle "principal" choisi non déterministe (vu en CI, jamais en local SQLite).
+     */
+    public function syncPrimaryRoleColumn(?string $preferred = null): void
     {
-        // Si le rôle déjà stocké fait toujours partie des rôles actuels, on le
-        // conserve tel quel plutôt que de le redéterminer via $this->roles->first() :
-        // model_has_roles est une table pivot sans colonne id/timestamp, l'ordre de
-        // lecture n'est donc garanti par aucun moteur de BDD — MySQL et SQLite
-        // pouvaient renvoyer un ordre différent pour les mêmes données, rendant le
-        // rôle "principal" choisi non déterministe (vu en CI, jamais en local SQLite).
         $roleNames = $this->roles->pluck('name');
+
+        if ($preferred && $roleNames->contains($preferred)) {
+            if ($this->role !== $preferred) {
+                $this->forceFill(['role' => $preferred])->save();
+            }
+
+            return;
+        }
 
         if ($this->role && $roleNames->contains($this->role)) {
             return;
