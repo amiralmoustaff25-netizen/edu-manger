@@ -46,11 +46,9 @@ use App\Http\Controllers\TeachingSessionController;
 use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserNotificationController;
-use App\Models\Note;
 use App\Services\FeeService;
 use App\Services\GradeCalculationService;
 use App\Services\TimetableGridService;
-use App\Support\AcademicPeriods;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -192,17 +190,7 @@ Route::middleware(['auth', 'verified', 'two-factor', 'password.changed'])->group
         Route::get('/mon-espace/bulletins', function () {
             $user = auth()->user();
 
-            // Décision produit (2026-08-29) : un bulletin n'est visible côté élève qu'une
-            // fois validé par la direction (voir Note::isPeriodPublishedFor(), même règle
-            // que BulletinController::show()) — indiqué ici pour ne pas proposer de lien
-            // "Voir"/"PDF" vers une période qui redirigera de toute façon avec une erreur.
-            $cycle = $user->latestRegistration?->classroom?->cycle;
-            $publishedPeriods = collect(AcademicPeriods::forCycle($cycle))
-                ->keys()
-                ->filter(fn ($period) => Note::isPeriodPublishedFor($user->id, $period))
-                ->all();
-
-            return view('students.bulletins', compact('user', 'publishedPeriods'));
+            return view('students.bulletins', compact('user'));
         })->name('student.bulletins');
 
         Route::get('/mon-espace', function () {
