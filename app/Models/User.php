@@ -375,7 +375,19 @@ class User extends Authenticatable
      */
     public function syncPrimaryRoleColumn(): void
     {
-        $primary = $this->roles->first()?->name;
+        // Si le rôle déjà stocké fait toujours partie des rôles actuels, on le
+        // conserve tel quel plutôt que de le redéterminer via $this->roles->first() :
+        // model_has_roles est une table pivot sans colonne id/timestamp, l'ordre de
+        // lecture n'est donc garanti par aucun moteur de BDD — MySQL et SQLite
+        // pouvaient renvoyer un ordre différent pour les mêmes données, rendant le
+        // rôle "principal" choisi non déterministe (vu en CI, jamais en local SQLite).
+        $roleNames = $this->roles->pluck('name');
+
+        if ($this->role && $roleNames->contains($this->role)) {
+            return;
+        }
+
+        $primary = $roleNames->first();
 
         if ($primary) {
             $this->forceFill(['role' => $primary])->save();
