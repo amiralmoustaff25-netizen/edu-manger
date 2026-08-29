@@ -101,7 +101,13 @@ class InvoiceController extends Controller
             'total_amount' => $totalAmount,
             'remaining_balance' => $totalAmount,
             'due_date' => $validated['due_date'],
-            'status' => 'pending',
+            // 'pending' n'existe pas dans l'enum réel de invoices.status ('draft','sent',
+            // 'paid','partial','overdue' — voir information_schema) : uniquement détecté sur
+            // MySQL, jamais en tests (SQLite n'impose pas cette contrainte). 'draft' est déjà
+            // traité comme un statut "non soldé" actif ailleurs (PaymentService::scope...,
+            // AccountingController) donc sémantiquement équivalent pour une facture qui vient
+            // d'être créée.
+            'status' => 'draft',
             'issued_at' => now(),
         ]);
 
@@ -153,7 +159,7 @@ class InvoiceController extends Controller
 
         $validated = $request->validate([
             'due_date' => 'required|date',
-            'status' => 'required|in:pending,paid,overdue,cancelled',
+            'status' => ['required', 'in:'.implode(',', Invoice::STATUSES)],
             'remaining_balance' => 'nullable|numeric|min:0',
         ]);
 

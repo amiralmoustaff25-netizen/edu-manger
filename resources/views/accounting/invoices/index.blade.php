@@ -22,10 +22,9 @@
                                 <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut</label>
                                 <select name="status" id="status" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Tous</option>
-                                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>En attente</option>
-                                    <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Payée</option>
-                                    <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>En retard</option>
-                                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Annulée</option>
+                                    @foreach(\App\Models\Invoice::LABELS as $value => $label)
+                                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div>
@@ -81,15 +80,9 @@
                                             {{ number_format($invoice->remaining_balance, 0, ',', ' ') }} FCFA
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($invoice->status === 'paid')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Payée</span>
-                                            @elseif($invoice->status === 'pending')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">En attente</span>
-                                            @elseif($invoice->status === 'overdue')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">En retard</span>
-                                            @elseif($invoice->status === 'cancelled')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">Annulée</span>
-                                            @endif
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {{ \App\Models\Invoice::BADGE_COLORS[$invoice->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400' }}">
+                                                {{ \App\Models\Invoice::LABELS[$invoice->status] ?? $invoice->status }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                             {{ $invoice->due_date->format('d/m/Y') }}
