@@ -65,6 +65,7 @@ return [
         'supprimer-classe' => 'Supprimer une classe',
         'affecter-professeur' => 'Affecter un professeur',
         'gerer-enseignants-classe' => 'Gérer les enseignants d’une classe',
+        'gerer-emploi-du-temps' => 'Gérer l’emploi du temps des classes',
 
         'voir-professeurs' => 'Voir les professeurs',
         'creer-professeur' => 'Créer un professeur',
@@ -166,7 +167,7 @@ return [
         'registrations' => ['voir-inscriptions', 'creer-inscription', 'promouvoir-eleves'],
         'parents' => ['voir-parents', 'creer-parent', 'modifier-parent', 'voir-detail-parent', 'archiver-parent', 'restaurer-parent', 'supprimer-parent', 'associer-eleve-parent', 'dissocier-eleve-parent', 'reinitialiser-mot-de-passe-parent'],
         'family' => ['voir-ses-enfants', 'voir-ses-paiements-enfants', 'voir-ses-notes-enfants', 'voir-ses-bulletins-enfants', 'voir-ses-discipline-enfants', 'voir-emploi-du-temps', 'voir-calendrier-scolaire'],
-        'classrooms' => ['voir-classes', 'creer-classe', 'modifier-classe', 'supprimer-classe', 'affecter-professeur', 'gerer-enseignants-classe'],
+        'classrooms' => ['voir-classes', 'creer-classe', 'modifier-classe', 'supprimer-classe', 'affecter-professeur', 'gerer-enseignants-classe', 'gerer-emploi-du-temps'],
         'teachers' => ['voir-professeurs', 'creer-professeur', 'modifier-professeur', 'supprimer-professeur', 'voir-rib-professeur'],
         'school-years' => ['voir-annees-scolaires', 'creer-annee-scolaire', 'modifier-annee-scolaire', 'supprimer-annee-scolaire', 'activer-annee-scolaire', 'cloturer-annee-scolaire', 'deverrouiller-annee-scolaire'],
         'payments' => ['voir-paiements', 'enregistrer-paiement', 'valider-paiement-partiel', 'annuler-paiement', 'modifier-paiement', 'supprimer-paiement', 'voir-comptabilite', 'voir-finances', 'voir-recouvrement'],
