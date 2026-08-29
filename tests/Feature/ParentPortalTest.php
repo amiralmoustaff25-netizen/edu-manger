@@ -58,6 +58,28 @@ test('a parent can view their own child profile', function () {
     $response->assertOk();
 });
 
+// childBulletins() redirigeait toujours vers 'trimestre_1' quel que soit le cycle de
+// l'enfant — un collégien/lycéen (période réelle semestre_1/2, voir AcademicPeriods)
+// n'affichait donc jamais rien, même une fois le bulletin publié.
+test('the child bulletins shortcut redirects to the period matching the child cycle', function () {
+    [$parentUser, $parentProfile] = createParentPortalFixture();
+
+    $schoolYear = SchoolYear::factory()->create(['is_active' => true]);
+    $collegeChild = User::factory()->create(['role' => 'eleve']);
+    $collegeChild->assignRole('eleve');
+    $parentProfile->students()->attach($collegeChild->id, ['lien_parente' => 'Mere']);
+    $classroom = Classroom::create(['name' => '6ème', 'cycle' => 'college', 'school_year_id' => $schoolYear->id]);
+    Registration::create([
+        'user_id' => $collegeChild->id, 'classroom_id' => $classroom->id, 'school_year_id' => $schoolYear->id,
+        'registration_fee_paid' => 0, 'monthly_fee' => 0, 'registration_date' => now()->toDateString(),
+        'academic_year' => $schoolYear->year_string, 'matricule' => 'EDU-TEST-BULLETIN-001', 'status' => 'active',
+    ]);
+
+    $this->actingAs($parentUser)
+        ->get(route('parents.children.bulletins', ['student' => $collegeChild->id]))
+        ->assertRedirect(route('bulletins.show', [$collegeChild, 'semestre_1']));
+});
+
 test('a parent cannot view a child that is not theirs (IDOR protection)', function () {
     [$parentUser, , , $otherChild] = createParentPortalFixture();
 
