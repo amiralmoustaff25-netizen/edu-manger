@@ -12,6 +12,33 @@ class Invoice extends Model
 {
     use HasFactory;
 
+    /**
+     * Seules valeurs réellement acceptées par la colonne status (ENUM MySQL, voir
+     * database/migrations/2026_07_13_155028_create_invoices_table.php). Les vues et le
+     * contrôleur utilisaient un vocabulaire différent ('pending', 'cancelled' — jamais
+     * valides ici) : sélectionner l'un de ces statuts dans le formulaire d'édition
+     * provoquait une violation de contrainte sur MySQL, jamais détectée en local
+     * (SQLite n'impose pas l'ENUM). Centralisé ici pour que formulaire, filtre et
+     * affichage ne puissent plus diverger de la colonne réelle.
+     */
+    public const STATUSES = ['draft', 'sent', 'paid', 'partial', 'overdue'];
+
+    public const LABELS = [
+        'draft' => 'Brouillon',
+        'sent' => 'Envoyée',
+        'paid' => 'Payée',
+        'partial' => 'Partiellement payée',
+        'overdue' => 'En retard',
+    ];
+
+    public const BADGE_COLORS = [
+        'draft' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+        'sent' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+        'paid' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+        'partial' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+        'overdue' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    ];
+
     protected $fillable = [
         'registration_id',
         'invoice_number',

@@ -40,10 +40,9 @@
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut</label>
                                 <select name="status" id="status" required class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="pending" {{ old('status', $invoice->status) === 'pending' ? 'selected' : '' }}>En attente</option>
-                                    <option value="paid" {{ old('status', $invoice->status) === 'paid' ? 'selected' : '' }}>Payée</option>
-                                    <option value="overdue" {{ old('status', $invoice->status) === 'overdue' ? 'selected' : '' }}>En retard</option>
-                                    <option value="cancelled" {{ old('status', $invoice->status) === 'cancelled' ? 'selected' : '' }}>Annulée</option>
+                                    @foreach(\App\Models\Invoice::LABELS as $value => $label)
+                                        <option value="{{ $value }}" {{ old('status', $invoice->status) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
                                 </select>
                                 <x-input-error :messages="$errors->get('status')" class="mt-2" />
                             </div>
