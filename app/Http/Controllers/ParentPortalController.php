@@ -8,6 +8,7 @@ use App\Models\Sanction;
 use App\Models\User;
 use App\Services\FeeService;
 use App\Services\TimetableGridService;
+use App\Support\AcademicPeriods;
 use Illuminate\Http\Request;
 
 class ParentPortalController extends Controller
@@ -107,7 +108,13 @@ class ParentPortalController extends Controller
     {
         $student = $this->resolveStudentFromRequest($request);
         if ($student) {
-            return redirect()->route('bulletins.show', [$student, 'trimestre_1']);
+            // trimestre_1 en dur envoyait tout parent d'un collégien/lycéen (dont la
+            // vraie période est semestre_1/2, voir AcademicPeriods) vers une période qui
+            // n'a jamais de note ni de bulletin publié — toujours vide, jamais une erreur
+            // franche, donc passé inaperçu jusqu'ici.
+            $cycle = $student->latestRegistration?->classroom?->cycle;
+
+            return redirect()->route('bulletins.show', [$student, AcademicPeriods::defaultFor($cycle)]);
         }
 
         return redirect()->route('parents.dashboard');
