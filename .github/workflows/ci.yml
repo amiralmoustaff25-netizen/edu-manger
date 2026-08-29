@@ -85,6 +85,22 @@ jobs:
       - name: Run Laravel Pint
         run: vendor/bin/pint --test
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      # Doit tourner AVANT les tests : les vues (layouts/app.blade.php) utilisent
+      # @vite(...), qui échoue avec "Vite manifest not found" si public/build/
+      # n'existe pas encore — faisait échouer ~194 tests sans rapport avec le code
+      # testé (toute vue rendue via le layout principal).
+      - name: Build assets
+        run: npm run build
+
       - name: Execute tests
         env:
           DB_CONNECTION: mysql
@@ -101,15 +117,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install NPM dependencies
-        run: npm ci
-
-      - name: Build assets
-        run: npm run build
