@@ -74,6 +74,7 @@ class RoleAndPermissionSeeder extends Seeder
             'supprimer-classe',
             'affecter-professeur',
             'gerer-enseignants-classe',
+            'gerer-emploi-du-temps',
 
             // --- Professeurs ---
             'voir-professeurs',
@@ -382,6 +383,7 @@ class RoleAndPermissionSeeder extends Seeder
             'voir-presences',
             'voir-pointage-enseignants',
             'enregistrer-pointage-enseignant',
+            'gerer-emploi-du-temps',
         ]);
 
         // --- Professeur : pédagogie ---

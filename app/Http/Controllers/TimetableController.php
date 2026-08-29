@@ -28,7 +28,7 @@ class TimetableController extends Controller
      */
     public function index()
     {
-        abort_unless(auth()->user()->hasAnyRole(['super-admin', 'admin', 'surveillant']), 403);
+        $this->authorize('viewAnyTimetable', Classroom::class);
 
         $schoolYear = SchoolYear::getActive();
         $classrooms = $schoolYear
@@ -40,7 +40,7 @@ class TimetableController extends Controller
 
     public function edit(Classroom $classroom)
     {
-        $this->authorizeManage($classroom);
+        $this->authorize('manageTimetable', $classroom);
 
         $entries = $this->grid->grid($classroom);
 
@@ -55,7 +55,7 @@ class TimetableController extends Controller
 
     public function update(Request $request, Classroom $classroom)
     {
-        $this->authorizeManage($classroom);
+        $this->authorize('manageTimetable', $classroom);
 
         $schoolYear = $classroom->schoolYear ?? SchoolYear::getActive();
         abort_unless($schoolYear, 422, 'Aucune année scolaire associée à cette classe.');
@@ -85,7 +85,7 @@ class TimetableController extends Controller
      */
     public function template(Classroom $classroom)
     {
-        $this->authorizeManage($classroom);
+        $this->authorize('manageTimetable', $classroom);
 
         $entries = $this->grid->grid($classroom);
 
@@ -115,7 +115,7 @@ class TimetableController extends Controller
 
     public function import(Request $request, Classroom $classroom)
     {
-        $this->authorizeManage($classroom);
+        $this->authorize('manageTimetable', $classroom);
 
         $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls']]);
 
@@ -148,7 +148,7 @@ class TimetableController extends Controller
 
     public function print(Classroom $classroom)
     {
-        $this->authorizeView($classroom);
+        $this->authorize('viewTimetable', $classroom);
 
         $entries = $this->grid->grid($classroom);
 
@@ -160,54 +160,5 @@ class TimetableController extends Controller
         ]);
 
         return $pdf->download('emploi_du_temps_'.Str::slug($classroom->name).'.pdf');
-    }
-
-    /**
-     * Droit de modifier l'emploi du temps : admin/super-admin, surveillant (n'importe quelle
-     * classe), ou le professeur titulaire de CETTE classe (Classroom::teacher_id) — voir
-     * l'échange avec l'utilisateur du 2026-08-21 ("c'est au professeur principal et au
-     * surveillant de remplir l'emploi du temps"). Vaut pour tous les cycles : au secondaire,
-     * le titulaire n'est pas forcément celui qui enseigne toutes les matières, mais reste
-     * celui qui coordonne l'emploi du temps de sa classe — même règle qu'au primaire.
-     */
-    private function authorizeManage(Classroom $classroom): void
-    {
-        $user = auth()->user();
-
-        if ($user->hasAnyRole(['super-admin', 'admin', 'surveillant'])) {
-            return;
-        }
-
-        if ($user->hasRole('professeur') && $classroom->teacher_id === $user->id) {
-            return;
-        }
-
-        abort(403, "Seul le professeur principal de cette classe, un surveillant ou un administrateur peut modifier l'emploi du temps.");
-    }
-
-    /**
-     * Droit de consulter/imprimer (plus large que modifier) : les mêmes acteurs que
-     * authorizeManage(), plus tout professeur ayant une affectation pédagogique active dans
-     * cette classe (cohérent avec BulletinController::authorizeCanViewRib()-like checks).
-     */
-    private function authorizeView(Classroom $classroom): void
-    {
-        $user = auth()->user();
-
-        if ($user->hasAnyRole(['super-admin', 'admin', 'surveillant'])) {
-            return;
-        }
-
-        if ($user->hasRole('professeur')) {
-            $teacher = $user->teacher;
-            $isTitulaire = $classroom->teacher_id === $user->id;
-            $hasAssignment = $teacher && $classroom->pedagogicalAssignments()->where('teacher_id', $teacher->id)->where('is_active', true)->exists();
-
-            if ($isTitulaire || $hasAssignment) {
-                return;
-            }
-        }
-
-        abort(403);
     }
 }

@@ -79,6 +79,55 @@ class ClassroomPolicy
     }
 
     /**
+     * Point d'entrée de la liste des classes à éditer (timetable.index) : accès réservé
+     * à qui gère l'emploi du temps de façon générale (pas encore rattaché à une classe
+     * précise) — un professeur titulaire, lui, y accède directement depuis "Mes Classes"
+     * (voir teachers/classes/index.blade.php), jamais depuis cette liste.
+     */
+    public function viewAnyTimetable(User $user): bool
+    {
+        return $user->hasPermissionTo('gerer-emploi-du-temps');
+    }
+
+    /**
+     * Détermine si l'utilisateur peut modifier l'emploi du temps de cette classe : la
+     * permission 'gerer-emploi-du-temps' (super-admin/admin/surveillant), ou le
+     * professeur principal (titulaire) de cette classe précise — un titulariat ne
+     * s'exprime pas comme une permission plate, c'est une relation à la classe.
+     * Anciennement TimetableController::authorizeManage(), déplacé ici pour rejoindre
+     * les autres règles d'autorisation de Classroom plutôt que de vivre isolé dans le
+     * contrôleur (seul point d'entrée où la logique de rôle n'était pas centralisée).
+     */
+    public function manageTimetable(User $user, Classroom $classroom): bool
+    {
+        if ($user->hasPermissionTo('gerer-emploi-du-temps')) {
+            return true;
+        }
+
+        return $user->hasRole('professeur') && $classroom->teacher_id === $user->id;
+    }
+
+    /**
+     * Droit de consulter/imprimer l'emploi du temps (plus large que le modifier) : les
+     * mêmes acteurs que manageTimetable(), plus tout professeur ayant une affectation
+     * pédagogique active dans cette classe.
+     */
+    public function viewTimetable(User $user, Classroom $classroom): bool
+    {
+        if ($this->manageTimetable($user, $classroom)) {
+            return true;
+        }
+
+        if (! $user->hasRole('professeur')) {
+            return false;
+        }
+
+        $teacher = $user->teacher;
+
+        return $teacher && $classroom->pedagogicalAssignments()->where('teacher_id', $teacher->id)->where('is_active', true)->exists();
+    }
+
+    /**
      * Détermine si l'utilisateur peut restaurer une classe supprimée.
      */
     public function restore(User $user, Classroom $classroom): bool
