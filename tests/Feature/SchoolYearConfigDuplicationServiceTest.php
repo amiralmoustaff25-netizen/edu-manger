@@ -149,7 +149,9 @@ class SchoolYearConfigDuplicationServiceTest extends TestCase
         PedagogicalAssignment::create([
             'teacher_id' => $teacher->id, 'classroom_id' => $classroom->id, 'matiere_id' => Matiere::factory()->create()->id,
             'school_year_id' => $this->source->id, 'volume_horaire_hebdo' => 4, 'is_active' => false,
-            'deactivated_at' => now(), 'deactivated_by' => $teacher->id,
+            // deactivated_by référence users.id (pas teachers.id) — voir le même correctif
+            // pour Attendance::recorded_by dans AttendanceController/TeachingSessionController.
+            'deactivated_at' => now(), 'deactivated_by' => $teacher->user_id,
         ]);
 
         $summary = $this->service->duplicate($this->source, $this->target);
