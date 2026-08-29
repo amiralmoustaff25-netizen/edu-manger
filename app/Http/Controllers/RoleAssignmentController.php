@@ -102,7 +102,7 @@ class RoleAssignmentController extends Controller
 
         $this->permissionService->apply($user, $requestedRoles->toArray(), $requestedPermissions->toArray(), auth()->id());
 
-        $this->syncPrimaryRoleColumn($user);
+        $this->syncPrimaryRoleColumn($user, $requestedRoles->first());
 
         return redirect()
             ->route('users.roles.index', ['search' => $user->matricule])
@@ -198,8 +198,8 @@ class RoleAssignmentController extends Controller
         }
     }
 
-    private function syncPrimaryRoleColumn(User $user): void
+    private function syncPrimaryRoleColumn(User $user, ?string $preferred = null): void
     {
-        $user->syncPrimaryRoleColumn();
+        $user->syncPrimaryRoleColumn($preferred);
     }
 }
