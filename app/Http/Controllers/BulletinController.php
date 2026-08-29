@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Models\Note;
 use App\Models\PedagogicalAssignment;
 use App\Models\User;
 use App\Services\GradeCalculationService;
@@ -30,21 +31,24 @@ class BulletinController extends Controller
         // Allow students to view their own bulletin even without the generer-bulletins permission.
         $user = $request->user();
 
-        $isStudentOwner = $user->id === $student->id && $user->hasRole('eleve');
+        $isOwnBulletin = $this->isStudentOrParentOf($user, $student);
 
-        // Allow a parent who is linked to this student to view the bulletin.
-        $isParentOfStudent = false;
-        if ($user->hasRole('parent') && method_exists($user, 'parentProfile')) {
-            $parentProfile = $user->parentProfile()->first();
-            if ($parentProfile) {
-                $isParentOfStudent = $parentProfile->students()
-                    ->where('users.id', $student->id)
-                    ->exists();
+        if ($isOwnBulletin) {
+            // Décision produit (2026-08-29) : le bulletin n'est visible côté élève/parent
+            // qu'une fois les notes de la période validées par la direction (admin), pas
+            // avant — jusqu'ici cette route l'exposait sans aucune condition, y compris en
+            // pleine saisie par les professeurs. Ce n'est pas un refus d'accès (abort 403)
+            // mais un état métier normal, comme les notes déjà validées dans
+            // GradeController::store() — même traitement (redirection + message).
+            if (! Note::isPeriodPublishedFor($student->id, $period)) {
+                // route('dashboard') plutôt qu'une route spécifique élève/parent : ce
+                // contrôleur est atteint par les deux rôles (et par le raccourci
+                // ParentPortalController::childBulletins, qui redirige lui-même ici sur
+                // "trimestre_1" par défaut — rediriger vers children.bulletins boucherait).
+                return redirect()->route('dashboard')->with('error', "Le bulletin de cette période n'est pas encore disponible.");
             }
-        }
-
-        if (! ($isStudentOwner || $isParentOfStudent)) {
-            abort_unless($request->user()->can('generer-bulletins'), 403);
+        } else {
+            abort_unless($user->can('generer-bulletins'), 403);
         }
 
         try {
@@ -64,8 +68,19 @@ class BulletinController extends Controller
     public function generatePdf(Request $request, User $student, string $period = 'trimestre_1')
     {
         $user = $request->user();
-        abort_unless($user->can('generer-bulletins'), 403);
-        $this->ensureTeacherAssignedToStudent($user, $student);
+
+        if ($this->isStudentOrParentOf($user, $student)) {
+            // Même règle de publication que show() ci-dessus : sans cette branche, le
+            // bouton "PDF" de la page "Mes bulletins" (students.bulletins) était
+            // toujours rejeté par le abort_unless ci-dessous, qui exige la permission
+            // generer-bulletins — qu'un élève/parent n'a jamais.
+            if (! Note::isPeriodPublishedFor($student->id, $period)) {
+                return redirect()->route('dashboard')->with('error', "Le bulletin de cette période n'est pas encore disponible.");
+            }
+        } else {
+            abort_unless($user->can('generer-bulletins'), 403);
+            $this->ensureTeacherAssignedToStudent($user, $student);
+        }
 
         try {
             $bulletin = $this->gradeService->getBulletinData($student, $period);
@@ -100,6 +115,23 @@ class BulletinController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    private function isStudentOrParentOf(User $user, User $student): bool
+    {
+        if ($user->id === $student->id && $user->hasRole('eleve')) {
+            return true;
+        }
+
+        if ($user->hasRole('parent') && method_exists($user, 'parentProfile')) {
+            $parentProfile = $user->parentProfile()->first();
+
+            if ($parentProfile) {
+                return $parentProfile->students()->where('users.id', $student->id)->exists();
+            }
+        }
+
+        return false;
     }
 
     private function ensureTeacherAssignedToStudent(User $user, User $student): void

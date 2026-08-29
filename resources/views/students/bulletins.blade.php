@@ -20,10 +20,14 @@
                         @foreach(\App\Support\AcademicPeriods::forCycle($cycle) as $period => $label)
                             <div class="rounded-md border border-gray-200 dark:border-slate-700 p-4">
                                 <p class="font-medium text-gray-800 dark:text-gray-200 mb-3">{{ $label }}</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <a href="{{ route('bulletins.show', [$user, $period]) }}" class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">{{ __('Voir') }}</a>
-                                    <a href="{{ route('bulletins.pdf', [$user, $period]) }}" target="_blank" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">{{ __('PDF') }}</a>
-                                </div>
+                                @if(in_array($period, $publishedPeriods, true))
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="{{ route('bulletins.show', [$user, $period]) }}" class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700">{{ __('Voir') }}</a>
+                                        <a href="{{ route('bulletins.pdf', [$user, $period]) }}" target="_blank" class="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded-md hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-200 dark:hover:bg-slate-600">{{ __('PDF') }}</a>
+                                    </div>
+                                @else
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 italic">{{ __('Pas encore disponible') }}</p>
+                                @endif
                             </div>
                         @endforeach
                     </div>

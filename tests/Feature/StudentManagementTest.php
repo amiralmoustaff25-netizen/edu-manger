@@ -173,6 +173,10 @@ test('student can only access his own bulletins and notes', function () {
     ]);
 
     $matiere = Matiere::factory()->create();
+    $admin = User::factory()->create(['role' => 'admin']);
+    // Le bulletin n'est visible côté élève/parent qu'une fois la note validée par la
+    // direction (décision produit 2026-08-29, voir Note::isPeriodPublishedFor()) — sans
+    // ceci, bulletins.show ci-dessous redirigerait avec un message au lieu de répondre 200.
     Note::create([
         'user_id' => $student->id,
         'classroom_id' => $classroom->id,
@@ -180,6 +184,8 @@ test('student can only access his own bulletins and notes', function () {
         'valeur' => 15,
         'type_evaluation' => 'Devoir',
         'periode' => 'trimestre_1',
+        'validated_at' => now(),
+        'validated_by' => $admin->id,
     ]);
     $otherNote = Note::create([
         'user_id' => $otherStudent->id,
