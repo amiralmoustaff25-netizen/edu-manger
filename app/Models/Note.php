@@ -70,6 +70,17 @@ class Note extends Model
         return $query->whereNull('validated_at');
     }
 
+    /**
+     * Un bulletin n'est "publié" côté élève/parent qu'une fois toutes les notes de cette
+     * période validées par la direction (voir BulletinController::show()). Une période
+     * sans aucune note n'est pas non plus publiée (rien à montrer).
+     */
+    public static function isPeriodPublishedFor(int $studentId, string $period): bool
+    {
+        return static::where('user_id', $studentId)->where('periode', $period)->validated()->exists()
+            && ! static::where('user_id', $studentId)->where('periode', $period)->notValidated()->exists();
+    }
+
     // Scope pour filtrer par période
     public function scopeForPeriod($query, string $period)
     {
