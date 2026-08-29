@@ -3,11 +3,21 @@
 namespace App\Notifications;
 
 use App\Models\Payment;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class PaymentReceived extends Notification
+/**
+ * toMail() génère un PDF (reçu de paiement) à chaque envoi — coûteux à exécuter dans
+ * la requête du comptable qui vient d'enregistrer le paiement. En file d'attente,
+ * comme les autres notifications à canal mail/diffusion large de ce projet.
+ */
+class PaymentReceived extends Notification implements ShouldQueue
 {
+    use Queueable, SerializesModels;
+
     protected $payment;
 
     /**

@@ -3,11 +3,22 @@
 namespace App\Notifications;
 
 use App\Models\Announcement;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class AnnouncementPublished extends Notification
+/**
+ * Diffusée potentiellement à toute l'école (Notification::send() sur toute la liste
+ * de destinataires d'une annonce, voir AnnouncementService::publish()) — en file
+ * d'attente pour ne pas bloquer la requête de publication le temps d'écrire une
+ * notification par destinataire (+ un envoi mail si edu.notifications.mail_enabled).
+ */
+class AnnouncementPublished extends Notification implements ShouldQueue
 {
+    use Queueable, SerializesModels;
+
     public function __construct(public Announcement $announcement) {}
 
     public function via(object $notifiable): array

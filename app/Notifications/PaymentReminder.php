@@ -3,11 +3,21 @@
 namespace App\Notifications;
 
 use App\Models\Reminder;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class PaymentReminder extends Notification
+/**
+ * Envoyée en lot à chaque exécution de SendPaymentReminders (potentiellement tous les
+ * parents ayant un impayé) — en file d'attente pour qu'un envoi mail lent ne bloque
+ * pas les suivants de la même exécution.
+ */
+class PaymentReminder extends Notification implements ShouldQueue
 {
+    use Queueable, SerializesModels;
+
     protected $reminder;
 
     /**
