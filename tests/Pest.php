@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /*
@@ -20,11 +19,14 @@ uses(TestCase::class)
 uses(TestCase::class)
     ->in('Unit');
 
-uses(RefreshDatabase::class)
-    ->in('Feature');
-
-uses(RefreshDatabase::class)
-    ->in('Unit');
+// Pas de uses(RefreshDatabase::class) ici : Tests\TestCase l'utilise déjà et personnalise
+// migrateDatabases() pour semer roles/permissions une seule fois par run (voir ce fichier).
+// L'appliquer une seconde fois ici re-fusionne la méthode du trait directement sur les
+// classes générées par Pest, qui prime alors sur l'override hérité de Tests\TestCase (les
+// méthodes définies/fusionnées sur une classe l'emportent toujours sur celles héritées d'un
+// ancêtre, même quand cet ancêtre les redéfinit) — l'override était donc silencieusement
+// ignoré, chaque test reseedait les mêmes permissions et finissait par provoquer un
+// deadlock sous MySQL (cf. tests/TestCase.php).
 
 /*
 |--------------------------------------------------------------------------

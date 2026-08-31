@@ -17,7 +17,10 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    // MySQL est la seule base utilisée sur ce projet (dev comme production) : un fallback
+    // SQLite silencieux, en cas de DB_CONNECTION absent du .env, a déjà causé un fichier
+    // orphelin à la racine du projet (données réelles jamais nettoyées, cf. .gitignore).
+    'default' => env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -61,6 +64,17 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                // Tests uniquement (voir tests/TestCase.php) : sous RefreshDatabase, les
+                // mêmes permissions Spatie sont réinsérées à chaque test sur la même
+                // connexion — le niveau d'isolation par défaut de MySQL (REPEATABLE READ)
+                // finit par déclencher un deadlock artefactuel ("gap lock") sur ces
+                // insertions répétées, jamais reproduit sous SQLite. Réglé ici (à
+                // l'ouverture de la connexion) plutôt qu'en SET SESSION dans le corps de
+                // setUp() : la transaction de RefreshDatabase démarre dès parent::setUp(),
+                // avant qu'un SET SESSION exécuté après n'ait pu s'appliquer.
+                PDO::MYSQL_ATTR_INIT_COMMAND => env('APP_ENV') === 'testing'
+                    ? 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED'
+                    : null,
             ]) : [],
         ],
 

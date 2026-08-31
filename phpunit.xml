@@ -29,10 +29,18 @@
              désactivation utilisé en dev pour accélérer les tests fonctionnels manuels. -->
         <env name="FORCE_PASSWORD_CHANGE" value="true"/>
         
-        <!-- SQLite en mémoire pour les tests -->
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_FOREIGN_KEYS" value="true"/>
+        <!-- MySQL, comme en dev et en CI (voir .github/workflows/ci.yml) : le SQLite en
+             mémoire précédemment utilisé ici n'impose pas les mêmes contraintes ENUM que
+             MySQL, ce qui a déjà laissé passer plusieurs bugs invisibles en local (voir par
+             exemple les correctifs sur registrations.status, teachers.rib, parent_user.
+             lien_parente) et détectés seulement en production. Base dédiée (edu_manager_test),
+             distincte de la base de développement : RefreshDatabase la vide à chaque run. -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="edu_manager_test"/>
+        <env name="DB_USERNAME" value="root"/>
+        <env name="DB_PASSWORD" value=""/>
         
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
