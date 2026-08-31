@@ -92,3 +92,42 @@ test('a surveillant does not see duplicate sidebar links between the generic Pé
     expect(substr_count($nav, 'href="'.route('programs.index').'"'))->toBe(1);
     expect(substr_count($nav, 'href="'.route('cahier-textes.dashboard.index').'"'))->toBe(1);
 });
+
+// Régression : même défaut que ci-dessus, mais pour comptable/manager-comptable — le
+// groupe générique 'Finance' n'excluait ni l'un ni l'autre, alors qu'ils ont chacun leur
+// propre 'Espace Comptabilité' dédié avec les mêmes permissions. Constaté sur un compte
+// réel (CPT-260001) : Paiements/Factures/Trésorerie/etc. apparaissaient deux fois.
+test('a comptable does not see duplicate sidebar links between the generic Finance group and Espace Comptabilité', function () {
+    $this->seed(RoleAndPermissionSeeder::class);
+
+    $user = User::factory()->create(['role' => 'comptable']);
+    $user->assignRole('comptable');
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $html = $response->getContent();
+    $navStart = strpos($html, 'id="sidebar-nav"');
+    $nav = substr($html, $navStart, strpos($html, '</nav>', $navStart) - $navStart);
+
+    expect(substr_count($nav, 'href="'.route('payments.index').'"'))->toBe(1);
+    expect(substr_count($nav, 'href="'.route('invoices.index').'"'))->toBe(1);
+    expect(substr_count($nav, 'href="'.route('accounting.cash-flow').'"'))->toBe(1);
+});
+
+test('a manager-comptable does not see duplicate sidebar links between the generic Finance group and Espace Comptabilité', function () {
+    $this->seed(RoleAndPermissionSeeder::class);
+
+    $user = User::factory()->create(['role' => 'manager-comptable']);
+    $user->assignRole('manager-comptable');
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $html = $response->getContent();
+    $navStart = strpos($html, 'id="sidebar-nav"');
+    $nav = substr($html, $navStart, strpos($html, '</nav>', $navStart) - $navStart);
+
+    expect(substr_count($nav, 'href="'.route('payments.index').'"'))->toBe(1);
+    expect(substr_count($nav, 'href="'.route('reminders.index').'"'))->toBe(1);
+});

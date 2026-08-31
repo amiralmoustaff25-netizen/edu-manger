@@ -91,6 +91,11 @@ return [
             // Pas de 'roles' ici : voir commentaire du groupe 'École'. La liste 'permissions'
             // ci-dessous suffit à elle seule (et redevient enfin effective : avec 'roles'
             // présent en même temps, elle n'était jamais évaluée par filterVisible()).
+            // exclude_roles : comptable et manager-comptable ont chacun leur propre "Espace
+            // Comptabilité" dédié couvrant les mêmes routes avec les mêmes permissions — ce
+            // groupe générique faisait doublon dans leur menu (constaté pour CPT-260001 :
+            // Paiements/Factures/Trésorerie/etc. apparaissaient deux fois).
+            'exclude_roles' => ['comptable', 'manager-comptable'],
             'permissions' => ['voir-comptabilite', 'voir-paiements', 'valider-paiement-partiel', 'voir-factures', 'voir-recouvrement', 'voir-alertes-impayes', 'voir-types-frais', 'voir-frais-classe', 'voir-rapports-avances', 'voir-tresorerie'],
             'active_routes' => ['accounting.*', 'payments.*', 'invoices.*', 'reminders.*', 'fee-types.*', 'classroom-fees.*'],
             'children' => [
