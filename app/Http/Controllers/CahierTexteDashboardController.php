@@ -6,6 +6,7 @@ use App\Models\ChapterCompletion;
 use App\Models\Classroom;
 use App\Models\ProgramAnnual;
 use App\Services\SchoolYearContext;
+use App\Support\UserRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,7 +24,7 @@ class CahierTexteDashboardController extends Controller
         $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher'])
             ->when($viewingYear, fn ($query) => $query->forSchoolYear($viewingYear->id));
 
-        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+        if (! UserRoles::isPedagogicalOverseer($request->user())) {
             $query->forTeacher($request->user()->id);
         }
 
@@ -32,9 +33,23 @@ class CahierTexteDashboardController extends Controller
         }
 
         $programs = $query->latest()->get();
-        $classrooms = $viewingYear
-            ? Classroom::where('school_year_id', $viewingYear->id)->orderBy('name')->get()
-            : Classroom::orderBy('name')->get();
+
+        // Le filtre "Classe" du tableau de bord ne doit lister que les classes du
+        // professeur (mêmes affectations que $programs ci-dessus), pas tout
+        // l'établissement comme pour l'admin/super-admin/surveillant.
+        $classroomsQuery = Classroom::query()
+            ->when($viewingYear, fn ($query) => $query->where('school_year_id', $viewingYear->id));
+
+        if (! UserRoles::isPedagogicalOverseer($request->user())) {
+            $classroomIdsWithProgram = ProgramAnnual::forTeacher($request->user()->id)->pluck('classroom_id');
+
+            $classroomsQuery->where(function ($query) use ($request, $classroomIdsWithProgram) {
+                $query->where('teacher_id', $request->user()->id)
+                    ->orWhereIn('id', $classroomIdsWithProgram);
+            });
+        }
+
+        $classrooms = $classroomsQuery->orderBy('name')->get();
         $selectedClassroomId = $request->input('classroom_id');
 
         return view('cahier-textes.dashboard', compact('programs', 'classrooms', 'selectedClassroomId'));

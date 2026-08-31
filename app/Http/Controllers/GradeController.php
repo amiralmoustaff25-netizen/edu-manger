@@ -8,6 +8,7 @@ use App\Models\Matiere;
 use App\Models\Note;
 use App\Models\PedagogicalAssignment;
 use App\Models\Registration;
+use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\AuditLogService;
@@ -27,13 +28,12 @@ class GradeController extends Controller
             abort(403, 'Profil enseignant non trouvé.');
         }
 
-        // PedagogicalAssignment (écran "Affectations pédagogiques") est la seule source
-        // de vérité des affectations enseignant/classe/matière alimentée par
+        // PedagogicalAssignment (écran "Affectations pédagogiques") est la source de
+        // vérité des affectations enseignant/classe/matière alimentée par
         // l'administration — l'ancien pivot teacher_classroom (Teacher::classrooms(),
         // écran "Gestion des enseignants" retiré de la navigation) n'est plus jamais
         // renseigné : une classe/matière affectée uniquement via l'écran actuel
-        // n'apparaissait donc jamais ici ni dans le menu déroulant matière, et la
-        // saisie était de toute façon rejetée par store() (même bug, corrigé ci-dessous).
+        // n'apparaissait donc jamais ici ni dans le menu déroulant matière.
         $assignments = PedagogicalAssignment::with(['classroom.schoolYear', 'matiere'])
             ->where('teacher_id', $teacher->id)
             ->where('is_active', true)
@@ -41,9 +41,37 @@ class GradeController extends Controller
 
         $classrooms = $assignments->pluck('classroom')->unique('id')->values();
 
-        $matieres = $request->filled('classroom_id')
-            ? $assignments->where('classroom_id', $request->integer('classroom_id'))->pluck('matiere')->unique('id')->values()
-            : collect();
+        // Le titulaire d'une classe de primaire (Classroom.teacher_id) couvre les
+        // matières générales même sans PedagogicalAssignment explicite — normalement
+        // synchronisé automatiquement (ClassroomController::syncPrimaryTeacherAssignments),
+        // mais un titulariat renseigné hors de cet écran (import, ancienne donnée) ne
+        // l'est pas : sans ce filet, un tel titulaire n'aurait aucune classe ni matière
+        // disponible ici, alors qu'il en a bien la charge (voir TeacherClassController,
+        // même règle pour "Mes classes"). Limité à l'année scolaire active : une classe
+        // d'une année clôturée serait de toute façon rejetée à l'enregistrement par
+        // SchoolYearGuardService, autant ne pas la proposer dans le menu.
+        $schoolYear = SchoolYear::getActive();
+        $titulaireClassrooms = Classroom::where('teacher_id', $user->id)
+            ->whereNotIn('id', $classrooms->pluck('id'))
+            ->when($schoolYear, fn ($query) => $query->where('school_year_id', $schoolYear->id))
+            ->get();
+
+        $classrooms = $classrooms->concat($titulaireClassrooms)->unique('id')->values();
+
+        $matieres = collect();
+
+        if ($request->filled('classroom_id')) {
+            $selectedClassroomId = $request->integer('classroom_id');
+            $matieres = $assignments->where('classroom_id', $selectedClassroomId)->pluck('matiere')->unique('id')->values();
+
+            $selectedClassroom = $classrooms->firstWhere('id', $selectedClassroomId);
+            if ($selectedClassroom && $selectedClassroom->cycle === 'primaire' && $selectedClassroom->teacher_id === $user->id) {
+                $matieres = $matieres
+                    ->concat(Matiere::whereIn('id', Matiere::generalSubjectIds())->get())
+                    ->unique('id')
+                    ->values();
+            }
+        }
 
         return view('teachers.grades.index', compact('classrooms', 'matieres'));
     }
@@ -78,13 +106,17 @@ class GradeController extends Controller
         $evaluationNumber = $this->resolveEvaluationNumber($classroom->cycle, $validated['type_evaluation'], $validated['evaluation_number'] ?? 1);
 
         // Vérifier que le professeur est assigné à cette classe ET cette matière — via
-        // PedagogicalAssignment, seule source de vérité alimentée par l'administration
-        // (voir index() ci-dessus, même correctif).
+        // PedagogicalAssignment, ou via son titulariat d'une classe de primaire pour les
+        // matières générales (voir index() ci-dessus, même règle).
         $isAssigned = PedagogicalAssignment::where('teacher_id', $teacher->id)
             ->where('classroom_id', $classroom->id)
             ->where('matiere_id', $matiere->id)
             ->where('is_active', true)
             ->exists();
+
+        if (! $isAssigned && $classroom->cycle === 'primaire' && $classroom->teacher_id === $user->id) {
+            $isAssigned = ! $matiere->isPrimarySpecialistSubject();
+        }
 
         if (! $isAssigned) {
             abort(403, 'Vous n\'êtes pas autorisé à saisir des notes pour cette matière dans cette classe.');

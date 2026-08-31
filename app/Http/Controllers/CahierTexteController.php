@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkToggleRequest;
 use App\Http\Requests\StoreChapterCompletionRequest;
 use App\Models\ChapterCompletion;
+use App\Models\Classroom;
+use App\Models\Matiere;
 use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
 use App\Models\ProgramChapter;
 use App\Models\ProgramHistory;
 use App\Services\CahierTexteService;
+use App\Support\UserRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -32,12 +35,25 @@ class CahierTexteController extends Controller
         // qui lui est réellement affectée (même contrôle que toggle/bulkToggle/
         // markLessonDone ci-dessous) — sans ceci, il pouvait lire n'importe quelle
         // classe en changeant classroom_id/subject_id dans l'URL.
-        if (! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+        if (! UserRoles::isPedagogicalOverseer(auth()->user())) {
             $hasAssignment = PedagogicalAssignment::where('classroom_id', $request->classroom_id)
                 ->where('matiere_id', $request->subject_id)
                 ->where('is_active', true)
                 ->whereHas('teacher', fn ($q) => $q->where('user_id', auth()->id()))
                 ->exists();
+
+            // Le titulaire d'une classe de primaire couvre les matières générales même
+            // sans PedagogicalAssignment explicite (même règle que GradeController pour
+            // la saisie des notes).
+            if (! $hasAssignment) {
+                $classroom = Classroom::find($request->classroom_id);
+                $matiere = Matiere::find($request->subject_id);
+
+                $hasAssignment = $classroom && $matiere
+                    && $classroom->teacher_id === auth()->id()
+                    && $classroom->cycle === 'primaire'
+                    && ! $matiere->isPrimarySpecialistSubject();
+            }
 
             abort_unless($hasAssignment, 403);
         }
@@ -57,7 +73,44 @@ class CahierTexteController extends Controller
 
     public function select(): View
     {
-        return view('cahier-textes.select');
+        $user = auth()->user();
+
+        if (UserRoles::isPedagogicalOverseer($user)) {
+            $classrooms = Classroom::orderBy('name')->get();
+            $matieres = Matiere::orderBy('nom')->get();
+
+            return view('cahier-textes.select', compact('classrooms', 'matieres'));
+        }
+
+        // Un professeur ne doit voir dans ce sélecteur que ses propres classes/matières
+        // affectées — jusqu'ici la vue listait Classroom::all()/Matiere::all(), donc
+        // exactement le même menu que l'admin, sans aucun filtre.
+        $assignments = PedagogicalAssignment::with(['classroom', 'matiere'])
+            ->where('is_active', true)
+            ->whereHas('teacher', fn ($q) => $q->where('user_id', $user->id))
+            ->get();
+
+        $classrooms = $assignments->pluck('classroom')->filter()->unique('id')->values();
+        $matieres = $assignments->pluck('matiere')->filter()->unique('id')->values();
+
+        // Titulaire d'une classe de primaire : couvre les matières générales même sans
+        // PedagogicalAssignment explicite (même règle que GradeController::index).
+        $titulaireClassrooms = Classroom::where('teacher_id', $user->id)
+            ->whereNotIn('id', $classrooms->pluck('id'))
+            ->get();
+
+        if ($titulaireClassrooms->isNotEmpty()) {
+            $classrooms = $classrooms->concat($titulaireClassrooms)->unique('id')->values();
+
+            if ($titulaireClassrooms->contains(fn ($classroom) => $classroom->cycle === 'primaire')) {
+                $matieres = $matieres
+                    ->concat(Matiere::whereIn('id', Matiere::generalSubjectIds())->get())
+                    ->unique('id')
+                    ->values();
+            }
+        }
+
+        return view('cahier-textes.select', compact('classrooms', 'matieres'));
     }
 
     public function toggle(StoreChapterCompletionRequest $request): JsonResponse
@@ -66,7 +119,7 @@ class CahierTexteController extends Controller
         $this->authorize('create', ChapterCompletion::class);
         $program = $chapter->program;
 
-        if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+        if ($program->teacher_id !== auth()->id() && ! UserRoles::isPedagogicalOverseer(auth()->user())) {
             abort(403);
         }
 
@@ -104,7 +157,7 @@ class CahierTexteController extends Controller
         $date = Carbon::parse($request->date)->toDateString();
         $program = ProgramChapter::findOrFail($request->chapter_ids[0])->program;
 
-        if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+        if ($program->teacher_id !== auth()->id() && ! UserRoles::isPedagogicalOverseer(auth()->user())) {
             abort(403);
         }
 
@@ -138,7 +191,7 @@ class CahierTexteController extends Controller
         $lesson = ProgramChapter::findOrFail($request->lesson_id);
         $program = $lesson->program;
 
-        if ($program->teacher_id !== auth()->id() && ! auth()->user()->hasRole(['admin', 'super-admin', 'surveillant'])) {
+        if ($program->teacher_id !== auth()->id() && ! UserRoles::isPedagogicalOverseer(auth()->user())) {
             abort(403);
         }
 

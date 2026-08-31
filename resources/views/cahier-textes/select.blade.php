@@ -12,7 +12,7 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
                         Classe
                         <select name="classroom_id" class="mt-1 w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            @foreach (App\Models\Classroom::all() as $classroom)
+                            @foreach ($classrooms as $classroom)
                                 <option value="{{ $classroom->id }}">{{ $classroom->name }}</option>
                             @endforeach
                         </select>
@@ -20,7 +20,7 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">
                         Matière
                         <select name="subject_id" class="mt-1 w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            @foreach (App\Models\Matiere::all() as $subject)
+                            @foreach ($matieres as $subject)
                                 <option value="{{ $subject->id }}">{{ $subject->nom }}</option>
                             @endforeach
                         </select>
