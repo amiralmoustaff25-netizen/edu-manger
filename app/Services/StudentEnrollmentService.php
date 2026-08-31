@@ -194,7 +194,13 @@ class StudentEnrollmentService
         ]);
 
         $parent->students()->attach($student->id, [
-            'lien_parente' => $data['parent_lien_parente'] ?? 'Parent',
+            // 'Parent' n'existe pas dans l'enum réel de parent_user.lien_parente ('Pere',
+            // 'Mere','Tuteur','Tutrice','Autre' — voir information_schema) : uniquement
+            // détecté sur MySQL, jamais en tests (SQLite n'impose pas cette contrainte). '?:'
+            // et non '??' : le champ étant facultatif (StoreRegistrationRequest), laisser le
+            // menu déroulant du formulaire d'inscription sur son option vide envoie une chaîne
+            // vide (pas une clé absente) — '??' ne l'aurait pas intercepté.
+            'lien_parente' => ($data['parent_lien_parente'] ?? null) ?: 'Autre',
             'est_responsable_financier' => (bool) ($data['parent_est_responsable_financier'] ?? false),
             'est_contact_urgence' => (bool) ($data['parent_est_contact_urgence'] ?? false),
         ]);

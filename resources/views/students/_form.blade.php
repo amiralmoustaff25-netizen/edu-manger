@@ -15,7 +15,7 @@
         'photoPreview' => $student->profile_photo_url,
         'showDelete' => (bool) $student->profile_photo_path,
         'feeLibrary' => $feeLibrary ?? [],
-        'canEditFees' => auth()->user()?->hasAnyRole(['super-admin', 'manager-comptable']) ?? false,
+        'canEditFees' => auth()->user() ? \App\Support\UserRoles::canEditRegistrationFees(auth()->user()) : false,
         'classroomId' => (string) old('classroom_id', $student->latestRegistration?->classroom_id ?? ''),
         'registrationFee' => (float) old('registration_fee_paid', $student->latestRegistration?->registration_fee_paid ?? 0),
         'monthlyFee' => (float) old('monthly_fee', $student->latestRegistration?->monthly_fee ?? 0),
@@ -314,7 +314,15 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lien de parenté</label>
-                            <input name="parents[{{ $i }}][lien_parente]" type="text" value="{{ old("parents.{$i}.lien_parente", optional(optional($parent)->pivot)->lien_parente) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            @php $currentLien = old("parents.{$i}.lien_parente", optional(optional($parent)->pivot)->lien_parente); @endphp
+                            <select name="parents[{{ $i }}][lien_parente]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Sélectionner</option>
+                                <option value="Pere" @selected($currentLien === 'Pere')>Père</option>
+                                <option value="Mere" @selected($currentLien === 'Mere')>Mère</option>
+                                <option value="Tuteur" @selected($currentLien === 'Tuteur')>Tuteur</option>
+                                <option value="Tutrice" @selected($currentLien === 'Tutrice')>Tutrice</option>
+                                <option value="Autre" @selected($currentLien === 'Autre')>Autre</option>
+                            </select>
                         </div>
                         <div class="flex items-end gap-2">
                             <label class="inline-flex items-center">

@@ -257,7 +257,11 @@ class StudentController extends Controller
                 foreach ($validated['parents'] as $parentData) {
                     if (! empty($parentData['parent_id'])) {
                         $parentSync[$parentData['parent_id']] = [
-                            'lien_parente' => $parentData['lien_parente'] ?? null,
+                            // parent_user.lien_parente est NOT NULL avec un enum strict (voir
+                            // StudentEnrollmentService::enroll() pour le même correctif) : un
+                            // champ laissé vide envoyait NULL, rejeté par MySQL (jamais détecté
+                            // en tests, SQLite n'imposant pas cette contrainte).
+                            'lien_parente' => ($parentData['lien_parente'] ?? null) ?: 'Autre',
                             'est_responsable_financier' => $parentData['est_responsable_financier'] ?? false,
                             'est_contact_urgence' => $parentData['est_contact_urgence'] ?? false,
                         ];

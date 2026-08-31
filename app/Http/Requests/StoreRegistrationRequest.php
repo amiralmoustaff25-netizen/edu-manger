@@ -51,7 +51,10 @@ class StoreRegistrationRequest extends FormRequest
             'allergies' => ['nullable', 'string'],
             'parents' => ['sometimes', 'array'],
             'parents.*.parent_id' => ['nullable', 'exists:parents,id'],
-            'parents.*.lien_parente' => ['nullable', 'string', 'max:255'],
+            // parent_user.lien_parente est un enum strict côté MySQL (Pere/Mere/Tuteur/
+            // Tutrice/Autre) : un champ libre acceptant n'importe quelle chaîne faisait
+            // planter l'inscription dès que la valeur ne correspondait pas exactement.
+            'parents.*.lien_parente' => ['nullable', Rule::in(['Pere', 'Mere', 'Tuteur', 'Tutrice', 'Autre'])],
             'parents.*.est_responsable_financier' => ['nullable', 'boolean'],
             'parents.*.est_contact_urgence' => ['nullable', 'boolean'],
             'parent_nom' => ['nullable', 'required_with:parent_prenom,parent_email', 'string', 'max:255'],

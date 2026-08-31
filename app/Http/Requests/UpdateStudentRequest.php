@@ -41,7 +41,9 @@ class UpdateStudentRequest extends FormRequest
             ],
             'parents' => ['sometimes', 'array'],
             'parents.*.parent_id' => ['nullable', 'exists:parents,id'],
-            'parents.*.lien_parente' => ['nullable', 'string', 'max:255'],
+            // parent_user.lien_parente est un enum strict côté MySQL (Pere/Mere/Tuteur/
+            // Tutrice/Autre) — voir StoreRegistrationRequest pour le même correctif.
+            'parents.*.lien_parente' => ['nullable', Rule::in(['Pere', 'Mere', 'Tuteur', 'Tutrice', 'Autre'])],
             'parents.*.est_responsable_financier' => ['nullable', 'boolean'],
             'parents.*.est_contact_urgence' => ['nullable', 'boolean'],
             'telephone' => ['nullable', 'string', 'max:20'],

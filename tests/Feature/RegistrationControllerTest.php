@@ -236,6 +236,36 @@ class RegistrationControllerTest extends TestCase
         $response->assertSessionHas('success');
     }
 
+    /**
+     * Régression : parent_user.lien_parente est un enum strict côté MySQL (Pere/Mere/
+     * Tuteur/Tutrice/Autre), jamais détecté en local (SQLite n'impose pas cette
+     * contrainte). Le champ "Lien de parenté" du formulaire d'inscription est facultatif
+     * et sa valeur par défaut n'est pas envoyée — un ancien code utilisait 'Parent' comme
+     * repli, absent de l'enum, ce qui faisait planter toute inscription avec création de
+     * compte parent où ce champ était laissé sur "Sélectionner".
+     *
+     * @test
+     */
+    public function it_defaults_to_autre_when_lien_parente_is_left_unselected(): void
+    {
+        $response = $this->post(route('registrations.store'), $this->registrationPayload([
+            'email' => 'enfant.sanslien@example.com',
+            'parent_nom' => 'Ndiaye',
+            'parent_prenom' => 'Fatou',
+            'parent_email' => 'parent.ndiaye@example.com',
+            // 'parent_lien_parente' volontairement absent.
+        ]));
+
+        $response->assertRedirect(route('dashboard'));
+
+        $student = User::where('email', 'enfant.sanslien@example.com')->firstOrFail();
+
+        $this->assertDatabaseHas('parent_user', [
+            'user_id' => $student->id,
+            'lien_parente' => 'Autre',
+        ]);
+    }
+
     /** @test */
     public function fee_library_amounts_override_manual_input_for_non_privileged_users(): void
     {
