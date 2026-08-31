@@ -77,7 +77,7 @@
                             @forelse($users as $user)
                                 @php
                                     $isSelf = $user->is(auth()->user());
-                                    $canTargetSuperAdmin = ! $user->hasRole('super-admin') || auth()->user()->hasRole('super-admin');
+                                    $canTargetSuperAdmin = app(\App\Services\SuperAdminProtectionService::class)->canTarget(auth()->user(), $user);
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3 align-middle whitespace-nowrap font-mono text-xs text-gray-700 dark:text-gray-300">{{ $user->matricule }}</td>

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\ProgramAnnual;
 use App\Models\User;
+use App\Support\UserRoles;
 
 class ProgramAnnualPolicy
 {
@@ -14,7 +15,7 @@ class ProgramAnnualPolicy
 
     public function view(User $user, ProgramAnnual $program): bool
     {
-        return $user->can('voir-programmes') && ($user->hasRole('super-admin') || $user->hasRole('admin') || $user->hasRole('surveillant') || $program->teacher_id === $user->id);
+        return $user->can('voir-programmes') && (UserRoles::isPedagogicalOverseer($user) || $program->teacher_id === $user->id);
     }
 
     public function create(User $user): bool

@@ -15,7 +15,7 @@
             
             <!-- Boutons d'action -->
             <div class="flex justify-end gap-3 mb-6">
-                @unless(auth()->user()->hasRole('eleve'))
+                @if(\App\Support\UserRoles::canManageOwnAccount(auth()->user()))
                     <a href="{{ route('profile.edit') }}"
                        class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +33,7 @@
                     {{ __('Changer le mot de passe') }}
                 </button>
 
-                @unless(auth()->user()->hasRole('eleve'))
+                @if(\App\Support\UserRoles::canManageOwnAccount(auth()->user()))
                     <button onclick="document.getElementById('modal-delete-account').classList.remove('hidden')"
                             class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,7 +289,7 @@
     </div>
 
     <!-- Modal suppression de compte -->
-    @unless(auth()->user()->hasRole('eleve'))
+    @if(\App\Support\UserRoles::canManageOwnAccount(auth()->user()))
     <div id="modal-delete-account" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full mx-4">
             <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">

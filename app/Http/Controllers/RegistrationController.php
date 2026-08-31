@@ -11,6 +11,7 @@ use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
 use App\Services\StudentEnrollmentService;
+use App\Support\UserRoles;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
@@ -63,7 +64,7 @@ class RegistrationController extends Controller
                 $validated,
                 $request->file('photo'),
                 auth()->id(),
-                $request->user()->hasAnyRole(['super-admin', 'manager-comptable'])
+                UserRoles::canEditRegistrationFees($request->user())
             );
         } catch (QueryException $e) {
             return back()
@@ -213,7 +214,7 @@ class RegistrationController extends Controller
             $registration = $enrollmentService->reenroll(
                 $student,
                 $validated,
-                $request->user()->hasAnyRole(['super-admin', 'manager-comptable'])
+                UserRoles::canEditRegistrationFees($request->user())
             );
         } catch (\RuntimeException $e) {
             return back()->withErrors(['error' => $e->getMessage()])->withInput();

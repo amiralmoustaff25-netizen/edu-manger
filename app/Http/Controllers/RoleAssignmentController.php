@@ -51,7 +51,7 @@ class RoleAssignmentController extends Controller
         // jusqu'ici, via SuperAdminProtectionService::ensureCanTarget dans update()).
         $restrictedSuperAdmin = false;
 
-        if ($user && $user->hasRole('super-admin') && ! auth()->user()->hasRole('super-admin')) {
+        if ($user && ! $this->superAdminProtection->canTarget(auth()->user(), $user)) {
             $restrictedSuperAdmin = true;
             $user = null;
         }

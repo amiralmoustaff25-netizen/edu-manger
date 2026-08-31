@@ -10,6 +10,7 @@ use App\Models\PedagogicalAssignment;
 use App\Models\ProgramAnnual;
 use App\Models\ProgramHistory;
 use App\Support\ProgramStatus;
+use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class ProgramAnnualController extends Controller
     {
         $query = ProgramAnnual::query()->with(['classroom', 'subject', 'teacher', 'chapters']);
 
-        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+        if (! UserRoles::isPedagogicalOverseer($request->user())) {
             $query->forTeacher($request->user()->id);
         }
 
@@ -57,7 +58,7 @@ class ProgramAnnualController extends Controller
         $assignments = PedagogicalAssignment::query()
             ->with(['classroom', 'matiere', 'schoolYear', 'teacher.user'])
             ->where('is_active', true)
-            ->when(! $request->user()->hasRole(['super-admin', 'admin', 'surveillant']), function ($query) use ($request) {
+            ->when(! UserRoles::isPedagogicalOverseer($request->user()), function ($query) use ($request) {
                 $query->whereHas('teacher', fn ($teacherQuery) => $teacherQuery->where('user_id', $request->user()->id));
             })
             ->orderBy('classroom_id')
@@ -81,7 +82,7 @@ class ProgramAnnualController extends Controller
         $this->authorize('create', ProgramAnnual::class);
         $assignment = PedagogicalAssignment::with('teacher')->whereKey($request->integer('pedagogical_assignment_id'))->where('is_active', true)->firstOrFail();
 
-        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+        if (! UserRoles::isPedagogicalOverseer($request->user())) {
             abort_unless($assignment->teacher->user_id === $request->user()->id, 403);
         }
 
@@ -192,7 +193,7 @@ class ProgramAnnualController extends Controller
         // pas en modifiant classroom_id/subject_id, et en devenir teacher_id.
         $assignment = PedagogicalAssignment::with('teacher')->whereKey($request->integer('pedagogical_assignment_id'))->where('is_active', true)->firstOrFail();
 
-        if (! $request->user()->hasRole(['super-admin', 'admin', 'surveillant'])) {
+        if (! UserRoles::isPedagogicalOverseer($request->user())) {
             abort_unless($assignment->teacher->user_id === $request->user()->id, 403);
         }
 

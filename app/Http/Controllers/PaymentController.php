@@ -11,6 +11,7 @@ use App\Notifications\PaymentReceived;
 use App\Services\FeeService;
 use App\Services\PaymentService;
 use App\Services\SchoolYearGuardService;
+use App\Support\UserRoles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -307,7 +308,7 @@ class PaymentController extends Controller
 
             $fee = $pendingFees->get($id);
 
-            if ($fee['status'] === 'paid' && ! auth()->user()->hasAnyRole(['super-admin', 'manager-comptable'])) {
+            if ($fee['status'] === 'paid' && ! UserRoles::canOverridePaidFee(auth()->user())) {
                 return ['items' => [], 'total_expected' => 0, 'error' => "Frais déjà payé : {$fee['description']}"];
             }
 

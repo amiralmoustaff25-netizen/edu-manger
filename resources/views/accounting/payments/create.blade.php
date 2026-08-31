@@ -265,7 +265,7 @@
     </div>
 
     <script>
-        const canOverridePaidFees = @json(auth()->user()->hasAnyRole(['super-admin', 'manager-comptable']));
+        const canOverridePaidFees = @json(\App\Support\UserRoles::canOverridePaidFee(auth()->user()));
         let selectedFees = [];
         let studentData = null;
         let allFees = [];

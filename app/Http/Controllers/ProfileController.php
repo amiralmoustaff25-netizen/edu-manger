@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\User;
+use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
-        abort_if($request->user()->hasRole('eleve'), 403);
+        abort_if(! UserRoles::canManageOwnAccount($request->user()), 403);
 
         $user = $request->user();
         $user->load('latestRegistration.classroom.schoolYear');
@@ -43,7 +44,7 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        abort_if($request->user()->hasRole('eleve'), 403);
+        abort_if(! UserRoles::canManageOwnAccount($request->user()), 403);
 
         $user = $request->user();
         $user->fill($request->validated());
@@ -76,7 +77,7 @@ class ProfileController extends Controller
     {
         // Même restriction que edit()/update() : un élève ne gère pas son propre
         // compte, seul un administrateur peut le faire.
-        abort_if($request->user()->hasRole('eleve'), 403);
+        abort_if(! UserRoles::canManageOwnAccount($request->user()), 403);
 
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],

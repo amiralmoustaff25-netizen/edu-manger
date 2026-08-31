@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SuperAdminProtectionService;
 use App\Support\UserRoles;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,8 +14,9 @@ class UpdateUserRequest extends FormRequest
         $target = $this->route('user');
 
         // Seul un super-admin peut modifier un compte super-admin (protège contre
-        // la désactivation/dépossession d'un super-admin par un simple admin).
-        if ($target->hasRole('super-admin') && ! $this->user()->hasRole('super-admin')) {
+        // la désactivation/dépossession d'un super-admin par un simple admin) — même
+        // règle que UserController (SuperAdminProtectionService::ensureCanTarget()).
+        if (! app(SuperAdminProtectionService::class)->canTarget($this->user(), $target)) {
             return false;
         }
 

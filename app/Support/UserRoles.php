@@ -17,6 +17,53 @@ class UserRoles
         'eleve',
     ];
 
+    /**
+     * Rôles ayant une vue d'ensemble sur les contenus pédagogiques (programmes annuels,
+     * cahier de textes) au-delà de leurs propres classes assignées — contrairement à un
+     * professeur, scopé à ce qu'il enseigne. Centralisé ici car ce même triplet était
+     * dupliqué mot pour mot dans ProgramAnnualController, CahierTexteController et
+     * CahierTexteDashboardController (11 occurrences avant ce correctif), déjà présent
+     * une fois dans ProgramAnnualPolicy::view() sans être réutilisé ailleurs.
+     */
+    public const PEDAGOGICAL_OVERSEERS = ['super-admin', 'admin', 'surveillant'];
+
+    public static function isPedagogicalOverseer(User $user): bool
+    {
+        return $user->hasAnyRole(self::PEDAGOGICAL_OVERSEERS);
+    }
+
+    /**
+     * Un élève ne gère jamais son propre compte (profil, mot de passe...) : c'est le
+     * personnel administratif qui le fait pour lui. Centralisé ici car ce même check
+     * était dupliqué mot pour mot dans ProfileController (×3) et profile/show.blade.php
+     * (×3) sans aucune règle centralisée.
+     */
+    public static function canManageOwnAccount(User $user): bool
+    {
+        return ! $user->hasRole('eleve');
+    }
+
+    /**
+     * Rôles habilités à modifier manuellement les montants de frais lors d'une
+     * inscription/réinscription (au lieu de s'en tenir à la grille tarifaire).
+     * Centralisé ici car dupliqué mot pour mot dans RegistrationController,
+     * students/_form.blade.php et registrations/reinscription.blade.php.
+     */
+    public static function canEditRegistrationFees(User $user): bool
+    {
+        return $user->hasAnyRole(['super-admin', 'manager-comptable']);
+    }
+
+    /**
+     * Rôles habilités à enregistrer un paiement sur un frais déjà soldé (cas
+     * exceptionnel : correction, double paiement à régulariser...). Centralisé ici
+     * car dupliqué mot pour mot dans PaymentController et payments/create.blade.php.
+     */
+    public static function canOverridePaidFee(User $user): bool
+    {
+        return $user->hasAnyRole(['super-admin', 'manager-comptable']);
+    }
+
     // Le rôle 'professeur' est attribuable via le formulaire utilisateur générique
     // (choix explicite : un seul point de création "Ajouter un utilisateur" plutôt
     // qu'un module dédié séparé) — la fiche professeur (statut, diplômes...) est

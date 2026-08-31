@@ -336,6 +336,8 @@ class TeacherController extends Controller
 
     private function authorizeCanViewRib(): bool
     {
-        return auth()->user()->hasRole(['super-admin', 'admin']);
+        // TeacherPolicy::manageRib() centralise déjà cette règle mais n'était jamais
+        // invoquée : ce contrôleur la réimplémentait indépendamment en dur.
+        return Gate::allows('manageRib', Teacher::class);
     }
 }
