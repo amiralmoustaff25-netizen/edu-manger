@@ -23,7 +23,10 @@ class UpdateParentRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('parents')->ignore($this->parent)],
+            'email' => [
+                'required', 'email', 'max:255',
+                Rule::unique('parents')->ignore($this->parent)->where(fn ($query) => $query->whereNull('deleted_at')),
+            ],
             'telephone' => ['nullable', 'string', 'max:20'],
             'adresse' => ['nullable', 'string'],
             'profession' => ['nullable', 'string', 'max:255'],

@@ -20,10 +20,20 @@ class StoreParentRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Un email d'archive (parent ou compte utilisateur archivé) ne doit pas bloquer sa
+        // réutilisation — même correctif que StoreUserRequest/StoreTeacherRequest/
+        // StoreRegistrationRequest, jusqu'ici absent ici (incohérence : la même situation
+        // était bloquée à tort selon le formulaire utilisé pour créer le compte).
+        $notTrashed = fn ($query) => $query->whereNull('deleted_at');
+
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:parents,email', 'unique:users,email'],
+            'email' => [
+                'required', 'email', 'max:255',
+                Rule::unique('parents', 'email')->where($notTrashed),
+                Rule::unique('users', 'email')->where($notTrashed),
+            ],
             'telephone' => ['nullable', 'string', 'max:20'],
             'adresse' => ['nullable', 'string'],
             'profession' => ['nullable', 'string', 'max:255'],

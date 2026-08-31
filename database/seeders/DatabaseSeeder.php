@@ -99,10 +99,10 @@ class DatabaseSeeder extends Seeder
     private function user(string $matricule, string $name, string $email, string $role): User
     {
         $user = User::updateOrCreate(
-            ['matricule' => $matricule],
+            ['email' => $email],
             [
                 'name' => $name,
-                'email' => $email,
+                'matricule' => $matricule,
                 'password' => Hash::make('password'),
                 'role' => $role,
                 'is_active' => true,

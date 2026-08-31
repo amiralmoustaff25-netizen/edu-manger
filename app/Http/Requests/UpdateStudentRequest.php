@@ -28,7 +28,10 @@ class UpdateStudentRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'max:255'],
             'prenom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('student')->id ?? null)],
+            'email' => [
+                'required', 'email', 'max:255',
+                Rule::unique('users', 'email')->ignore($this->route('student')->id ?? null)->where(fn ($query) => $query->whereNull('deleted_at')),
+            ],
             'date_naissance' => ['required', 'date'],
             'lieu_naissance' => ['required', 'string', 'max:255'],
             'sexe' => ['required', Rule::in(['M', 'F'])],
