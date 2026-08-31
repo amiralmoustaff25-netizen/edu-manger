@@ -296,21 +296,27 @@
             {{-- Au moins un emplacement par parent déjà lié à l'élève, sinon la sauvegarde du
                  formulaire (sync() sur la relation parents()) supprimerait silencieusement
                  tout lien au-delà des 2 premiers emplacements (perte de données). --}}
-            @php $parentSlots = max($student->parents->count(), 2); @endphp
+            @php
+                $parentSlots = max($student->parents->count(), 2);
+                // Liste brute inutilisable au-delà de quelques dizaines de familles : remplacée
+                // par x-searchable-select (filtrage côté client, sans dépendance JS ajoutée).
+                $parentOptions = $parents->map(fn ($p) => ['value' => $p->id, 'label' => trim("{$p->nom} {$p->prenom}")])->values()->all();
+            @endphp
             <div class="mt-2 space-y-3">
                 @for($i = 0; $i < $parentSlots; $i++)
                     @php
                         $parent = $student->parents->get($i);
+                        $currentParentId = old("parents.{$i}.parent_id", optional($parent)->id);
                     @endphp
                     <div class="grid grid-cols-1 gap-3 md:grid-cols-4 border border-gray-200 dark:border-slate-700 rounded-md p-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Parent</label>
-                            <select name="parents[{{ $i }}][parent_id]" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Aucun</option>
-                                @foreach($parents as $p)
-                                    <option value="{{ $p->id }}" @selected(old("parents.{$i}.parent_id", optional($parent)->id === $p->id))>{{ $p->nom }} {{ $p->prenom }}</option>
-                                @endforeach
-                            </select>
+                            <x-searchable-select
+                                name="parents[{{ $i }}][parent_id]"
+                                :options="$parentOptions"
+                                :selected="$currentParentId"
+                                placeholder="Rechercher un parent..."
+                            />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Lien de parenté</label>
