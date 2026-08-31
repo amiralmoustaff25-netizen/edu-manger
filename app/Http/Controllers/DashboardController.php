@@ -12,11 +12,15 @@ use App\Models\Sanction;
 use App\Models\SchoolYear;
 use App\Models\User;
 use App\Services\FeeService;
+use App\Services\SchoolYearContext;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly FeeService $feeService) {}
+    public function __construct(
+        private readonly FeeService $feeService,
+        private readonly SchoolYearContext $schoolYearContext
+    ) {}
 
     public function index()
     {
@@ -93,7 +97,13 @@ class DashboardController extends Controller
 
     private function staffDashboard(): View
     {
-        $activeYear = SchoolYear::where('is_active', true)->first();
+        // "Année consultée" (SchoolYearContext), pas SchoolYear::where('is_active', true) :
+        // le sélecteur d'année en haut de cette page — et son badge "Historique — lecture
+        // d'une année passée" — n'avaient jusqu'ici aucun effet ici, contrairement à
+        // toutes les autres pages admin (élèves, classes, cahier de textes...). Un
+        // directeur qui consultait une année passée voyait le badge "Historique" au-dessus
+        // de chiffres qui restaient ceux de l'année active en cours, sans lien entre eux.
+        $activeYear = $this->schoolYearContext->current();
 
         $registrations = Registration::with(['user', 'classroom', 'schoolYear'])
             ->latest()
@@ -123,8 +133,10 @@ class DashboardController extends Controller
         );
 
         $stats = [
-            'students' => User::role('eleve')->count(),
-            'classrooms' => Classroom::count(),
+            'students' => $activeYear
+                ? User::role('eleve')->whereHas('registrations', fn ($q) => $q->where('school_year_id', $activeYear->id))->count()
+                : 0,
+            'classrooms' => $activeYear ? Classroom::where('school_year_id', $activeYear->id)->count() : 0,
             'parents' => ParentModel::count(),
             'active_parents' => ParentModel::where('statut', 'actif')->count(),
             'paid_this_month' => $scopedToActiveYear(Payment::where('status', 'complet')->notCancelled())
@@ -159,9 +171,14 @@ class DashboardController extends Controller
             )->count(),
             'students_without_class' => Registration::where('status', 'active')->whereNull('classroom_id')->count(),
             'classrooms_without_teacher' => Classroom::whereNull('teacher_id')->count(),
-            'missing_active_year' => $activeYear === null,
+            // Distinct de $activeYear (l'année consultée) : cette alerte doit rester vraie
+            // même quand on consulte une année passée valide alors qu'aucune année active
+            // n'est configurée pour l'établissement — sinon elle resterait masquée.
+            'missing_active_year' => SchoolYear::getActive() === null,
         ];
 
-        return view('dashboard', compact('registrations', 'recentPayments', 'stats', 'alerts', 'activeYear', 'monthlyRevenue'));
+        $isViewingActiveYear = $this->schoolYearContext->isViewingActiveYear();
+
+        return view('dashboard', compact('registrations', 'recentPayments', 'stats', 'alerts', 'activeYear', 'monthlyRevenue', 'isViewingActiveYear'));
     }
 }

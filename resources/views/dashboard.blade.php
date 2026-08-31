@@ -6,7 +6,7 @@
                     Tableau de bord
                 </h2>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ $activeYear ? 'Année scolaire active : '.$activeYear->year_string : 'Aucune année scolaire active' }}
+                    {{ $activeYear ? ($isViewingActiveYear ? 'Année scolaire active : ' : 'Année consultée : ').$activeYear->year_string : 'Aucune année scolaire active' }}
                 </p>
             </div>
             @role('super-admin|admin')
@@ -44,13 +44,13 @@
                 <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Élèves inscrits</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $stats['students'] }}</p>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Tous les comptes élèves</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $activeYear ? 'Année '.$activeYear->year_string : 'Aucune année active' }}</p>
                 </x-card>
 
                 <x-card padding="p-5">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Classes actives</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ $stats['classrooms'] }}</p>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Classes créées dans le système</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $activeYear ? 'Année '.$activeYear->year_string : 'Aucune année active' }}</p>
                 </x-card>
 
                 @role('super-admin|manager-comptable|comptable')
