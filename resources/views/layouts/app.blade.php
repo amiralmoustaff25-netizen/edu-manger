@@ -125,6 +125,7 @@
         </script>
 
         <x-cancel-payment-modal />
+        <x-reject-payment-modal />
 
         <div
             x-data="{ open: false, form: null, title: '', message: '', confirmLabel: 'Confirmer' }"

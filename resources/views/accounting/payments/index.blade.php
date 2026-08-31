@@ -93,11 +93,10 @@
                                                 @csrf
                                                 <button type="submit" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300">Valider</button>
                                             </form>
-                                            <form action="{{ route('payments.reject', $payment) }}" method="POST" class="inline-flex items-center gap-1" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
-                                                @csrf
-                                                <input type="text" name="reason" placeholder="Motif du rejet" aria-label="Motif du rejet" required class="w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-xs">
-                                                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Rejeter</button>
-                                            </form>
+                                            <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                                x-on:click="$dispatch('open-reject-payment', { action: '{{ route('payments.reject', $payment) }}', receipt: '{{ addslashes($payment->receipt_number) }}' })">
+                                                Rejeter
+                                            </button>
                                         @endcan
                                     @endif
                                     @unless($payment->isCancelled())
@@ -170,7 +169,11 @@
                                             {{ $payment->payment_date->format('d/m/Y') }}
                                         </td>
                                         <td class="px-6 py-4 text-right text-sm font-medium">
-                                            <div class="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                                            {{-- flex-nowrap : le nombre d'actions varie par ligne (2 à 5 selon le statut du
+                                                 paiement) ; avec flex-wrap, les lignes à 5 actions passaient sur 2 lignes et
+                                                 devenaient 2 à 3 fois plus hautes que leurs voisines, rompant l'alignement
+                                                 vertical de la colonne. Le tableau parent est déjà overflow-x-auto. --}}
+                                            <div class="flex flex-nowrap items-center justify-end gap-2">
                                             <a href="{{ route('payments.show', $payment) }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 whitespace-nowrap">Voir</a>
                                             @if($payment->status === 'partiel' && ! $payment->validated_at)
                                                 @can('validatePartial')
@@ -178,11 +181,10 @@
                                                         @csrf
                                                         <button type="submit" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 whitespace-nowrap">Valider</button>
                                                     </form>
-                                                    <form action="{{ route('payments.reject', $payment) }}" method="POST" class="inline-flex items-center gap-1" x-on:submit.prevent="$dispatch('open-confirmation', { form: $event.target, title: 'Rejeter le paiement', message: 'Le paiement {{ addslashes($payment->receipt_number) }} sera rejeté. Le motif saisi sera conservé dans l’historique.', confirmLabel: 'Rejeter' })">
-                                                        @csrf
-                                                        <input type="text" name="reason" placeholder="Motif du rejet" aria-label="Motif du rejet" required class="w-28 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-xs">
-                                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 whitespace-nowrap">Rejeter</button>
-                                                    </form>
+                                                    <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 whitespace-nowrap"
+                                                        x-on:click="$dispatch('open-reject-payment', { action: '{{ route('payments.reject', $payment) }}', receipt: '{{ addslashes($payment->receipt_number) }}' })">
+                                                        Rejeter
+                                                    </button>
                                                 @endcan
                                             @endif
                                             @unless($payment->isCancelled())
