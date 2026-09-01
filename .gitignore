@@ -37,3 +37,7 @@ Thumbs.db
 /route-list.json
 /routes.txt
 /extract.ps1
+
+# Rapports d'audit internes (findings détaillés, scénarios d'exploitation précis) : usage
+# développeur uniquement, jamais dans le livrable client. Conservés en dehors du dépôt.
+/docs/audits/
